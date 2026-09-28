@@ -280,7 +280,7 @@
     display: table;
     overflow: visible;
   }
-  .doc-sheet:last-child {
+  .doc-pages > div:last-child .doc-sheet {
     page-break-after: auto;
     break-after: auto;
   }
