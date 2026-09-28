@@ -11,7 +11,8 @@
 - [x] Quiz pós-registo → planos; overlay "A gerar o seu trabalho…"
 
 ## Em curso
-- [x] Descarregar trabalho abaixo das páginas em PDF ou Word, em telemóvel e computador
+- [x] Descarregar trabalho acima das páginas em PDF ou Word, em telemóvel e computador
+- [x] Melhorar a organização das páginas e a formatação dos trabalhos gerados
 - [ ] Esconder selo "Edit with Lovable" (CSS adicionado a styles.css — definição oficial exige plano Pro)
 - [ ] Typecheck e verificação final dos fluxos de acesso
 

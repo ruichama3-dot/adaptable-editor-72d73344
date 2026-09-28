@@ -134,7 +134,10 @@ function Editor() {
             {html !== null && ` · ${pageCount} páginas`}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          {html !== null && work && (
+            <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
+          )}
           <Button onClick={save} disabled={saving}>
             <Save className="h-4 w-4" /> Guardar
           </Button>
@@ -199,14 +202,6 @@ function Editor() {
       </div>
 
       {html !== null && <DocPages ref={docRef} html={html} editable version={version} />}
-      {html !== null && work && (
-        <div className="mt-6 flex justify-center print:hidden">
-          <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
-        </div>
-      )}
-      <p className="text-muted-foreground mt-4 text-xs print:hidden">
-        Cada folha acima é uma página do documento — o PDF e o Word mantêm esta separação.
-      </p>
 
     </main>
   );
