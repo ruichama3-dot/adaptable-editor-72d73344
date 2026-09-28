@@ -2,6 +2,10 @@ import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  DEFAULT_SUPABASE_PUBLISHABLE_KEY,
+  DEFAULT_SUPABASE_URL,
+} from "@/integrations/supabase/config";
 
 /**
  * Middleware de autenticação resiliente para produção (Vercel).
@@ -85,21 +89,16 @@ export const requireAuth = createMiddleware({ type: "function" }).server(async (
     throw new Error("A sua sessão expirou. Actualize a página ou volte a entrar.");
   }
 
-  const ENV_URL = readEnv("SUPABASE_URL", "VITE_SUPABASE_URL");
+  const ENV_URL = readEnv("SUPABASE_URL", "VITE_SUPABASE_URL") ?? DEFAULT_SUPABASE_URL;
   // A URL do emissor do token tem prioridade: é sempre o projecto certo.
   const SUPABASE_URL = baseUrlFromIssuer(payload?.iss) ?? ENV_URL;
-  const SUPABASE_KEY = readEnv(
-    "SUPABASE_PUBLISHABLE_KEY",
-    "VITE_SUPABASE_PUBLISHABLE_KEY",
-    "SUPABASE_ANON_KEY",
-    "VITE_SUPABASE_ANON_KEY",
-  );
-
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    throw new Error(
-      "Configuração em falta no servidor: defina SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY nas variáveis de ambiente (também na Vercel).",
-    );
-  }
+  const SUPABASE_KEY =
+    readEnv(
+      "SUPABASE_PUBLISHABLE_KEY",
+      "VITE_SUPABASE_PUBLISHABLE_KEY",
+      "SUPABASE_ANON_KEY",
+      "VITE_SUPABASE_ANON_KEY",
+    ) ?? DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
     global: {

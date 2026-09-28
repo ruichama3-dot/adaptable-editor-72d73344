@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep RuJe IA's public data-service URL and publishable key in `src/integrations/supabase/config.ts`; this lets GitHub/Vercel builds authenticate without private environment files.
+- Keep all private provider keys server-only in deployment environment settings; `.env` files must never be committed.
