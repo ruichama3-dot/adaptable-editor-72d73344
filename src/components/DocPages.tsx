@@ -22,14 +22,14 @@ export const DocPages = forwardRef<DocPagesHandle, Props>(function DocPages(
   const last = useRef<HTMLDivElement | null>(null);
 
   useImperativeHandle(ref, () => ({
-    getHtml: () => joinPages(refs.current.filter(Boolean).map((el) => el!.innerHTML)),
+    getHtml: () => joinPages(refs.current.slice(0, pages.length).filter((el): el is HTMLDivElement => Boolean(el)).map((el) => el.innerHTML)),
     focusedPage: () => last.current ?? refs.current[0] ?? null,
   }));
 
   return (
     <div className="doc-pages mt-5">
       {pages.map((page, i) => (
-        <div key={`${String(version ?? "v")}-${i}`} className="w-full max-w-[794px]">
+        <div key={`${String(version ?? "v")}-${i}`} className="w-full max-w-[794px] min-w-0">
           <div
             ref={(el) => {
               refs.current[i] = el;
@@ -40,7 +40,7 @@ export const DocPages = forwardRef<DocPagesHandle, Props>(function DocPages(
               last.current = e.currentTarget;
             }}
             dangerouslySetInnerHTML={{ __html: page }}
-            className="doc-sheet shadow-soft rounded-2xl border border-border outline-none"
+            className="doc-sheet shadow-soft rounded-md border border-border outline-none"
           />
           <p className="page-number mt-1.5 pr-2 print:hidden">Página {i + 1} de {pages.length}</p>
         </div>

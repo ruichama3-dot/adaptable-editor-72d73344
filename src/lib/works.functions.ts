@@ -46,7 +46,7 @@ ${manualRefs
 
 REGRAS DE SAÍDA:
 - Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <li>, <table>, <strong>. Sem markdown, sem \`\`\`, sem <html> ou <body>.
-- SEPARAÇÃO EM PÁGINAS OBRIGATÓRIA: separa cada página com exactamente <hr class="page-break">. A capa é uma página; a folha de rosto é outra; o índice é outra; a introdução começa em página nova; a conclusão, as recomendações e as referências bibliográficas ficam cada uma em página própria. Distribui o desenvolvimento por várias páginas, com cerca de 350 a 450 palavras por página, até atingir aproximadamente ${f("pages")} páginas no total.
+ - SEPARAÇÃO EM PÁGINAS OBRIGATÓRIA: separa cada página com exactamente <hr class="page-break">, colocado ENTRE blocos completos de texto, nunca dentro de parágrafos, listas ou tabelas. A capa é uma página; a folha de rosto é outra; o índice é outra; a introdução começa em página nova; a conclusão, as recomendações e as referências bibliográficas ficam cada uma em página própria. Distribui o desenvolvimento por várias páginas, com cerca de 250 a 320 palavras por página, até atingir aproximadamente ${f("pages")} páginas no total. Não uses numeração de página inventada no índice.
 - A capa deve ser centrada com <p style="text-align:center"> contendo instituição, faculdade, departamento, curso, título, ${isGroup ? "a indicação \"Trabalho em grupo\"" : "estudante"}, docente, cidade e data.
 ${isGroup ? "- A folha de rosto deve conter a lista numerada dos elementos do grupo." : ""}
 - Linguagem académica formal, rigorosa e original. Nada de texto de exemplo tipo "insira aqui".`;
@@ -97,7 +97,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+             generationConfig: { temperature: 0.7, maxOutputTokens: 16384 },
           }),
         },
       );
