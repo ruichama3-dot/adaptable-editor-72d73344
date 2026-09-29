@@ -71,6 +71,20 @@ function Painel() {
     },
   });
 
+  const { data: pending } = useQuery({
+    queryKey: ["my-pending-payment"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("payment_requests")
+        .select("id, plan, amount, method, created_at, status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const last = data?.[0];
+      return last && String(last.status ?? "").toLowerCase().startsWith("pend") ? last : null;
+    },
+  });
+
   const firstName =
     (user.user_metadata?.["full_name"] as string | undefined)?.split(" ")[0] ??
     user.email?.split("@")[0] ??
@@ -106,6 +120,19 @@ function Painel() {
           </Link>
         </Button>
       </div>
+
+      {pending && !isAdmin && (
+        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-border bg-card p-5">
+          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div>
+            <p className="font-semibold">Pedido enviado · a aguardar aprovação</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {pending.plan} · {pending.amount} MT via {pending.method}. Aguarde — o administrador está a verificar o
+              seu comprovativo e o plano será activado assim que for aprovado.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary bg-secondary/50 p-5">
         <p className="flex items-center gap-2 font-semibold">

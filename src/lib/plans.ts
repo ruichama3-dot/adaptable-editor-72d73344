@@ -21,6 +21,7 @@ export const PAYMENT_METHODS = [
 export const FREE_DAILY_LIMIT = 0;
 
 
-export function planById(id: string): Plan | undefined {
-  return PLANS.find((p) => p.id === id);
+export function planById(id: string | null | undefined): Plan | undefined {
+  const k = String(id ?? "").trim().toLowerCase();
+  return PLANS.find((p) => p.id === k || p.name.toLowerCase() === k);
 }
