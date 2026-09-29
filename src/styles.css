@@ -294,3 +294,12 @@ a[href*="lovable"] {
   display: none !important;
 }
 
+
+.doc-sheet table.rosto,
+.doc-sheet table.rosto td,
+.doc-sheet table.rosto th {
+  border: none;
+  background: transparent;
+  vertical-align: top;
+}
+.doc-sheet table.rosto td:last-child { text-align: right; }
