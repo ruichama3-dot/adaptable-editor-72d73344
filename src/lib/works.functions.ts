@@ -25,30 +25,27 @@ ${isGroup ? `- Elementos do grupo (lista numerada na folha de rosto): ${f("group
 - Local: ${f("city")}, ${f("country")} | Data de entrega: ${f("due_date")}
 - Extensão alvo: aproximadamente ${f("pages")} páginas (escreve texto extenso e denso, sem repetições).
 
-ESTRUTURA OBRIGATÓRIA, por esta ordem:
-${opt['cover'] === false ? "" : "1. Capa\n2. Folha de Rosto\n"}${opt['index'] === false ? "" : "3. Índice\n"}4. Introdução
-5. Objetivo Geral
-6. Objetivos Específicos
-7. Fundamentação Teórica
-8. Desenvolvimento (com subtítulos)
-9. Metodologia
-10. Resultados
-11. Discussão
-12. Conclusão
-13. Recomendações
-14. Referências Bibliográficas
-15. Anexos (se aplicável)
+ESTRUTURA OBRIGATÓRIA (modelo académico moçambicano), por esta ordem, cada item em página própria quando indicado:
+${opt['cover'] === false ? "" : `1. CAPA (página única, tudo centrado): nome da instituição em maiúsculas; ${isGroup ? '"TRABALHO EM GRUPO"' : '"TRABALHO INDIVIDUAL"'} em destaque; "Cadeira: <disciplina>"; "Tema: <tema>"; e no fim "<cidade>, <ano>".
+2. FOLHA DE ROSTO (página única): instituição em maiúsculas centrada; ${isGroup ? '"TRABALHO EM GRUPO"' : '"TRABALHO INDIVIDUAL"'} centrado; depois uma tabela sem bordas de duas colunas: à esquerda ${isGroup ? '"Elementos do grupo:" com um nome por linha' : '"Discente:" com o nome e número do estudante'}, à direita "Docente:" com o nome do docente; depois centrado "Cadeira: <disciplina>", "Tema: <tema>", curso e turma se existirem; no fim "<cidade>, <ano>".
+`}${opt['index'] === false ? "" : "3. ÍNDICE (página única): título <h1>Índice</h1> e uma lista <ul> com todos os títulos e subtítulos do trabalho, sem números de página.\n"}4. Introdução (página nova)
+5. Objetivos: Objetivo Geral e Objetivos Específicos
+6. Metodologia
+7. Desenvolvimento / Fundamentação Teórica, dividido em vários subtítulos <h2> e <h3> claros e específicos ao tema
+8. Conclusão (página nova)
+9. Referências Bibliográficas (página nova, título "Bibliografia"), em ordem alfabética
 
 REFERÊNCIAS BIBLIOGRÁFICAS:
 ${manualRefs
   ? `- O utilizador escolheu REFERÊNCIAS MANUAIS. Usa EXACTAMENTE e apenas as referências indicadas abaixo, formatando-as segundo as normas ${f("norms")}, e cita-as no corpo do texto:\n${f("manual_references")}`
-  : `- Gera referências bibliográficas reais e credíveis segundo as normas ${f("norms")}${opt['citations'] === false ? "" : ", com citações no corpo do texto"}.`}
+  : `- Gera referências bibliográficas reais e credíveis segundo as normas ${f("norms")}${opt['citations'] === false ? "" : ", com citações no corpo do texto (Autor, ano)"}.`}
 
 REGRAS DE SAÍDA:
-- Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <li>, <table>, <strong>. Sem markdown, sem \`\`\`, sem <html> ou <body>.
- - SEPARAÇÃO EM PÁGINAS OBRIGATÓRIA: separa cada página com exactamente <hr class="page-break">, colocado ENTRE blocos completos de texto, nunca dentro de parágrafos, listas ou tabelas. A capa é uma página; a folha de rosto é outra; o índice é outra; a introdução começa em página nova; a conclusão, as recomendações e as referências bibliográficas ficam cada uma em página própria. Distribui o desenvolvimento por várias páginas, com cerca de 250 a 320 palavras por página, até atingir aproximadamente ${f("pages")} páginas no total. Não uses numeração de página inventada no índice.
-- A capa deve ser centrada com <p style="text-align:center"> contendo instituição, faculdade, departamento, curso, título, ${isGroup ? "a indicação \"Trabalho em grupo\"" : "estudante"}, docente, cidade e data.
-${isGroup ? "- A folha de rosto deve conter a lista numerada dos elementos do grupo." : ""}
+- Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <strong>, <em>. Sem markdown, sem \`\`\`, sem <html>, <head> ou <body>, sem comentários.
+- Cada secção principal usa <h1>; subtítulos usam <h2>/<h3>. Parágrafos completos de 4 a 7 linhas, justificados, sem frases soltas.
+- SEPARAÇÃO EM PÁGINAS OBRIGATÓRIA: separa cada página com exactamente <hr class="page-break">, sempre ENTRE blocos completos, nunca dentro de parágrafos, listas ou tabelas. Capa, folha de rosto e índice são uma página cada; a introdução, a conclusão e a bibliografia começam em página nova. Cerca de 250 a 320 palavras por página no desenvolvimento, até aproximadamente ${f("pages")} páginas no total. Não escrevas números de página.
+- Na capa e folha de rosto usa <p style="text-align:center"> e deixa espaço com parágrafos vazios <p>&nbsp;</p> entre os blocos, como num trabalho impresso.
+- Revê ortografia e gramática: o texto final não pode ter erros, repetições nem marcadores de exemplo.
 - Linguagem académica formal, rigorosa e original. Nada de texto de exemplo tipo "insira aqui".`;
 }
 
@@ -89,6 +86,8 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const errors: string[] = [];
 
   for (const model of GEMINI_MODELS) {
+   for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1000));
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -106,11 +105,12 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
         const errText = (await res.text().catch(() => "")).slice(0, 300);
         if (res.status === 400 || res.status === 401 || res.status === 403) {
           throw new Error(
-            "A chave da API Gemini é inválida ou não tem permissões. Verifique a variável GEMINI_API_KEY no seu projecto (e na Vercel).",
+            "CONFIG_KEY_INVALID",
           );
         }
         errors.push(`${model}: ${res.status} ${errText}`);
-        continue;
+        if (res.status === 429 || res.status >= 500) continue;
+        break;
       }
 
       const data = (await res.json()) as {
@@ -121,12 +121,16 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
       errors.push(`${model}: resposta vazia`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      if (message.startsWith("A chave da API Gemini")) throw err;
+      if (message === "CONFIG_KEY_INVALID") {
+        console.error("[IA] Chave inválida ou sem permissões.");
+        return "";
+      }
       errors.push(`${model}: ${message}`);
     }
+   }
   }
 
-  console.error("[IA] Falha em todos os modelos Gemini:", errors.join(" | "));
+  console.error("[IA] Falha em todos os modelos principais:", errors.join(" | "));
   return "";
 }
 
@@ -142,8 +146,6 @@ async function callLovableGateway(prompt: string, apiKey: string): Promise<strin
 
   if (!res.ok) {
     const errText = (await res.text().catch(() => "")).slice(0, 300);
-    if (res.status === 429) throw new Error("Demasiados pedidos em simultâneo. Tente novamente dentro de instantes.");
-    if (res.status === 402) throw new Error("Créditos de IA esgotados. Recarregue para continuar a gerar trabalhos.");
     console.error("[IA] Falha no gateway:", res.status, errText);
     return "";
   }
@@ -152,28 +154,31 @@ async function callLovableGateway(prompt: string, apiKey: string): Promise<strin
   return data.choices?.[0]?.message?.content ?? "";
 }
 
+const BUSY_MSG =
+  "O nosso sistema está com muita procura neste momento. O seu trabalho não foi descontado — tente novamente dentro de alguns minutos.";
+
 async function callAI(prompt: string): Promise<string> {
   const { geminiKey, gatewayKey } = readKeys();
 
   if (!geminiKey && !gatewayKey) {
-    throw new Error(
-      "Nenhuma chave de IA configurada. Adicione a variável GEMINI_API_KEY nas definições do projecto (e na Vercel) e tente novamente.",
-    );
+    console.error("[IA] Nenhuma chave de IA configurada no servidor.");
+    throw new Error(BUSY_MSG);
   }
 
-  if (geminiKey) {
-    const text = await callGemini(prompt, geminiKey);
-    if (text.trim()) return text;
+  // Duas rondas completas antes de desistir.
+  for (let round = 0; round < 2; round++) {
+    if (round > 0) await new Promise((r) => setTimeout(r, 3000));
+    if (geminiKey) {
+      const text = await callGemini(prompt, geminiKey);
+      if (text.trim()) return text;
+    }
+    if (gatewayKey) {
+      const text = await callLovableGateway(prompt, gatewayKey).catch(() => "");
+      if (text.trim()) return text;
+    }
   }
 
-  if (gatewayKey) {
-    const text = await callLovableGateway(prompt, gatewayKey);
-    if (text.trim()) return text;
-  }
-
-  throw new Error(
-    "O serviço de IA não respondeu. Tente novamente dentro de instantes — se persistir, verifique a chave GEMINI_API_KEY.",
-  );
+  throw new Error(BUSY_MSG);
 }
 
 
@@ -220,7 +225,7 @@ export const generateWork = createServerFn({ method: "POST" })
       .replace(/^```(?:html)?/i, "")
       .replace(/```$/i, "")
       .trim();
-    if (!html) throw new Error("A IA não devolveu conteúdo. Tente novamente.");
+    if (!html) throw new Error(BUSY_MSG);
 
     const { error: upErr } = await context.supabase
       .from("works")
