@@ -8,7 +8,7 @@ export function downloadWord(title: string, html: string) {
   const body = splitPages(html)
     .map((page, index) => `<div${index ? ' style="page-break-before:always"' : ""}>${page}</div>`)
     .join("");
-  const word = `<!DOCTYPE html><html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>@page{size:A4;margin:18mm}body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;overflow-wrap:break-word}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}h1,h2,h3{page-break-after:avoid}p{text-align:justify;margin:0 0 .8em}p,li,tr,img{page-break-inside:avoid}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px}img{max-width:100%;height:auto}</style></head><body>${body}</body></html>`;
+  const word = `<!DOCTYPE html><html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>@page{size:A4;margin:18mm}body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;overflow-wrap:break-word}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}h1,h2,h3{page-break-after:avoid}p{text-align:justify;margin:0 0 .8em}p,li,tr,img{page-break-inside:avoid}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px}table.rosto td{border:none;vertical-align:top}table.rosto td:last-child{text-align:right}img{max-width:100%;height:auto}</style></head><body>${body}</body></html>`;
   const url = URL.createObjectURL(new Blob(["\ufeff", word], { type: "application/msword" }));
   const link = document.createElement("a");
   link.href = url;
@@ -39,7 +39,7 @@ export async function downloadPdf(title: string, html: string) {
       const frameDoc = frame.contentDocument;
       if (!frameDoc) throw new Error("Não foi possível preparar o PDF.");
       frameDoc.open();
-      frameDoc.write(`<!doctype html><html><head><style>*{box-sizing:border-box}html,body{margin:0;width:794px;background:#fff;color:#111}body{font:12pt/1.5 'Times New Roman',serif;padding:64px 72px;min-height:1122px;overflow-wrap:break-word}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}p{text-align:justify;margin:0 0 .8em}ul,ol{margin:0 0 .8em 1.4em}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:6px 8px}img{max-width:100%;height:auto}</style></head><body>${sheet.innerHTML}</body></html>`);
+      frameDoc.write(`<!doctype html><html><head><style>*{box-sizing:border-box}html,body{margin:0;width:794px;background:#fff;color:#111}body{font:12pt/1.5 'Times New Roman',serif;padding:64px 72px;min-height:1122px;overflow-wrap:break-word}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}p{text-align:justify;margin:0 0 .8em}ul,ol{margin:0 0 .8em 1.4em}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:6px 8px}table.rosto td{border:none;vertical-align:top}table.rosto td:last-child{text-align:right}img{max-width:100%;height:auto}</style></head><body>${sheet.innerHTML}</body></html>`);
       frameDoc.close();
       await Promise.all(Array.from(frameDoc.images).map((image) => image.decode().catch(() => undefined)));
       const canvas = await html2canvas(frameDoc.body, { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 794, height: Math.max(1122, frameDoc.body.scrollHeight) });
