@@ -225,6 +225,7 @@
 }
 .doc-sheet {
   width: 100%;
+  min-width: 0;
   max-width: 794px;
   min-height: 1123px;
   box-sizing: border-box;
@@ -242,6 +243,10 @@
     min-height: max(520px, 120vw);
     padding: 8% 7%;
     font-size: 11pt;
+  }
+  .doc-sheet td,
+  .doc-sheet th {
+    padding: 4px;
   }
   .doc-sheet table {
     display: block;

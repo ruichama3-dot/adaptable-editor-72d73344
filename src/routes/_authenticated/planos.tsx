@@ -109,7 +109,7 @@ function Planos() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-6 sm:px-5 sm:py-8">
       <h1 className="text-3xl font-extrabold">Planos RuJe IA</h1>
       <p className="text-muted-foreground mt-1">Escolha o plano, pague por Emola ou M-Pesa e envie o comprovativo.</p>
 
@@ -192,12 +192,12 @@ function Planos() {
                         key={m.id}
                         type="button"
                         onClick={() => setMethod(m.id)}
-                        className={`rounded-2xl border-2 p-5 text-left ${
+                        className={`min-w-0 rounded-2xl border-2 p-4 text-left sm:p-5 ${
                           method === m.id ? "border-primary bg-secondary/50" : "border-border"
                         }`}
                       >
                         <p className="text-lg font-bold">{m.name}</p>
-                        <p className="mt-1 text-2xl font-extrabold tracking-wide">{m.number}</p>
+                        <p className="mt-1 text-2xl font-extrabold break-words">{m.number}</p>
                         {m.holder && <p className="text-muted-foreground mt-1 text-sm">Nome: {m.holder}</p>}
                       </button>
                     ))}

@@ -11,6 +11,7 @@
 - [x] Quiz pós-registo → planos; overlay "A gerar o seu trabalho…"
 
 ## Em curso
+- [x] Adaptar navegação, formulários, pagamentos, painel, editor e administração para telemóvel sem perder a experiência no computador
 - [x] Descarregar trabalho acima das páginas em PDF ou Word, em telemóvel e computador
 - [x] Melhorar a organização das páginas e a formatação dos trabalhos gerados
 - [ ] Esconder selo "Edit with Lovable" (CSS adicionado a styles.css — definição oficial exige plano Pro)
