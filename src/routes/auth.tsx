@@ -29,7 +29,7 @@ export const Route = createFileRoute("/auth")({
 function signupErrorMessage(message: string) {
   const m = message.toLowerCase();
   if (m.includes("weak") || m.includes("pwned")) {
-    return "Essa palavra-passe é demasiado comum. Junte um número ou símbolo (ex.: Maputo2026!) e tente de novo.";
+    return "Essa palavra-passe é demasiado comum. Escolha outra com pelo menos 6 caracteres.";
   }
   if (m.includes("already registered") || m.includes("already been registered")) {
     return "Já existe uma conta com este e-mail. Entre em vez de criar conta.";
@@ -153,11 +153,12 @@ function AuthPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="s-pass">Palavra-passe</Label>
-                  <Input id="s-pass" name="password" type="password" required />
+                  <Input id="s-pass" name="password" type="password" required minLength={6} />
+                  <p className="text-muted-foreground text-xs">Pelo menos 6 caracteres; números e símbolos não são obrigatórios.</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="s-confirm">Confirmar</Label>
-                  <Input id="s-confirm" name="confirm" type="password" required />
+                  <Input id="s-confirm" name="confirm" type="password" required minLength={6} />
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>

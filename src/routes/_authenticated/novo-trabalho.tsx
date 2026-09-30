@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { generateWork } from "@/lib/works.functions";
 import { getAccess } from "@/lib/access.functions";
+import { referenceSample } from "@/lib/reference-sample";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,7 +136,9 @@ function NovoTrabalho() {
     queryKey: ["sample", amostra],
     enabled: Boolean(amostra),
     queryFn: async () => {
-      const { data } = await supabase.from("samples").select("*").eq("id", amostra!).maybeSingle();
+      const { data } = amostra === referenceSample.id
+        ? { data: referenceSample }
+        : await supabase.from("samples").select("*").eq("id", amostra ?? "").maybeSingle();
       if (data?.work_mode === "grupo") setMode("grupo");
       return data;
     },
