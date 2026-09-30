@@ -47,13 +47,13 @@ export function InstallPwaButton({ className }: { className?: string }) {
       return;
     }
     if (isIOS) {
-      toast.info("No iPhone: toque em Partilhar e depois em “Adicionar ao ecrã principal”.", {
+      toast.info("O iPhone não permite instalação automática. Toque em Partilhar e depois em “Adicionar ao ecrã principal”.", {
         duration: 8000,
       });
       return;
     }
     toast.info(
-      "Abra o menu do navegador e escolha “Instalar aplicação”. Se já estiver instalada, procure o ícone RuJe IA no seu ecrã.",
+      "Este navegador não disponibilizou a instalação directa. Abra o menu e escolha “Instalar aplicação”.",
       { duration: 8000 },
     );
   }

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { InstallPwaButton } from "@/components/InstallPwaButton";
+import { referenceSample } from "@/lib/reference-sample";
 import {
   Plus,
   FileText,
@@ -50,13 +51,7 @@ function Painel() {
     },
   });
 
-  const { data: samples = [] } = useQuery({
-    queryKey: ["samples"],
-    queryFn: async () => {
-      const { data } = await supabase.from("samples").select("*").order("created_at", { ascending: false });
-      return data ?? [];
-    },
-  });
+  const samples = [referenceSample];
 
   const { data: sub } = useQuery({
     queryKey: ["subscription"],
@@ -156,9 +151,7 @@ function Painel() {
       <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
         <div>
           <p className="font-semibold">Instalar a RuJe IA no seu telemóvel</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Fica com o ícone no ecrã principal, abre mais rápido e continua com a sessão iniciada.
-          </p>
+          <p className="text-muted-foreground mt-1 text-sm">Aceda à RuJe IA directamente pelo ícone no ecrã principal.</p>
         </div>
         <InstallPwaButton />
       </section>

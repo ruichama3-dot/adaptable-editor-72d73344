@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DocPages } from "@/components/DocPages";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
+import { referenceSample } from "@/lib/reference-sample";
 
 export const Route = createFileRoute("/_authenticated/amostra/$id")({
   head: () => ({
@@ -21,14 +22,16 @@ export const Route = createFileRoute("/_authenticated/amostra/$id")({
 
 function Amostra() {
   const { id } = Route.useParams();
-  const { data: sample } = useQuery({
+  const { data: oldSample } = useQuery({
     queryKey: ["sample", id],
+    enabled: id !== referenceSample.id,
     queryFn: async () => {
       const { data, error } = await supabase.from("samples").select("*").eq("id", id).single();
       if (error) throw error;
       return data;
     },
   });
+  const sample = id === referenceSample.id ? referenceSample : oldSample;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
