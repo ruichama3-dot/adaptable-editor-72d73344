@@ -126,8 +126,8 @@ function Editor() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <div>
-          <h1 className="text-2xl font-extrabold">{work?.title ?? "A carregar…"}</h1>
+        <div className="min-w-0">
+          <h1 className="break-words text-xl font-extrabold sm:text-2xl">{work?.title ?? "A carregar…"}</h1>
           <p className="text-muted-foreground text-sm">
             {work?.work_type}
             {work && ` · ${work.work_mode === "grupo" ? "Trabalho em grupo" : "Trabalho individual"}`}
@@ -147,10 +147,10 @@ function Editor() {
         </div>
       </div>
 
-      <div className="shadow-soft sticky top-16 z-20 mt-5 flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card p-2 print:hidden">
+      <div className="shadow-soft sticky top-24 z-20 mt-5 flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-2 print:hidden sm:top-16 sm:flex-wrap sm:overflow-visible">
         <select
           onChange={(e) => cmd("fontName", e.target.value)}
-          className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-9 shrink-0 rounded-md border border-input bg-transparent px-2 text-sm"
           defaultValue="Times New Roman"
         >
           {FONTS.map((f) => (
@@ -159,7 +159,7 @@ function Editor() {
         </select>
         <select
           onChange={(e) => cmd("fontSize", e.target.value)}
-          className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-9 shrink-0 rounded-md border border-input bg-transparent px-2 text-sm"
           defaultValue="3"
         >
           {SIZES.map((s) => (
@@ -196,7 +196,7 @@ function Editor() {
         <button type="button" className={btn} onClick={insertTable} aria-label="Inserir tabela">
           <TableIcon className="h-4 w-4" />
         </button>
-        <Button variant="outline" size="sm" className="ml-auto" onClick={addPage}>
+        <Button variant="outline" size="sm" className="ml-auto shrink-0" onClick={addPage}>
           <FilePlus2 className="h-4 w-4" /> Nova página
         </Button>
       </div>

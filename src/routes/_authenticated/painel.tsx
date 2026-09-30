@@ -108,13 +108,13 @@ function Painel() {
       : "Sem plano activo · escolha um plano para criar trabalhos";
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-8">
+    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold capitalize">Olá, {firstName} 👋</h1>
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-extrabold capitalize sm:text-3xl">Olá, {firstName} 👋</h1>
           <p className="text-muted-foreground mt-1">Pronto para criar o próximo trabalho?</p>
         </div>
-        <Button asChild size="lg" className="shadow-brand">
+        <Button asChild size="lg" className="shadow-brand w-full sm:w-auto">
           <Link to="/novo-trabalho">
             <Plus className="h-4 w-4" /> Criar Novo Trabalho
           </Link>
@@ -135,8 +135,8 @@ function Painel() {
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary bg-secondary/50 p-5">
-        <p className="flex items-center gap-2 font-semibold">
-          {isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Crown className="h-4 w-4 text-primary" />}
+        <p className="flex min-w-0 items-start gap-2 font-semibold break-words">
+          {isAdmin ? <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" /> : <Crown className="mt-1 h-4 w-4 shrink-0 text-primary" />}
           {planLabel}
         </p>
         <div className="flex gap-2">
@@ -228,15 +228,15 @@ function Painel() {
                 key={w.id}
                 to="/trabalho/$id"
                 params={{ id: w.id }}
-                className="shadow-soft flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary"
+                className="shadow-soft flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary sm:flex-row sm:items-center sm:justify-between sm:p-5"
               >
-                <div>
-                  <p className="font-semibold">{w.title}</p>
-                  <p className="text-muted-foreground mt-0.5 text-sm">
+                <div className="min-w-0">
+                  <p className="font-semibold break-words">{w.title}</p>
+                  <p className="text-muted-foreground mt-0.5 text-sm break-words">
                     {w.work_type} · {w.work_mode === "grupo" ? "Grupo" : "Individual"} · {w.theme}
                   </p>
                 </div>
-                <div className="text-muted-foreground text-right text-xs">
+                <div className="text-muted-foreground shrink-0 text-left text-xs sm:text-right">
                   <p>Criado: {new Date(w.created_at).toLocaleDateString("pt-PT")}</p>
                   <p>Editado: {new Date(w.updated_at).toLocaleDateString("pt-PT")}</p>
                   <p>{w.download_count} downloads</p>

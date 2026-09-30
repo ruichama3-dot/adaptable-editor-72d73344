@@ -131,9 +131,9 @@ function Admin() {
   const cell = "px-3 py-2.5 align-top";
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-8">
-      <h1 className="flex items-center gap-2 text-3xl font-extrabold">
-        <ShieldCheck className="h-7 w-7 text-primary" /> Painel de administração
+    <main className="mx-auto max-w-6xl min-w-0 px-4 py-6 sm:px-5 sm:py-8">
+      <h1 className="flex items-start gap-2 text-2xl font-extrabold sm:text-3xl">
+        <ShieldCheck className="mt-1 h-7 w-7 shrink-0 text-primary" /> Painel de administração
       </h1>
       <p className="text-muted-foreground mt-1">Todos os utilizadores, trabalhos e pagamentos da plataforma.</p>
 
@@ -149,7 +149,7 @@ function Admin() {
       </div>
 
       <Tabs defaultValue="pagamentos" className="mt-8">
-        <TabsList>
+        <TabsList className="flex h-auto w-full justify-start overflow-x-auto sm:w-fit">
           <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
           <TabsTrigger value="utilizadores">Utilizadores</TabsTrigger>
           <TabsTrigger value="trabalhos">Trabalhos</TabsTrigger>
@@ -157,7 +157,7 @@ function Admin() {
 
         <TabsContent value="pagamentos">
           <div className="shadow-soft mt-4 overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="w-full text-sm">
+            <table className="min-w-[760px] w-full text-sm">
               <thead className="bg-secondary/60 text-left">
                 <tr>
                   <th className={cell}>Nome</th>
@@ -212,7 +212,7 @@ function Admin() {
 
         <TabsContent value="utilizadores">
           <div className="shadow-soft mt-4 overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="w-full text-sm">
+            <table className="min-w-[760px] w-full text-sm">
               <thead className="bg-secondary/60 text-left">
                 <tr>
                   <th className={cell}>Nome</th>
@@ -253,7 +253,7 @@ function Admin() {
 
         <TabsContent value="trabalhos">
           <div className="shadow-soft mt-4 overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="w-full text-sm">
+            <table className="min-w-[760px] w-full text-sm">
               <thead className="bg-secondary/60 text-left">
                 <tr>
                   <th className={cell}>Título</th>

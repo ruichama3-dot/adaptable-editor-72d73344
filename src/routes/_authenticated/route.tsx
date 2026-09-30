@@ -31,32 +31,35 @@ function AuthedLayout() {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur print:hidden">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3">
-          <Link to="/painel">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-3">
+          <Link to="/painel" className="w-fit shrink-0" aria-label="Ir para o painel">
             <Logo size="sm" />
           </Link>
-          <div className="flex items-center gap-1">
+          <nav aria-label="Navegação da conta" className="flex w-full min-w-0 items-center gap-1 overflow-x-auto pb-0.5 sm:w-auto sm:overflow-visible sm:pb-0">
+            <Button asChild variant="ghost" size="sm" className="shrink-0 sm:hidden">
+              <Link to="/painel">Painel</Link>
+            </Button>
             {isAdmin && (
-              <Button asChild variant="ghost" size="sm">
+              <Button asChild variant="ghost" size="sm" className="shrink-0">
                 <Link to="/admin">
                   <ShieldCheck className="h-4 w-4" /> Admin
                 </Link>
               </Button>
             )}
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="shrink-0">
               <Link to="/planos">
                 <CreditCard className="h-4 w-4" /> Planos
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="shrink-0">
               <Link to="/perfil">
                 <User className="h-4 w-4" /> Perfil
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" onClick={signOut}>
+            <Button variant="ghost" size="sm" className="shrink-0" onClick={signOut}>
               <LogOut className="h-4 w-4" /> Sair
             </Button>
-          </div>
+          </nav>
         </div>
       </header>
       <Outlet />

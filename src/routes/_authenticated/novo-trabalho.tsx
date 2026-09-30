@@ -213,7 +213,7 @@ function NovoTrabalho() {
 
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-8">
+    <main className="mx-auto max-w-4xl px-4 py-6 sm:px-5 sm:py-8">
       {busy && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background/85 px-5 backdrop-blur">
           <div className="shadow-soft w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center">
@@ -237,7 +237,7 @@ function NovoTrabalho() {
       )}
 
       <form onSubmit={onSubmit} className="mt-7 space-y-6">
-        <section className="shadow-soft rounded-2xl border border-border bg-card p-6">
+        <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">Modalidade do trabalho</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Choice
@@ -268,7 +268,7 @@ function NovoTrabalho() {
           )}
         </section>
 
-        <section className="shadow-soft rounded-2xl border border-border bg-card p-6">
+        <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">Informações académicas</h2>
           <div className="mt-4 space-y-4">
             <div className="space-y-1.5">
@@ -302,7 +302,7 @@ function NovoTrabalho() {
           </div>
         </section>
 
-        <section className="shadow-soft rounded-2xl border border-border bg-card p-6">
+        <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">Referências bibliográficas</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Choice
@@ -333,7 +333,7 @@ function NovoTrabalho() {
           )}
         </section>
 
-        <section className="shadow-soft rounded-2xl border border-border bg-card p-6">
+        <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">Configurações</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field id="pages" label="Quantidade de páginas" type="number" min={2} max={60} defaultValue={10} />

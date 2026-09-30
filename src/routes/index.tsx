@@ -61,13 +61,13 @@ function Landing() {
   return (
 
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
+      <header className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-4 sm:px-5 sm:py-5">
         <Logo />
-        <div className="flex items-center gap-2">
-          <Button asChild variant="ghost">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <Button asChild variant="ghost" size="sm" className="px-2 sm:px-4">
             <Link to="/auth">Entrar</Link>
           </Button>
-          <Button asChild>
+          <Button asChild size="sm" className="px-2 sm:px-4">
             <Link to="/auth" search={{ modo: "registo" }}>
               Criar conta
             </Link>
@@ -77,10 +77,10 @@ function Landing() {
 
       <main>
         <section className="mx-auto max-w-6xl px-5 pt-10 pb-16 text-center sm:pt-20">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-semibold text-secondary-foreground">
+          <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-xs font-semibold text-secondary-foreground">
             <Sparkles className="h-3.5 w-3.5" /> Inteligência Artificial académica moçambicana
           </span>
-          <h1 className="mt-6 text-4xl leading-tight font-extrabold sm:text-6xl">
+          <h1 className="mt-6 text-3xl leading-tight font-extrabold sm:text-6xl">
             Trabalhos académicos completos <span className="text-brand-gradient">em minutos</span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-5 max-w-2xl text-base sm:text-lg">
@@ -116,7 +116,7 @@ function Landing() {
 
       <footer className="border-t border-border py-8 text-center">
         <div className="mx-auto max-w-6xl px-5">
-          <Button asChild variant="outline" className="mb-4">
+          <Button asChild variant="outline" className="mb-4 h-auto max-w-full whitespace-normal py-3 text-center">
             <a
               href="https://chat.whatsapp.com/CU2WmZIWDDvJURM2eqOtKT"
               target="_blank"
