@@ -5,6 +5,7 @@ import { DocPages } from "@/components/DocPages";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { referenceSample } from "@/lib/reference-sample";
+import originalSamplePdf from "@/assets/escola-classica-economia.pdf.asset.json";
 
 export const Route = createFileRoute("/_authenticated/amostra/$id")({
   head: () => ({
@@ -51,7 +52,14 @@ function Amostra() {
         )}
       </div>
 
-      {sample && <DocPages html={sample.content} version={sample.id} />}
+      {sample && (id === referenceSample.id ? (
+        <div className="mt-5">
+          <iframe title="Escola Clássica da Economia — trabalho original" src={originalSamplePdf.url} className="h-[75vh] min-h-[520px] w-full border border-border bg-card sm:h-[85vh]" />
+          <Button asChild variant="outline" className="mt-4">
+            <a href={originalSamplePdf.url} target="_blank" rel="noopener noreferrer">Abrir o trabalho completo</a>
+          </Button>
+        </div>
+      ) : <DocPages html={sample.content} version={sample.id} />)}
     </main>
   );
 }

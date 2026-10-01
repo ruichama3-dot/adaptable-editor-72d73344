@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { InstallPwaButton } from "@/components/InstallPwaButton";
 import {
   BookOpenCheck,
   FileText,
@@ -96,6 +97,9 @@ function Landing() {
             <Button asChild size="lg" variant="outline">
               <Link to="/auth">Já tenho conta</Link>
             </Button>
+          </div>
+          <div className="mt-5 flex justify-center">
+            <InstallPwaButton className="shadow-soft" />
           </div>
         </section>
 
