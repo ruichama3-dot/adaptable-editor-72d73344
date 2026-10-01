@@ -1,30 +1,13 @@
-const CACHE = "ruje-ia-v2";
-const ASSETS = ["/", "/manifest.webmanifest", "/favicon.png", "/icon-192.png", "/icon-512.png"];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-  );
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  if (request.method !== "GET" || !request.url.startsWith(self.location.origin)) return;
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request))
-  );
-});
+// Retire the previous app cache without touching other services on this origin.
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) =>
+  event.waitUntil((async () => {
+    try {
+      const names = await caches.keys();
+      await Promise.allSettled(names.filter((name) => name.startsWith("ruje-ia-")).map((name) => caches.delete(name)));
+      await self.clients.claim();
+    } finally {
+      await self.registration.unregister();
+    }
+  })()),
+);
