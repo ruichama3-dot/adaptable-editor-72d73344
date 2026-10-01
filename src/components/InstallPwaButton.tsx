@@ -42,7 +42,7 @@ export function InstallPwaButton({ className }: { className?: string }) {
     if (deferred) {
       await deferred.prompt();
       const choice = await deferred.userChoice;
-      if (choice.outcome === "accepted") setInstalled(true);
+      if (choice.outcome === "accepted") toast.success("Pedido de instalação aceite. Confirme quando o navegador solicitar.");
       setDeferred(null);
       return;
     }

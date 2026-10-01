@@ -12,3 +12,4 @@
 - Keep RuJe IA's public data-service URL and publishable key in `src/integrations/supabase/config.ts`; this lets GitHub/Vercel builds authenticate without private environment files.
 - Keep all private provider keys server-only in deployment environment settings; `.env` files must never be committed.
 - Keep the owner-provided sample in versioned source and use it for both viewing and prefill, so GitHub/Vercel deployments show the same reference without database seed timing.
+- Use manifest-only installation and retire the old caching worker; caching authenticated pages could expose stale private work on a shared device.
