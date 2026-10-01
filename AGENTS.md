@@ -13,3 +13,4 @@
 - Keep all private provider keys server-only in deployment environment settings; `.env` files must never be committed.
 - Keep the owner-provided sample in versioned source and use it for both viewing and prefill, so GitHub/Vercel deployments show the same reference without database seed timing.
 - Use manifest-only installation and retire the old caching worker; caching authenticated pages could expose stale private work on a shared device.
+- Export editable work as real DOCX from the browser and retain page breaks; HTML disguised as .doc is unreliable in mobile office apps.

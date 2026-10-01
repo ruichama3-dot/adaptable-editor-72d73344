@@ -12,7 +12,7 @@ function buildPrompt(w: Record<string, unknown>) {
   const isGroup = String(w['work_mode'] ?? "individual") === "grupo";
   const manualRefs = String(w['references_mode'] ?? "automatica") === "manual";
 
-  return `És um assistente académico especialista. Escreve um trabalho académico COMPLETO em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}.
+  return `És um assistente académico especialista. Escreve um trabalho académico COMPLETO em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}. Segue a organização da amostra da RuJe IA: capa, folha de rosto, índice, introdução, desenvolvimento em capítulos temáticos, conclusão e bibliografia. Não copies o conteúdo nem o tema da amostra; adapta a estrutura aos dados deste trabalho.
 
 DADOS:
 - Tema: ${f("theme")}
@@ -31,7 +31,7 @@ ${opt['cover'] === false ? "" : `1. CAPA (página única, tudo centrado): nome d
 `}${opt['index'] === false ? "" : "3. ÍNDICE (página única): título <h1>Índice</h1> e uma lista <ul> com todos os títulos e subtítulos do trabalho, sem números de página.\n"}4. Introdução (página nova)
 5. Objetivos: Objetivo Geral e Objetivos Específicos
 6. Metodologia
-7. Desenvolvimento / Fundamentação Teórica, dividido em vários subtítulos <h2> e <h3> claros e específicos ao tema
+7. Desenvolvimento / Fundamentação Teórica, dividido em capítulos <h1> e subtítulos <h2>/<h3> claros e específicos ao tema, como na amostra. Cada capítulo principal começa numa página nova; os subtítulos continuam na mesma página quando houver espaço.
 8. Conclusão (página nova)
 9. Referências Bibliográficas (página nova, título "Bibliografia"), em ordem alfabética
 
@@ -44,7 +44,8 @@ REGRAS DE SAÍDA:
 - Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <strong>, <em>. Sem markdown, sem \`\`\`, sem <html>, <head> ou <body>, sem comentários.
 - Cada secção principal usa <h1>; subtítulos usam <h2>/<h3>. Parágrafos completos de 4 a 7 linhas, justificados, sem frases soltas.
 - SEPARAÇÃO EM PÁGINAS OBRIGATÓRIA: separa cada página com exactamente <hr class="page-break">, sempre ENTRE blocos completos, nunca dentro de parágrafos, listas ou tabelas. Capa, folha de rosto e índice são uma página cada; a introdução, a conclusão e a bibliografia começam em página nova. Cerca de 250 a 320 palavras por página no desenvolvimento, até aproximadamente ${f("pages")} páginas no total. Não escrevas números de página.
-- Na capa e folha de rosto usa <p style="text-align:center"> e deixa espaço com parágrafos vazios <p>&nbsp;</p> entre os blocos, como num trabalho impresso.
+- Na capa e folha de rosto usa <div class="sample-cover"> com <p> para cada linha e espaços entre blocos com <p>&nbsp;</p>, como na amostra impressa; na folha de rosto a tabela de membros e docente fica fora do div centrado ou com class="rosto". Omite os campos vazios, sem inventar nomes ou imprimir "—".
+- Na introdução contextualiza o tema, apresenta a questão central e anuncia os capítulos. Organiza o desenvolvimento com argumentação progressiva e transições naturais. O índice deve listar apenas títulos efetivamente escritos e nunca páginas fictícias. Mantém uma bibliografia específica ao assunto; não inventes obras, datas ou autores de que não tenhas certeza.
 - Revê ortografia e gramática: o texto final não pode ter erros, repetições nem marcadores de exemplo.
 - Linguagem académica formal, rigorosa e original. Nada de texto de exemplo tipo "insira aqui".`;
 }
