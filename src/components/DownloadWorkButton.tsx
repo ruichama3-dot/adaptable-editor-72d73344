@@ -25,7 +25,7 @@ export function DownloadWorkButton({ title, getHtml, onDownloaded }: Props) {
     try {
       const html = getHtml();
       if (format === "pdf") await downloadPdf(title, html);
-      else downloadWord(title, html);
+      else await downloadWord(title, html);
       onDownloaded?.();
     } catch {
       toast.error("Não foi possível descarregar o trabalho. Tente novamente.");
@@ -47,7 +47,7 @@ export function DownloadWorkButton({ title, getHtml, onDownloaded }: Props) {
           <FileText /> PDF
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void download("word")}>
-          <FileType2 /> Word (.doc)
+          <FileType2 /> Word editável (.docx)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
