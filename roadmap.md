@@ -11,9 +11,9 @@
 - [x] Quiz pós-registo → planos; overlay "A gerar o seu trabalho…"
 
 ## Em curso
-- [ ] Gerar trabalhos na sequência e apresentação da amostra enviada, respeitando campos disponíveis
-- [ ] Descarregar um ficheiro Word editável e válido, com páginas e formatação preservadas
-- [ ] Tornar a leitura e edição das folhas cómodas no telemóvel sem cortes
+- [x] Gerar trabalhos na sequência e apresentação da amostra enviada, respeitando campos disponíveis
+- [x] Descarregar um ficheiro Word editável e válido, com páginas e formatação preservadas
+- [x] Tornar a leitura e edição das folhas cómodas no telemóvel sem cortes
 - [x] Substituir a amostra visível pelo PDF original enviado, com texto de referência para preencher a criação de trabalhos
 - [x] Explicitar no registo o mínimo de 6 caracteres sem exigir números nem símbolos
 - [x] Acionar o pedido de instalação pelo botão sempre que o navegador o permitir
