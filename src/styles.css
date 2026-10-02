@@ -163,7 +163,11 @@
   line-height: 1.5;
   color: #111;
   overflow-wrap: break-word;
+  word-break: normal;
+  overflow-x: auto;
 }
+.doc-sheet .sample-cover { text-align: center; }
+.doc-sheet .sample-cover p { text-align: center; }
 .doc-sheet h1 {
   font-size: 18pt;
   font-weight: 700;
@@ -195,11 +199,13 @@
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1em;
+  table-layout: fixed;
 }
 .doc-sheet td,
 .doc-sheet th {
   border: 1px solid #999;
   padding: 6px 8px;
+  overflow-wrap: anywhere;
 }
 .doc-sheet img {
   max-width: 100%;
@@ -222,6 +228,8 @@
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
+  min-width: 0;
+  width: 100%;
 }
 .doc-sheet {
   width: 100%;
@@ -240,19 +248,22 @@
 
 @media (max-width: 640px) {
   .doc-sheet {
-    min-height: max(520px, 120vw);
-    padding: 8% 7%;
-    font-size: 11pt;
+    min-height: max(460px, 115vw);
+    padding: 7% 6%;
+    font-size: 12pt;
+    line-height: 1.55;
   }
   .doc-sheet td,
   .doc-sheet th {
     padding: 4px;
   }
   .doc-sheet table {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;
+    width: 100%;
+    table-layout: fixed;
   }
+  .doc-sheet h1 { font-size: 16pt; }
+  .doc-sheet h2 { font-size: 14pt; }
+  .doc-sheet h3 { font-size: 12pt; }
 }
 
 
@@ -308,3 +319,4 @@ a[href*="lovable"] {
   vertical-align: top;
 }
 .doc-sheet table.rosto td:last-child { text-align: right; }
+.doc-sheet table.rosto { table-layout: fixed; }

@@ -4,15 +4,13 @@ function safeName(title: string) {
   return title.replace(/[<>:"/\\|?*\x00-\x1f]/g, "-").trim().slice(0, 100) || "trabalho";
 }
 
-export function downloadWord(title: string, html: string) {
-  const body = splitPages(html)
-    .map((page, index) => `<div${index ? ' style="page-break-before:always"' : ""}>${page}</div>`)
-    .join("");
-  const word = `<!DOCTYPE html><html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>@page{size:A4;margin:18mm}body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;overflow-wrap:break-word}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}h1,h2,h3{page-break-after:avoid}p{text-align:justify;margin:0 0 .8em}p,li,tr,img{page-break-inside:avoid}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px}table.rosto td{border:none;vertical-align:top}table.rosto td:last-child{text-align:right}img{max-width:100%;height:auto}</style></head><body>${body}</body></html>`;
-  const url = URL.createObjectURL(new Blob(["\ufeff", word], { type: "application/msword" }));
+export async function downloadWord(title: string, html: string) {
+  const { createWordDocument } = await import("@/lib/word-document");
+  const blob = await createWordDocument(html);
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${safeName(title)}.doc`;
+  link.download = `${safeName(title)}.docx`;
   document.body.appendChild(link);
   link.click();
   link.remove();
