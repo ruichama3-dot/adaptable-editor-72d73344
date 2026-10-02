@@ -47,12 +47,12 @@ export async function createWordDocument(html: string): Promise<Blob> {
     const centered = options.centered || element.getAttribute("style")?.includes("text-align:center");
     const children = await runs(element);
     return new Paragraph({
-      heading,
+      ...(heading ? { heading } : {}),
       children: children.length ? children : [new TextRun(" ")],
       alignment: centered ? AlignmentType.CENTER : heading ? AlignmentType.LEFT : AlignmentType.JUSTIFIED,
       spacing: { after: heading ? 200 : 140, line: 360 },
       keepNext: Boolean(heading),
-      numbering: options.list ? { reference: options.list, level: options.level ?? 0 } : undefined,
+      ...(options.list ? { numbering: { reference: options.list, level: options.level ?? 0 } } : {}),
     });
   }
 
@@ -60,13 +60,13 @@ export async function createWordDocument(html: string): Promise<Blob> {
     const rows = Array.from(element.querySelectorAll("tr"));
     const columns = Math.max(1, ...rows.map((row) => row.children.length));
     const columnWidths = Array.from({ length: columns }, () => Math.floor(contentWidth / columns));
-    columnWidths[columns - 1] += contentWidth - columnWidths.reduce((sum, value) => sum + value, 0);
+    columnWidths[columns - 1] = (columnWidths[columns - 1] ?? 0) + contentWidth - columnWidths.reduce((sum, value) => sum + value, 0);
     const isTitlePage = element.classList.contains("rosto");
     return new Table({
       width: { size: contentWidth, type: WidthType.DXA }, columnWidths,
       borders: Object.fromEntries(["top", "bottom", "left", "right", "insideHorizontal", "insideVertical"].map((side) => [side, isTitlePage ? noBorder : border])),
       rows: await Promise.all(rows.map(async (row) => new TableRow({ children: await Promise.all(Array.from(row.children).map(async (cell, index) => new TableCell({
-        width: { size: columnWidths[index] ?? columnWidths[0], type: WidthType.DXA },
+        width: { size: columnWidths[index] ?? columnWidths[0] ?? contentWidth, type: WidthType.DXA },
         margins: { top: 80, bottom: 80, left: 120, right: 120 },
         children: [await paragraph(cell, { centered: isTitlePage && index === columns - 1 })],
       }))) }))),
