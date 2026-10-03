@@ -105,6 +105,25 @@ function Admin() {
     toast.success(approve ? "Plano activado para o utilizador." : "Pedido rejeitado.");
   }
 
+  async function toggleAdmin(userId: string, email: string | null, isCurrentlyAdmin: boolean) {
+    const { data: me } = await supabase.auth.getUser();
+    if (isCurrentlyAdmin && me.user?.id === userId) {
+      toast.error("Não pode remover o seu próprio acesso de administrador.");
+      return;
+    }
+    const label = email ?? "este utilizador";
+    if (!window.confirm(isCurrentlyAdmin ? `Remover o acesso de administrador de ${label}?` : `Tornar ${label} administrador?`)) return;
+    const { error } = isCurrentlyAdmin
+      ? await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin")
+      : await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
+    if (error) {
+      toast.error("Não foi possível alterar o acesso. Tente novamente.");
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["admin-roles"] });
+    toast.success(isCurrentlyAdmin ? "Acesso de administrador removido." : "Utilizador promovido a administrador.");
+  }
+
   if (isLoading) return <main className="mx-auto max-w-6xl px-5 py-10 text-muted-foreground">A verificar acesso…</main>;
 
   if (!isAdmin) {
@@ -222,6 +241,7 @@ function Admin() {
                   <th className={cell}>Trabalhos</th>
                   <th className={cell}>Plano</th>
                   <th className={cell}>Registo</th>
+                  <th className={cell}>Acesso</th>
                 </tr>
               </thead>
               <tbody>
@@ -243,6 +263,15 @@ function Admin() {
                       <td className={cell}>{works.filter((w) => w.user_id === u.id).length}</td>
                       <td className={cell}>{adminIds.has(u.id) ? "Ilimitado" : (sub?.plan ?? "Grátis")}</td>
                       <td className={cell}>{new Date(u.created_at).toLocaleDateString("pt-PT")}</td>
+                      <td className={cell}>
+                        <Button
+                          size="sm"
+                          variant={adminIds.has(u.id) ? "outline" : "default"}
+                          onClick={() => toggleAdmin(u.id, u.email, adminIds.has(u.id))}
+                        >
+                          {adminIds.has(u.id) ? "Remover admin" : "Tornar admin"}
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
