@@ -39,6 +39,18 @@ export const Route = createFileRoute("/_authenticated/painel")({
 function Painel() {
   const { user } = Route.useRouteContext();
   const { isAdmin } = useIsAdmin();
+  const queryClient = useQueryClient();
+
+  async function clearHistory() {
+    if (!window.confirm("Apagar todo o histórico de trabalhos? Esta acção não pode ser anulada.")) return;
+    const { error } = await supabase.from("works").delete().eq("user_id", user.id);
+    if (error) {
+      toast.error("Não foi possível apagar o histórico. Tente novamente.");
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["works"] });
+    toast.success("Histórico apagado.");
+  }
 
   const { data: works = [], isLoading } = useQuery({
     queryKey: ["works"],
@@ -206,7 +218,14 @@ function Painel() {
       )}
 
       <section className="mt-10">
-        <h2 className="text-xl font-bold">Histórico de trabalhos</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-bold">Histórico de trabalhos</h2>
+          {works.length > 0 && (
+            <Button variant="outline" size="sm" onClick={clearHistory}>
+              <Trash2 className="h-4 w-4" /> Apagar histórico
+            </Button>
+          )}
+        </div>
         {isLoading ? (
           <p className="text-muted-foreground mt-4 text-sm">A carregar…</p>
         ) : works.length === 0 ? (
