@@ -140,11 +140,16 @@ function Admin() {
 
   const adminIds = new Set(roles.filter((r) => r.role === "admin").map((r) => r.user_id));
   const pendentes = payments.filter((p) => p.status === "pendente").length;
+  const APROVADOS = ["aprovado", "approved", "aprovada", "pago"];
+  const aprovados = payments.filter((p) => APROVADOS.includes(String(p.status ?? "").toLowerCase()));
+  const totalAprovado = aprovados.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const stats = [
     { icon: Users, label: "Utilizadores", value: users.length },
     { icon: FileText, label: "Trabalhos criados", value: works.length },
     { icon: Wallet, label: "Pagamentos pendentes", value: pendentes },
     { icon: ShieldCheck, label: "Planos activos", value: subs.filter((s) => new Date(s.expires_at) > new Date()).length },
+    { icon: CheckCircle2, label: "Planos aprovados", value: aprovados.length },
+    { icon: Wallet, label: "Total arrecadado", value: `${totalAprovado.toLocaleString("pt-PT")} MT` },
   ];
 
   const cell = "px-3 py-2.5 align-top";
@@ -156,7 +161,7 @@ function Admin() {
       </h1>
       <p className="text-muted-foreground mt-1">Todos os utilizadores, trabalhos e pagamentos da plataforma.</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((s) => (
           <div key={s.label} className="shadow-soft rounded-2xl border border-border bg-card p-5">
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
