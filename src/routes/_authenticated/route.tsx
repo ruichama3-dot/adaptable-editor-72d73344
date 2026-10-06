@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Logo } from "@/components/Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, CreditCard, ShieldCheck } from "lucide-react";
 
@@ -46,6 +47,7 @@ function AuthedLayout() {
                 </Link>
               </Button>
             )}
+            <NotificationBell />
             <Button asChild variant="ghost" size="sm" className="shrink-0">
               <Link to="/planos">
                 <CreditCard className="h-4 w-4" /> Planos

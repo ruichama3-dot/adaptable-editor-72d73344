@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, Users, FileText, Wallet, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSendNotification } from "@/components/AdminSendNotification";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -177,6 +178,7 @@ function Admin() {
           <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
           <TabsTrigger value="utilizadores">Utilizadores</TabsTrigger>
           <TabsTrigger value="trabalhos">Trabalhos</TabsTrigger>
+          <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pagamentos">
@@ -315,6 +317,10 @@ function Admin() {
               </tbody>
             </table>
           </div>
+        </TabsContent>
+
+        <TabsContent value="notificacoes">
+          <AdminSendNotification users={users} />
         </TabsContent>
       </Tabs>
     </main>
