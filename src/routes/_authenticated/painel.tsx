@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { InstallPwaButton } from "@/components/InstallPwaButton";
 import { referenceSample } from "@/lib/reference-sample";
 import {
   Plus,
+  Trash2,
   FileText,
   Download,
   Clock,
