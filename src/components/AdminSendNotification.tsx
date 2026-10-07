@@ -21,7 +21,7 @@ export function AdminSendNotification({ users }: { users: U[] }) {
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return toast.error("Escreva um título.");
+    if (!title.trim()) { toast.error("Escreva um título."); return; }
     setSending(true);
     const { data: u } = await supabase.auth.getUser();
     const { error } = await db.from("notifications").insert({
@@ -32,7 +32,7 @@ export function AdminSendNotification({ users }: { users: U[] }) {
       created_by: u.user?.id,
     });
     setSending(false);
-    if (error) return toast.error("Não foi possível enviar a notificação.");
+    if (error) { toast.error("Não foi possível enviar a notificação."); return; }
     toast.success(target === "all" ? "Notificação enviada a todos." : "Notificação enviada.");
     setTitle("");
     setBody("");
