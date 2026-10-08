@@ -11,7 +11,7 @@ export function WhatsAppFloat() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-3 sm:right-5 sm:bottom-5">
+    <div className="pointer-events-none fixed right-3 bottom-3 z-40 flex flex-col items-end gap-3 print:hidden sm:right-5 sm:bottom-5 [&>*]:pointer-events-auto">
       {open && (
         <div className="flex flex-col gap-2">
           <a
