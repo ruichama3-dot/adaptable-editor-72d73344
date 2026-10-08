@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { Download, Check, Share } from "lucide-react";
 import { toast } from "sonner";
+
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-export function InstallPwaButton({ className }: { className?: string }) {
+export function InstallPwaButton({
+  className,
+  variant = "brand",
+  size,
+}: {
+  className?: string;
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+}) {
+
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -60,15 +70,16 @@ export function InstallPwaButton({ className }: { className?: string }) {
 
   if (installed) {
     return (
-      <Button variant="outline" className={className} disabled>
+      <Button variant={variant} size={size} className={className} disabled>
         <Check className="h-4 w-4" /> Aplicação instalada
       </Button>
     );
   }
 
   return (
-    <Button onClick={install} className={className}>
+    <Button variant={variant} size={size} onClick={install} className={className}>
       {isIOS && !deferred ? <Share className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+
       Instalar aplicação
     </Button>
   );

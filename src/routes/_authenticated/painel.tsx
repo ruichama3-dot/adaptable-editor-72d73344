@@ -3,9 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { InstallPwaButton } from "@/components/InstallPwaButton";
 import { referenceSample } from "@/lib/reference-sample";
+import { cn } from "@/lib/utils";
 import {
   Plus,
   Trash2,
@@ -20,6 +21,9 @@ import {
   Eye,
   Crown,
   ShieldCheck,
+  ArrowRight,
+  CreditCard,
+  Users,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/painel")({
@@ -117,18 +121,45 @@ function Painel() {
       : "Sem plano activo · escolha um plano para criar trabalhos";
 
   return (
+
     <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      {/* Cabeçalho + acção principal */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="break-words text-2xl font-extrabold capitalize sm:text-3xl">Olá, {firstName} 👋</h1>
           <p className="text-muted-foreground mt-1">Pronto para criar o próximo trabalho?</p>
         </div>
-        <Button asChild size="lg" className="shadow-brand w-full sm:w-auto">
+        <Button asChild variant="brand" size="lg" className="w-full sm:w-auto">
           <Link to="/novo-trabalho">
             <Plus className="h-4 w-4" /> Criar Novo Trabalho
           </Link>
         </Button>
       </div>
+
+      {/* Acessos rápidos */}
+      <nav
+        aria-label="Acessos rápidos"
+        className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/60 p-2.5 sm:w-fit"
+      >
+        <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
+          <Link to="/planos">
+            <CreditCard className="h-4 w-4" /> Planos
+          </Link>
+        </Button>
+        <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
+          <Link to="/amostra/$id" params={{ id: referenceSample.id }}>
+            <Eye className="h-4 w-4" /> Amostra
+          </Link>
+        </Button>
+        {isAdmin && (
+          <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
+            <Link to="/admin">
+              <ShieldCheck className="h-4 w-4" /> Painel admin
+            </Link>
+          </Button>
+        )}
+
+      </nav>
 
       {pending && !isAdmin && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-border bg-card p-5">
@@ -143,35 +174,47 @@ function Painel() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary bg-secondary/50 p-5">
+      {/* Plano actual */}
+      <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-primary/25 bg-secondary/50 p-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex min-w-0 items-start gap-2 font-semibold break-words">
-          {isAdmin ? <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" /> : <Crown className="mt-1 h-4 w-4 shrink-0 text-primary" />}
+          {isAdmin ? (
+            <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" />
+          ) : (
+            <Crown className="mt-1 h-4 w-4 shrink-0 text-primary" />
+          )}
           {planLabel}
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           {isAdmin && (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/admin">Painel admin</Link>
+            <Button asChild variant="glass">
+              <Link to="/admin">
+                <ShieldCheck className="h-4 w-4" /> Painel admin
+              </Link>
             </Button>
           )}
           {!isAdmin && (
-            <Button asChild size="sm">
-              <Link to="/planos">{sub ? "Renovar plano" : "Ver planos"}</Link>
+            <Button asChild variant="brand">
+              <Link to="/planos">
+                {sub ? "Renovar plano" : "Ver planos"} <ArrowRight className="h-4 w-4" />
+              </Link>
             </Button>
           )}
         </div>
       </div>
 
-      <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
+      {/* Instalação */}
+      <section className="mt-4 flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-semibold">Instalar a RuJe IA no seu telemóvel</p>
-          <p className="text-muted-foreground mt-1 text-sm">Aceda à RuJe IA directamente pelo ícone no ecrã principal.</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Aceda à RuJe IA directamente pelo ícone no ecrã principal.
+          </p>
         </div>
-        <InstallPwaButton />
+        <InstallPwaButton variant="glass" className="w-full sm:w-auto" />
       </section>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-
+      {/* Estatísticas */}
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
         {stats.map((s) => (
           <div key={s.label} className="shadow-soft rounded-2xl border border-border bg-card p-5">
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -182,6 +225,7 @@ function Painel() {
         ))}
       </div>
 
+      {/* Amostras */}
       {samples.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-bold">Trabalhos de amostra</h2>
@@ -199,13 +243,13 @@ function Painel() {
                   {s.work_type} · {s.work_mode === "grupo" ? "Trabalho em grupo" : "Individual"}
                   {s.institution ? ` · ${s.institution}` : ""}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button asChild variant="outline" size="sm">
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <Button asChild variant="glass" className="w-full sm:w-auto">
                     <Link to="/amostra/$id" params={{ id: s.id }}>
                       <Eye className="h-4 w-4" /> Ver trabalho
                     </Link>
                   </Button>
-                  <Button asChild size="sm">
+                  <Button asChild variant="brand" className="w-full sm:w-auto">
                     <Link to="/novo-trabalho" search={{ amostra: s.id }}>
                       <Copy className="h-4 w-4" /> Fazer igual
                     </Link>
@@ -217,11 +261,12 @@ function Painel() {
         </section>
       )}
 
+      {/* Histórico */}
       <section className="mt-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-bold">Histórico de trabalhos</h2>
           {works.length > 0 && (
-            <Button variant="outline" size="sm" onClick={clearHistory}>
+            <Button variant="danger" onClick={clearHistory} className="w-full sm:w-auto">
               <Trash2 className="h-4 w-4" /> Apagar histórico
             </Button>
           )}
@@ -231,8 +276,10 @@ function Painel() {
         ) : works.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed border-border p-10 text-center">
             <p className="text-muted-foreground">Ainda não criou nenhum trabalho.</p>
-            <Button asChild className="mt-4">
-              <Link to="/novo-trabalho">Criar o primeiro</Link>
+            <Button asChild variant="brand" className="mt-4 w-full sm:w-auto">
+              <Link to="/novo-trabalho">
+                <Plus className="h-4 w-4" /> Criar o primeiro
+              </Link>
             </Button>
           </div>
         ) : (
@@ -242,43 +289,52 @@ function Painel() {
                 key={w.id}
                 to="/trabalho/$id"
                 params={{ id: w.id }}
-                className="shadow-soft flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                className="shadow-soft group flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/50 sm:flex-row sm:items-center sm:justify-between sm:p-5"
               >
                 <div className="min-w-0">
                   <p className="font-semibold break-words">{w.title}</p>
                   <p className="text-muted-foreground mt-0.5 text-sm break-words">
                     {w.work_type} · {w.work_mode === "grupo" ? "Grupo" : "Individual"} · {w.theme}
                   </p>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Criado: {new Date(w.created_at).toLocaleDateString("pt-PT")} · Editado:{" "}
+                    {new Date(w.updated_at).toLocaleDateString("pt-PT")} · {w.download_count} downloads
+                  </p>
                 </div>
-                <div className="text-muted-foreground shrink-0 text-left text-xs sm:text-right">
-                  <p>Criado: {new Date(w.created_at).toLocaleDateString("pt-PT")}</p>
-                  <p>Editado: {new Date(w.updated_at).toLocaleDateString("pt-PT")}</p>
-                  <p>{w.download_count} downloads</p>
-                </div>
+                <span
+                  className={cn(
+                    buttonVariants({ variant: "brand", size: "sm" }),
+                    "w-full shrink-0 sm:w-auto sm:px-5",
+                  )}
+                >
+                  Abrir trabalho <ArrowRight className="h-4 w-4" />
+                </span>
               </Link>
             ))}
           </div>
         )}
       </section>
 
+      {/* Comunidade */}
       <section className="mt-12">
         <h2 className="text-xl font-bold">Comunidade WhatsApp</h2>
         <div className="shadow-soft mt-4 rounded-2xl border border-border bg-card p-5">
           <p className="text-muted-foreground text-sm">
             Converse com outros estudantes, partilhe opiniões e fique atento aos cursos com certificado.
           </p>
-          <Button asChild className="mt-4">
+          <Button asChild variant="brand" className="mt-4 w-full sm:w-auto">
             <a
               href="https://chat.whatsapp.com/CU2WmZIWDDvJURM2eqOtKT"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <MessageCircle className="h-4 w-4" /> Entrar na comunidade
+              <Users className="h-4 w-4" /> Entrar na comunidade
             </a>
           </Button>
         </div>
       </section>
 
+      {/* Outros programas */}
       <section className="mt-12">
         <h2 className="text-xl font-bold">Outros programas da RuJe IA</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
