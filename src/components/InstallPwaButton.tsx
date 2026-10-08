@@ -70,15 +70,16 @@ export function InstallPwaButton({
 
   if (installed) {
     return (
-      <Button variant="outline" className={className} disabled>
+      <Button variant={variant} size={size} className={className} disabled>
         <Check className="h-4 w-4" /> Aplicação instalada
       </Button>
     );
   }
 
   return (
-    <Button onClick={install} className={className}>
+    <Button variant={variant} size={size} onClick={install} className={className}>
       {isIOS && !deferred ? <Share className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+
       Instalar aplicação
     </Button>
   );
