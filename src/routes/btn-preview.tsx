@@ -22,7 +22,7 @@ function BtnPreview() {
 
       <nav
         aria-label="Acessos rápidos"
-        className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/60 p-2.5"
+        className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/60 p-2.5 sm:w-fit"
       >
         <Button variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
           <CreditCard className="h-4 w-4" /> Planos
