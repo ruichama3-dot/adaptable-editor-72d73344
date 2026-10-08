@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as BtnPreviewRouteImport } from './routes/btn-preview'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedNovoTrabalhoRouteImport } from './routes/_authenticated/novo-trabalho'
@@ -35,11 +34,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BtnPreviewRoute = BtnPreviewRouteImport.update({
-  id: '/btn-preview',
-  path: '/btn-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -92,7 +86,6 @@ const AuthenticatedTrabalhoIdRoute = AuthenticatedTrabalhoIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/btn-preview': typeof BtnPreviewRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/novo-trabalho': typeof AuthenticatedNovoTrabalhoRoute
@@ -106,7 +99,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/btn-preview': typeof BtnPreviewRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/novo-trabalho': typeof AuthenticatedNovoTrabalhoRoute
@@ -122,7 +114,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/btn-preview': typeof BtnPreviewRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/novo-trabalho': typeof AuthenticatedNovoTrabalhoRoute
@@ -138,7 +129,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/btn-preview'
     | '/reset-password'
     | '/admin'
     | '/novo-trabalho'
@@ -152,7 +142,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/btn-preview'
     | '/reset-password'
     | '/admin'
     | '/novo-trabalho'
@@ -167,7 +156,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/btn-preview'
     | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/novo-trabalho'
@@ -183,7 +171,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  BtnPreviewRoute: typeof BtnPreviewRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   PartilhaIdRoute: typeof PartilhaIdRoute
 }
@@ -209,13 +196,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/btn-preview': {
-      id: '/btn-preview'
-      path: '/btn-preview'
-      fullPath: '/btn-preview'
-      preLoaderRoute: typeof BtnPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -311,7 +291,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  BtnPreviewRoute: BtnPreviewRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   PartilhaIdRoute: PartilhaIdRoute,
 }
