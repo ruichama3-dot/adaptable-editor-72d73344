@@ -120,18 +120,8 @@ function Painel() {
       ? `${sub.plan} · ${sub.daily_limit} trabalhos/dia até ${new Date(sub.expires_at).toLocaleDateString("pt-PT")}`
       : "Sem plano activo · escolha um plano para criar trabalhos";
 
-  const quickAccess = [
-    { to: "/planos", label: "Planos", icon: CreditCard },
-    { to: "/amostra/$id", params: { id: referenceSample.id }, label: "Amostra", icon: Eye },
-    {
-      to: "/admin",
-      label: "Painel admin",
-      icon: ShieldCheck,
-      onlyAdmin: true,
-    },
-  ] as const;
-
   return (
+
     <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
       {/* Cabeçalho + acção principal */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -151,21 +141,24 @@ function Painel() {
         aria-label="Acessos rápidos"
         className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/60 p-2.5"
       >
-        {quickAccess
-          .filter((q) => !("onlyAdmin" in q && q.onlyAdmin) || isAdmin)
-          .map((q) => (
-            <Button
-              key={q.label}
-              asChild
-              variant="glass"
-              size="sm"
-              className="w-full grow px-3 sm:w-auto sm:grow-0"
-            >
-              <Link to={q.to} params={"params" in q ? q.params : undefined}>
-                <q.icon className="h-4 w-4" /> {q.label}
-              </Link>
-            </Button>
-          ))}
+        <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
+          <Link to="/planos">
+            <CreditCard className="h-4 w-4" /> Planos
+          </Link>
+        </Button>
+        <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
+          <Link to="/amostra/$id" params={{ id: referenceSample.id }}>
+            <Eye className="h-4 w-4" /> Amostra
+          </Link>
+        </Button>
+        {isAdmin && (
+          <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
+            <Link to="/admin">
+              <ShieldCheck className="h-4 w-4" /> Painel admin
+            </Link>
+          </Button>
+        )}
+
       </nav>
 
       {pending && !isAdmin && (
