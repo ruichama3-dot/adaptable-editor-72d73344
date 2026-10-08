@@ -147,7 +147,13 @@ function Editor() {
         </div>
       </div>
 
-      <div className="shadow-soft sticky top-24 z-20 mt-5 flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-2 print:hidden sm:top-16 sm:flex-wrap sm:overflow-visible">
+      <div
+        onMouseDown={(e) => {
+          // Mantém a selecção do texto ao carregar nos botões de formatação.
+          if ((e.target as HTMLElement).closest("button")) e.preventDefault();
+        }}
+        className="shadow-soft sticky top-24 z-20 mt-5 flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-2 print:hidden sm:top-16 sm:flex-wrap sm:overflow-visible"
+      >
         <select
           onChange={(e) => cmd("fontName", e.target.value)}
           className="h-9 shrink-0 rounded-md border border-input bg-transparent px-2 text-sm"
