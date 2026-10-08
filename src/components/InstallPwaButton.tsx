@@ -9,7 +9,16 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-export function InstallPwaButton({ className }: { className?: string }) {
+export function InstallPwaButton({
+  className,
+  variant = "brand",
+  size,
+}: {
+  className?: string;
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+}) {
+
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
