@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { Download, Check, Share } from "lucide-react";
 import { toast } from "sonner";
+
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
