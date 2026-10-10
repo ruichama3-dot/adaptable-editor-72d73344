@@ -21,6 +21,7 @@
 - [x] Descarregar trabalho acima das páginas em PDF ou Word, em telemóvel e computador
 - [x] Melhorar a organização das páginas e a formatação dos trabalhos gerados
 - [x] Organizar os botões do painel em acções verdes cheias e transparentes, incluindo abrir trabalho
+- [x] Menu da conta com botões verdes/transparentes, confirmação ao sair, página de Definições e eliminação selectiva do histórico
 
 - [ ] Esconder selo "Edit with Lovable" (CSS adicionado a styles.css — definição oficial exige plano Pro)
 - [ ] Typecheck e verificação final dos fluxos de acesso
