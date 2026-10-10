@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ import {
   ArrowRight,
   CreditCard,
   Users,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/painel")({
@@ -44,16 +46,26 @@ function Painel() {
   const { user } = Route.useRouteContext();
   const { isAdmin } = useIsAdmin();
   const queryClient = useQueryClient();
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
 
-  async function clearHistory() {
-    if (!window.confirm("Apagar todo o histórico de trabalhos? Esta acção não pode ser anulada.")) return;
-    const { error } = await supabase.from("works").delete().eq("user_id", user.id);
+  function toggle(id: string) {
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  }
+
+  async function deleteSelected() {
+    if (selected.length === 0) return;
+    const n = selected.length;
+    if (!window.confirm(`Eliminar ${n} trabalho${n > 1 ? "s" : ""} seleccionado${n > 1 ? "s" : ""}? Esta acção não pode ser anulada.`)) return;
+    const { error } = await supabase.from("works").delete().eq("user_id", user.id).in("id", selected);
     if (error) {
-      toast.error("Não foi possível apagar o histórico. Tente novamente.");
+      toast.error("Não foi possível eliminar. Tente novamente.");
       return;
     }
+    setSelected([]);
+    setSelecting(false);
     void queryClient.invalidateQueries({ queryKey: ["works"] });
-    toast.success("Histórico apagado.");
+    toast.success("Trabalho(s) eliminado(s).");
   }
 
   const { data: works = [], isLoading } = useQuery({
@@ -265,12 +277,25 @@ function Painel() {
       <section className="mt-10">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-bold">Histórico de trabalhos</h2>
-          {works.length > 0 && (
-            <Button variant="danger" onClick={clearHistory} className="w-full sm:w-auto">
-              <Trash2 className="h-4 w-4" /> Apagar histórico
-            </Button>
-          )}
+          {works.length > 0 &&
+            (selecting ? (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button variant="glass" onClick={() => { setSelecting(false); setSelected([]); }} className="w-full sm:w-auto">
+                  <X className="h-4 w-4" /> Cancelar
+                </Button>
+                <Button variant="danger" onClick={deleteSelected} disabled={selected.length === 0} className="w-full sm:w-auto">
+                  <Trash2 className="h-4 w-4" /> Eliminar seleccionados ({selected.length})
+                </Button>
+              </div>
+            ) : (
+              <Button variant="danger" onClick={() => setSelecting(true)} className="w-full sm:w-auto">
+                <Trash2 className="h-4 w-4" /> Eliminar trabalhos
+              </Button>
+            ))}
         </div>
+        {selecting && (
+          <p className="text-muted-foreground mt-2 text-sm">Toque nos trabalhos que deseja eliminar.</p>
+        )}
         {isLoading ? (
           <p className="text-muted-foreground mt-4 text-sm">A carregar…</p>
         ) : works.length === 0 ? (
@@ -284,7 +309,32 @@ function Painel() {
           </div>
         ) : (
           <div className="mt-4 grid gap-3">
-            {works.map((w) => (
+            {selecting && works.map((w) => {
+              const on = selected.includes(w.id);
+              return (
+                <label
+                  key={w.id}
+                  className={cn(
+                    "shadow-soft flex cursor-pointer items-start gap-3 rounded-2xl border bg-card p-4 sm:p-5",
+                    on ? "border-destructive/60 bg-destructive/5" : "border-border",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={() => toggle(w.id)}
+                    className="mt-1 h-5 w-5 shrink-0 accent-[var(--destructive)]"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-semibold break-words">{w.title}</p>
+                    <p className="text-muted-foreground mt-0.5 text-sm break-words">
+                      {w.work_type} · {new Date(w.created_at).toLocaleDateString("pt-PT")}
+                    </p>
+                  </div>
+                </label>
+              );
+            })}
+            {!selecting && works.map((w) => (
               <Link
                 key={w.id}
                 to="/trabalho/$id"
