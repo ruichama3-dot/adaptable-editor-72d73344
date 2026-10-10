@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,17 +6,6 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Logo } from "@/components/Logo";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { applyTheme, readTheme, t, usePreferences } from "@/lib/preferences";
 import { LogOut, Settings, CreditCard, ShieldCheck, LayoutDashboard } from "lucide-react";
 
@@ -35,6 +24,7 @@ function AuthedLayout() {
   const queryClient = useQueryClient();
   const { isAdmin } = useIsAdmin();
   const { lang } = usePreferences();
+  const [confirmOut, setConfirmOut] = useState(false);
 
   useEffect(() => {
     applyTheme(readTheme());
@@ -83,26 +73,33 @@ function AuthedLayout() {
               </Link>
             </Button>
             <NotificationBell />
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="danger" size="sm" className={navBtn}>
-                  <LogOut className="h-4 w-4" /> {t(lang, "sair")}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t(lang, "sairTitulo")}</AlertDialogTitle>
-                  <AlertDialogDescription>{t(lang, "sairTexto")}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t(lang, "cancelar")}</AlertDialogCancel>
-                  <AlertDialogAction onClick={signOut}>{t(lang, "simSair")}</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button variant="danger" size="sm" className={navBtn} onClick={() => setConfirmOut(true)}>
+              <LogOut className="h-4 w-4" /> {t(lang, "sair")}
+            </Button>
           </nav>
         </div>
       </header>
+      {confirmOut && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sair-titulo"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
+          onClick={() => setConfirmOut(false)}
+        >
+          <div
+            className="shadow-soft w-full max-w-sm rounded-2xl border border-border bg-card p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="sair-titulo" className="text-lg font-bold">{t(lang, "sairTitulo")}</h2>
+            <p className="text-muted-foreground mt-2 text-sm">{t(lang, "sairTexto")}</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="glass" onClick={() => setConfirmOut(false)}>{t(lang, "cancelar")}</Button>
+              <Button variant="danger" onClick={signOut}>{t(lang, "simSair")}</Button>
+            </div>
+          </div>
+        </div>
+      )}
       <Outlet />
     </div>
   );

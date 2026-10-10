@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    // Pre-bundle Radix dialogs with React so a late discovery can't load a second React copy.
+    optimizeDeps: {
+      include: ["@radix-ui/react-alert-dialog", "@radix-ui/react-dialog"],
+    },
+  },
 });
