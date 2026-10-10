@@ -63,7 +63,7 @@ function Definicoes() {
       institution: String(f.get("institution")),
       course: String(f.get("course")),
     });
-    if (error) return toast.error("Não foi possível guardar os dados.");
+    if (error) { toast.error("Não foi possível guardar os dados."); return; }
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
     toast.success("Dados actualizados.");
   }
@@ -74,12 +74,12 @@ function Definicoes() {
     const f = new FormData(form);
     const p1 = String(f.get("p1"));
     const p2 = String(f.get("p2"));
-    if (p1.length < 6) return toast.error("A palavra-passe deve ter pelo menos 6 caracteres.");
-    if (p1 !== p2) return toast.error("As palavras-passe não coincidem.");
+    if (p1.length < 6) { toast.error("A palavra-passe deve ter pelo menos 6 caracteres."); return; }
+    if (p1 !== p2) { toast.error("As palavras-passe não coincidem."); return; }
     setSavingPass(true);
     const { error } = await supabase.auth.updateUser({ password: p1 });
     setSavingPass(false);
-    if (error) return toast.error("Não foi possível alterar a palavra-passe. Tente novamente.");
+    if (error) { toast.error("Não foi possível alterar a palavra-passe. Tente novamente."); return; }
     form.reset();
     toast.success("Palavra-passe alterada.");
   }
@@ -124,7 +124,7 @@ function Definicoes() {
           ["institution", "Instituição"],
           ["course", "Curso"],
         ].map(([name, label]) => {
-          const value = (profile as Record<string, string | null> | null | undefined)?.[name] ?? "";
+          const value = (profile as Record<string, string | null> | null | undefined)?.[name as string] ?? "";
           return (
             <div key={name} className="space-y-1.5">
               <Label htmlFor={name}>{label}</Label>
