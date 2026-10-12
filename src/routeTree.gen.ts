@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as PlanCheckRouteImport } from './routes/plan-check'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDefinicoesRouteImport } from './routes/_authenticated/definicoes'
@@ -36,11 +35,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlanCheckRoute = PlanCheckRouteImport.update({
-  id: '/plan-check',
-  path: '/plan-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -98,7 +92,6 @@ const AuthenticatedTrabalhoIdRoute = AuthenticatedTrabalhoIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/plan-check': typeof PlanCheckRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/definicoes': typeof AuthenticatedDefinicoesRoute
@@ -113,7 +106,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/plan-check': typeof PlanCheckRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/definicoes': typeof AuthenticatedDefinicoesRoute
@@ -130,7 +122,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/plan-check': typeof PlanCheckRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/definicoes': typeof AuthenticatedDefinicoesRoute
@@ -147,7 +138,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/plan-check'
     | '/reset-password'
     | '/admin'
     | '/definicoes'
@@ -162,7 +152,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/plan-check'
     | '/reset-password'
     | '/admin'
     | '/definicoes'
@@ -178,7 +167,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/plan-check'
     | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/definicoes'
@@ -195,7 +183,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  PlanCheckRoute: typeof PlanCheckRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   PartilhaIdRoute: typeof PartilhaIdRoute
 }
@@ -221,13 +208,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plan-check': {
-      id: '/plan-check'
-      path: '/plan-check'
-      fullPath: '/plan-check'
-      preLoaderRoute: typeof PlanCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -332,7 +312,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  PlanCheckRoute: PlanCheckRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   PartilhaIdRoute: PartilhaIdRoute,
 }
