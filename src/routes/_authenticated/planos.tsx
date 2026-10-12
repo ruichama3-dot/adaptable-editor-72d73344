@@ -155,7 +155,9 @@ function Planos() {
                 <p className="mt-2 text-3xl font-extrabold">
                   {p.price} <span className="text-base font-semibold">MT</span>
                 </p>
-                <p className="text-muted-foreground mt-1 text-sm">{p.days} dias de acesso</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {p.days === 1 ? "1 dia de acesso" : `${p.days} dias de acesso`}
+                </p>
                 <p className="mt-3 flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-primary" /> {p.dailyLimit} trabalhos por dia
                 </p>
