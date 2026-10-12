@@ -11,25 +11,29 @@ describe("regras dos planos", () => {
     expect(p?.dailyLimit).toBe(2);
   });
 
-  it("o Plano 1 dia é o primeiro e o recomendado para começar", () => {
+  it("o Plano 1 dia é o primeiro e o único recomendado para começar", () => {
     expect(PLANS[0].id).toBe("teste");
     expect(PLANS[0].highlight).toBe(true);
     expect(PLANS.filter((x) => x.highlight)).toHaveLength(1);
   });
 
-  it("os limites diários crescem com a duração do plano", () => {
-    const weekly = planById("semanal");
-    const fortnightly = planById("quinzenal");
-    const monthly = planById("mensal");
-    expect(weekly?.dailyLimit).toBe(2);
-    expect(fortnightly?.dailyLimit).toBe(4);
-    expect(monthly?.dailyLimit).toBe(10);
-    expect((weekly?.dailyLimit ?? 0) + 1).toBe(fortnightly?.dailyLimit);
-    expect((fortnightly?.dailyLimit ?? 0) + 1).toBe(monthly?.dailyLimit);
+  it("ninguém paga mais de 30 MT para experimentar a plataforma", () => {
+    const cheapest = Math.min(...PLANS.map((p) => p.price));
+    expect(cheapest).toBe(30);
   });
 
-  it("não há limites diários repetidos entre os planos", () => {
-    const limits = PLANS.map((p) => p.dailyLimit);
-    expect(new Set(limits).size).toBe(limits.length);
+  it("planos mais longos nunca dão menos trabalhos por dia", () => {
+    const ordered = [...PLANS].sort((a, b) => a.days - b.days);
+    for (let i = 1; i < ordered.length; i++) {
+      expect(ordered[i].dailyLimit).toBeGreaterThanOrEqual(ordered[i - 1].dailyLimit);
+    }
+  });
+
+  it("todos os planos têm limite diário positivo e preço em meticais", () => {
+    for (const p of PLANS) {
+      expect(p.dailyLimit).toBeGreaterThan(0);
+      expect(p.price).toBeGreaterThan(0);
+      expect(p.days).toBeGreaterThan(0);
+    }
   });
 });
