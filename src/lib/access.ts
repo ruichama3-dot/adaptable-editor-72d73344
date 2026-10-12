@@ -64,11 +64,14 @@ export async function resolveAccess(
 
   const activeSub = (subs ?? []).find((s) => new Date(s.expires_at).getTime() > now);
   if (activeSub) {
+    // A definição actual do plano é a fonte de verdade; o valor guardado
+    // serve apenas para planos personalizados fora da lista.
+    const plan = planById(activeSub.plan);
     return {
       isAdmin: false,
       hasAccess: true,
       plan: activeSub.plan,
-      dailyLimit: activeSub.daily_limit ?? FREE_DAILY_LIMIT,
+      dailyLimit: plan?.dailyLimit ?? activeSub.daily_limit ?? FREE_DAILY_LIMIT,
       expiresAt: activeSub.expires_at,
       source: "subscription",
     };
