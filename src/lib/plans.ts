@@ -8,8 +8,9 @@ export type Plan = {
 };
 
 export const PLANS: Plan[] = [
+  { id: "teste", name: "Plano 1 dia", price: 30, days: 1, dailyLimit: 1, highlight: true },
   { id: "semanal", name: "Plano Semanal", price: 150, days: 7, dailyLimit: 2 },
-  { id: "quinzenal", name: "Plano 14 dias", price: 250, days: 14, dailyLimit: 4, highlight: true },
+  { id: "quinzenal", name: "Plano 14 dias", price: 250, days: 14, dailyLimit: 4 },
   { id: "mensal", name: "Plano 30 dias", price: 400, days: 30, dailyLimit: 10 },
 ];
 
