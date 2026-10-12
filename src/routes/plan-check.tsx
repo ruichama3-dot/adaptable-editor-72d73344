@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PLANS } from "@/lib/plans";
 
-export const Route = createFileRoute("/_plan-check")({
+export const Route = createFileRoute("/plan-check")({
   component: PlanCheck,
 });
 
