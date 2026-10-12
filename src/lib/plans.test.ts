@@ -12,8 +12,8 @@ describe("regras dos planos", () => {
   });
 
   it("o Plano 1 dia é o primeiro e o único recomendado para começar", () => {
-    expect(PLANS[0].id).toBe("teste");
-    expect(PLANS[0].highlight).toBe(true);
+    expect(PLANS[0]?.id).toBe("teste");
+    expect(PLANS[0]?.highlight).toBe(true);
     expect(PLANS.filter((x) => x.highlight)).toHaveLength(1);
   });
 
@@ -24,12 +24,13 @@ describe("regras dos planos", () => {
 
   it("planos mais longos nunca dão menos trabalhos por dia", () => {
     const ordered = [...PLANS].sort((a, b) => a.days - b.days);
-    for (let i = 1; i < ordered.length; i++) {
-      expect(ordered[i].dailyLimit).toBeGreaterThanOrEqual(ordered[i - 1].dailyLimit);
+    const limits = ordered.map((p) => p.dailyLimit);
+    for (let i = 1; i < limits.length; i++) {
+      expect(limits[i] ?? 0).toBeGreaterThanOrEqual(limits[i - 1] ?? 0);
     }
   });
 
-  it("todos os planos têm limite diário positivo e preço em meticais", () => {
+  it("todos os planos têm limite diário positivo, preço e duração", () => {
     for (const p of PLANS) {
       expect(p.dailyLimit).toBeGreaterThan(0);
       expect(p.price).toBeGreaterThan(0);
