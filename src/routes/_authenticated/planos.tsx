@@ -138,7 +138,7 @@ function Planos() {
         </div>
       ) : (
         <>
-          <div className="mt-7 grid gap-4 sm:grid-cols-3">
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p) => (
               <div
                 key={p.id}
@@ -148,7 +148,7 @@ function Planos() {
               >
                 {p.highlight && (
                   <span className="bg-brand w-fit rounded-full px-2.5 py-1 text-[11px] font-bold text-primary-foreground">
-                    Mais popular
+                    Recomendado para começar
                   </span>
                 )}
                 <p className="mt-2 font-bold">{p.name}</p>
