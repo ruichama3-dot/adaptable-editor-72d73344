@@ -19,7 +19,9 @@ function PlanCheck() {
           <p className="mt-2 text-3xl font-extrabold">
             {p.price} <span className="text-base font-semibold">MT</span>
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">{p.days} dias de acesso</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {p.days === 1 ? "1 dia de acesso" : `${p.days} dias de acesso`}
+          </p>
           <p className="mt-3 text-sm">{p.dailyLimit} trabalhos por dia</p>
         </div>
       ))}
