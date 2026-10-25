@@ -1,10 +1,10 @@
+import { splitPages } from "@/lib/doc-pages";
+
 type Slide = { title: string; paragraphs: string[] };
 
 function xmlEscape(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
-
-import { splitPages } from "@/lib/doc-pages";
 
 function documentSlides(html: string): Slide[] {
   const slides: Slide[] = [];
