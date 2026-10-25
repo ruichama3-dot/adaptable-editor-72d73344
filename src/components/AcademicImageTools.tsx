@@ -23,7 +23,7 @@ export function AcademicImageTools({ onInsert }: { onInsert: (html: string) => v
       const params = new URLSearchParams({ action: "query", generator: "search", gsrsearch: query.trim(), gsrnamespace: "6", gsrlimit: "8", gsrwhat: "text", prop: "imageinfo|info", iiprop: "url|extmetadata", iiurlwidth: "700", inprop: "url", format: "json", origin: "*" });
       const response = await fetch("https://commons.wikimedia.org/w/api.php?" + params.toString());
       if (!response.ok) throw new Error("A pesquisa está temporariamente indisponível.");
-      const json = await response.json() as { query?: { pages?: Record<string, { title?: string; imageinfo?: { thumburl?: string; descriptionurl?: string; extmetadata?: Record<string, { value?: string }> }[] }> };
+      const json = await response.json() as { query?: { pages?: Record<string, { title?: string; imageinfo?: { thumburl?: string; descriptionurl?: string; extmetadata?: Record<string, { value?: string }> }[] }> } };
       const plain = (value?: string) => (value ?? "").replace(/<[^>]*>/g, "").replace(/&quot;/g, '"' ).replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
       const items = Object.values(json.query?.pages ?? {}).flatMap((page) => {
         const info = page.imageinfo?.[0];
