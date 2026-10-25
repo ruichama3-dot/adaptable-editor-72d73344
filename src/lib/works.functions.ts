@@ -249,3 +249,54 @@ export const generateWork = createServerFn({ method: "POST" })
     return { content: html };
   });
 
+
+
+const GenerateIllustrationInput = z.object({
+  prompt: z.string().trim().min(5).max(800),
+});
+
+export const generateIllustration = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => GenerateIllustrationInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const access = await resolveAccess(context.supabase, context.userId);
+    if (!access.isAdmin && !access.hasAccess) {
+      throw new Error("Precisa de um plano activo para gerar imagens.");
+    }
+
+    const { geminiKey } = readKeys();
+    if (!geminiKey) {
+      throw new Error("A geração de imagens requer uma GEMINI_API_KEY válida nas variáveis de ambiente da Vercel.");
+    }
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: "Cria uma ilustração original, adequada a um documento académico. Não incluas texto, letras, marcas de água nem logótipos. Pedido: " + data.prompt }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const detail = (await response.text().catch(() => "")).slice(0, 250);
+      console.error("[IA imagens] Falha Gemini:", response.status, detail);
+      if (response.status === 400 || response.status === 403) {
+        throw new Error("O modelo de geração de imagens não está disponível para esta chave ou projeto Google. Verifique o acesso à API Gemini.");
+      }
+      if (response.status === 429) throw new Error("Limite de geração de imagens atingido. Tente novamente mais tarde.");
+      throw new Error("Não foi possível gerar a imagem neste momento.");
+    }
+
+    const result = await response.json() as {
+      candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string }; text?: string }[] } }[];
+    };
+    const image = result.candidates?.[0]?.content?.parts?.find((part) => part.inlineData?.data)?.inlineData;
+    if (!image?.data || !image.mimeType?.startsWith("image/")) {
+      throw new Error("A IA não devolveu uma imagem. Tente reformular a descrição.");
+    }
+    return { dataUrl: `data:${image.mimeType};base64,${image.data}`, mimeType: image.mimeType };
+  });
