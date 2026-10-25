@@ -44,14 +44,8 @@ ${isGroup ? `- Elementos do grupo (lista numerada na folha de rosto): ${f("group
 - Extensão alvo: aproximadamente ${f("pages")} páginas (escreve texto extenso e denso, sem repetições).
 
 INSTRUÇÕES ESPECÍFICAS DO FORMATO SELECIONADO:\n${workTypeGuidance(f("work_type"))}\n\nESTRUTURA BASE FLEXÍVEL: aplica apenas os elementos adequados ao tipo selecionado; não forces uma estrutura única.
-${opt['cover'] === false ? "" : `1. CAPA (página única, tudo centrado): nome da instituição em maiúsculas; ${isGroup ? '"TRABALHO EM GRUPO"' : '"TRABALHO INDIVIDUAL"'} em destaque; "Cadeira: <disciplina>"; "Tema: <tema>"; e no fim "<cidade>, <ano>".
-2. FOLHA DE ROSTO (página única): instituição em maiúsculas centrada; ${isGroup ? '"TRABALHO EM GRUPO"' : '"TRABALHO INDIVIDUAL"'} centrado; depois uma <table class=\"rosto\"> de duas colunas: à esquerda ${isGroup ? '"Elementos do grupo:" com um nome por linha' : '"Discente:" com o nome e número do estudante'}, à direita "Docente:" com o nome do docente; depois centrado "Cadeira: <disciplina>", "Tema: <tema>", curso e turma se existirem; no fim "<cidade>, <ano>".
-`}${opt['index'] === false ? "" : "3. ÍNDICE (página única): título <h1>Índice</h1> e uma lista <ul> com todos os títulos e subtítulos do trabalho, sem números de página.\n"}4. Introdução (página nova)
-5. Objetivos: Objetivo Geral e Objetivos Específicos
-6. Metodologia
-7. Desenvolvimento / Fundamentação Teórica, dividido em capítulos <h1> e subtítulos <h2>/<h3> claros e específicos ao tema, como na amostra. Cada capítulo principal começa numa página nova; os subtítulos continuam na mesma página quando houver espaço.
-8. Conclusão (página nova)
-9. Referências Bibliográficas (página nova, título "Bibliografia"), em ordem alfabética
+${opt['cover'] === false ? "" : `CAPA E FOLHA DE ROSTO: inclui apenas quando forem adequadas ao formato. Usa dados fornecidos e omite campos vazios; não acrescentes páginas pré-textuais a artigos curtos ou seminários quando não forem apropriadas.\n`}${opt['index'] === false ? "" : "ÍNDICE: inclui apenas quando o documento for suficientemente extenso e adequado; lista somente títulos escritos.\n"}
+ORGANIZAÇÃO DO CORPO: segue a estrutura específica indicada acima. Não imponhas automaticamente introdução + objetivos + metodologia + capítulos + conclusão a todos os tipos. Cria secções, páginas novas, anexos ou recomendações apenas quando fizerem sentido. Usa títulos <h1>, subtítulos <h2>/<h3> e separadores de página entre blocos completos quando o documento for extenso.
 
 REFERÊNCIAS BIBLIOGRÁFICAS:
 ${manualRefs
