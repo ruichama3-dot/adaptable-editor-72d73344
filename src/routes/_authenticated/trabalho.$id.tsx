@@ -149,8 +149,10 @@ function Editor() {
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {html !== null && work && (
-            <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
+            <>
+              <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
               <Button variant="outline" onClick={() => void exportPowerPoint()}><Presentation className="h-4 w-4" /> PowerPoint</Button>
+            </>
           )}
           <Button onClick={save} disabled={saving}>
             <Save className="h-4 w-4" /> Guardar
