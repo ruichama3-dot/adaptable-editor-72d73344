@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Wand2, Users, User as UserIcon, BookMarked } from "lucide-react";
+import { Loader2, Wand2, Users, User as UserIcon, BookMarked, Image as ImageIcon, Presentation, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/novo-trabalho")({
@@ -122,6 +122,8 @@ function NovoTrabalho() {
   const generate = useServerFn(generateWork);
   const [busy, setBusy] = useState(false);
   const [opts, setOpts] = useState({ cover: true, index: true, citations: true, references: true });
+  const [includeImages, setIncludeImages] = useState(false);
+  const [outputFormat, setOutputFormat] = useState<"normal" | "powerpoint">("normal");
   const [mode, setMode] = useState<"individual" | "grupo">("individual");
   const [refsMode, setRefsMode] = useState<"automatica" | "manual">("automatica");
 
@@ -179,14 +181,20 @@ function NovoTrabalho() {
           language: s("language"),
           academic_level: s("academic_level"),
           norms: s("norms"),
-          options: opts,
+          options: { ...opts, includeImages, outputFormat },
         })
         .select()
         .single();
       if (error) throw error;
       toast.info("A IA está a escrever o seu trabalho… pode demorar 1 a 3 minutos.");
-      await generate({ data: { workId: work.id } });
-      toast.success("Trabalho gerado!");
+      const generated = await generate({ data: { workId: work.id } });
+      if (outputFormat === "powerpoint") {
+        toast.success("Apresentação preparada. No ecrã seguinte, descarregue o PowerPoint.");
+      } else if (includeImages && generated.imagesAdded === 0) {
+        toast.info("O trabalho foi gerado, mas não foram encontradas imagens adequadas. Pode tentar novamente mais tarde.");
+      } else {
+        toast.success("Trabalho gerado!");
+      }
       navigate({ to: "/trabalho/$id", params: { id: work.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível gerar o trabalho.");
@@ -334,6 +342,43 @@ function NovoTrabalho() {
               />
             </div>
           )}
+        </section>
+
+        <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
+          <h2 className="text-lg font-bold">Como pretende receber o trabalho?</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Escolha estas opções antes de gerar. Não alteram os restantes dados do formulário.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Choice
+              active={!includeImages}
+              onClick={() => setIncludeImages(false)}
+              icon={FileText}
+              title="Sem imagens"
+              text="Documento focado no texto académico."
+            />
+            <Choice
+              active={includeImages}
+              onClick={() => setIncludeImages(true)}
+              icon={ImageIcon}
+              title="Com imagens"
+              text="Inclui imagens ilustrativas relevantes, com indicação da fonte e licença."
+            />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Choice
+              active={outputFormat === "normal"}
+              onClick={() => setOutputFormat("normal")}
+              icon={FileText}
+              title="Trabalho normal"
+              text="Documento académico organizado segundo o modelo de referência da RuJe IA."
+            />
+            <Choice
+              active={outputFormat === "powerpoint"}
+              onClick={() => setOutputFormat("powerpoint")}
+              icon={Presentation}
+              title="Apresentação PowerPoint"
+              text="Conteúdo organizado em diapositivos para apresentação oral."
+            />
+          </div>
         </section>
 
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
