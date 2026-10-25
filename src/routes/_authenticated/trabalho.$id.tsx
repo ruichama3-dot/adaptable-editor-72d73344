@@ -151,7 +151,7 @@ function Editor() {
           {html !== null && work && (
             <>
               <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
-              <Button variant="outline" onClick={() => void exportPowerPoint()}><Presentation className="h-4 w-4" /> PowerPoint</Button>
+              <Button variant="outline" onClick={() => void exportPowerPoint()}><Presentation className="h-4 w-4" /> {(work.options as Record<string, unknown> | null)?.outputFormat === "powerpoint" ? "Descarregar apresentação" : "PowerPoint"}</Button>
             </>
           )}
           <Button onClick={save} disabled={saving}>
