@@ -280,7 +280,7 @@ function Admin() {
                   <th className={cell}>Plano</th>
                   <th className={cell}>Registo</th>
                   <th className={cell}>Acesso</th>
-                  <th className={cell}>Plano</th>
+                  <th className={cell}>Acção</th>
                 </tr>
               </thead>
               <tbody>
