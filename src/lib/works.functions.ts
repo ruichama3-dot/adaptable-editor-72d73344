@@ -289,13 +289,25 @@ export const generateWork = createServerFn({ method: "POST" })
       .single();
     if (error || !work) throw new Error("Trabalho não encontrado.");
 
+    const workOptions = (work.options ?? {}) as Record<string, unknown>;
+    const includeImages = workOptions.includeImages === true;
+    const outputFormat = workOptions.outputFormat === "powerpoint" ? "powerpoint" : "normal";
     const rawContent = await callAI(buildPrompt(work as Record<string, unknown>));
 
-    const html = rawContent
-      .replace(/^```(?:html)?/i, "")
-      .replace(/```$/i, "")
+    let html = rawContent
+      .replace(/^\`\`\`(?:html)?/i, "")
+      .replace(/\`\`\`$/i, "")
       .trim();
     if (!html) throw new Error(BUSY_MSG);
+
+    let imagesAdded = 0;
+    if (includeImages) {
+      const imageHtml = await findAcademicImages(String(work.theme ?? work.title ?? "educação"), 3);
+      if (imageHtml) {
+        html = insertImagesAfterIntroduction(html, imageHtml);
+        imagesAdded = (imageHtml.match(/<figure class="academic-image">/g) ?? []).length;
+      }
+    }
 
     const { error: upErr } = await context.supabase
       .from("works")
@@ -303,7 +315,7 @@ export const generateWork = createServerFn({ method: "POST" })
       .eq("id", data.workId);
     if (upErr) throw new Error(upErr.message);
 
-    return { content: html };
+    return { content: html, imagesAdded, outputFormat };
   });
 
 
