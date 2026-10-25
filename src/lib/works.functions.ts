@@ -205,6 +205,53 @@ async function callAI(prompt: string): Promise<string> {
 }
 
 
+function escapeImageHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+async function findAcademicImages(topic: string, limit = 3): Promise<string> {
+  try {
+    const params = new URLSearchParams({
+      action: "query", generator: "search", gsrsearch: topic, gsrnamespace: "6",
+      gsrlimit: String(limit), prop: "imageinfo", iiprop: "url|extmetadata",
+      iiurlwidth: "900", format: "json",
+    });
+    const response = await fetch("https://commons.wikimedia.org/w/api.php?" + params.toString(), {
+      headers: { "User-Agent": "RuJeIA/1.0 (academic document image attribution)" },
+    });
+    if (!response.ok) return "";
+    const data = await response.json() as {
+      query?: { pages?: Record<string, { title?: string; imageinfo?: { thumburl?: string; descriptionurl?: string; extmetadata?: Record<string, { value?: string }> }[]> };
+    };
+    const plain = (value?: string) => (value ?? "").replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
+    const images = Object.values(data.query?.pages ?? {}).flatMap((page) => {
+      const info = page.imageinfo?.[0];
+      if (!info?.thumburl || !info.descriptionurl) return [];
+      const title = (page.title ?? "Imagem").replace(/^File:/, "");
+      const author = plain(info.extmetadata?.Artist?.value) || "Autor não indicado";
+      const license = plain(info.extmetadata?.LicenseShortName?.value) || "Consultar licença na fonte";
+      return ['<figure class="academic-image"><img src="' + escapeImageHtml(info.thumburl) + '" alt="' + escapeImageHtml(title) + '" style="max-width:100%;height:auto"><figcaption><small>Figura: ' + escapeImageHtml(title) + '. Fonte: <a href="' + escapeImageHtml(info.descriptionurl) + '">' + escapeImageHtml(info.descriptionurl) + '</a>. Autor: ' + escapeImageHtml(author) + '. Licença: ' + escapeImageHtml(license) + '.</small></figcaption></figure>'];
+    });
+    return images.length ? "<h2>Imagens ilustrativas</h2>\\n" + images.join("\\n") : "";
+  } catch (error) {
+    console.warn("[IA imagens] A pesquisa falhou; o trabalho será gerado sem imagens.", error);
+    return "";
+  }
+}
+
+function insertImagesAfterIntroduction(html: string, imageHtml: string): string {
+  if (!imageHtml) return html;
+  const intro = html.search(/<h[12][^>]*>\\s*introdu[cç][aã]o\\b/i);
+  const start = intro >= 0 ? intro : 0;
+  const breakText = '<hr class="page-break">';
+  const breakAt = html.indexOf(breakText, start);
+  if (breakAt >= 0) {
+    const end = breakAt + breakText.length;
+    return html.slice(0, end) + "\\n" + imageHtml + "\\n" + html.slice(end);
+  }
+  return html + "\\n" + imageHtml;
+}
+
 export const generateWork = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => GenerateInput.parse(d))
