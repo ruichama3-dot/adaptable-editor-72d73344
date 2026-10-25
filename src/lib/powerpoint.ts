@@ -81,7 +81,7 @@ function zipStore(files: { name: string; text: string }[]): Blob {
     ...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length),
     ...u32(centralSize), ...u32(offset), ...u16(0),
   ]);
-  return new Blob([...local, ...central, end], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+  const parts = [...local, ...central, end].map((part) => part.buffer.slice(part.byteOffset, part.byteOffset + part.byteLength) as ArrayBuffer);\n  return new Blob(parts, { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
 }
 
 function slideXml(slide: Slide, index: number) {
