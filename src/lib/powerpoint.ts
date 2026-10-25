@@ -22,7 +22,7 @@ function documentSlides(html: string): Slide[] {
       bullets = [];
     };
     for (const element of elements) {
-      const text = (element.textContent ?? "").replace(/\\s+/g, " ").trim();
+      const text = (element.textContent ?? "").replace(/\s+/g, " ").trim();
       if (!text) continue;
       if (/^H[1-3]$/.test(element.tagName)) {
         flush();
