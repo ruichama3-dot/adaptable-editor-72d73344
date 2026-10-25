@@ -106,6 +106,37 @@ function Admin() {
     toast.success(approve ? "Plano activado para o utilizador." : "Pedido rejeitado.");
   }
 
+  async function removeUserPlan(userId: string, email: string | null) {
+    const label = email ?? "este utilizador";
+    if (!window.confirm(`Remover o plano de ${label}? O acesso pago será revogado. A conta, os trabalhos e o histórico serão mantidos.`)) return;
+
+    const { error: paymentError } = await supabase
+      .from("payment_requests")
+      .update({ status: "revogado" })
+      .eq("user_id", userId)
+      .in("status", ["aprovado", "approved", "aprovada", "pago"]);
+    if (paymentError) {
+      toast.error("Não foi possível revogar o acesso dos pagamentos.");
+      return;
+    }
+
+    const { error: subscriptionError } = await supabase
+      .from("subscriptions")
+      .delete()
+      .eq("user_id", userId);
+    if (subscriptionError) {
+      toast.error("Os pagamentos foram revogados, mas não foi possível remover as subscrições. Tente novamente.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
+      return;
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ["admin-subs"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
+    void queryClient.invalidateQueries({ queryKey: ["user-access"] });
+    void queryClient.invalidateQueries({ queryKey: ["access"] });
+    toast.success("Plano removido. A conta e o histórico foram mantidos.");
+  }
+
   async function toggleAdmin(userId: string, email: string | null, isCurrentlyAdmin: boolean) {
     const { data: me } = await supabase.auth.getUser();
     if (isCurrentlyAdmin && me.user?.id === userId) {
@@ -249,6 +280,7 @@ function Admin() {
                   <th className={cell}>Plano</th>
                   <th className={cell}>Registo</th>
                   <th className={cell}>Acesso</th>
+                  <th className={cell}>Acção</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,6 +310,19 @@ function Admin() {
                         >
                           {adminIds.has(u.id) ? "Remover admin" : "Tornar admin"}
                         </Button>
+                      </td>
+                      <td className={cell}>
+                        {sub || payments.some((p) => p.user_id === u.id && ["aprovado", "approved", "aprovada", "pago"].includes(String(p.status ?? "").toLowerCase())) ? (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => removeUserPlan(u.id, u.email)}
+                          >
+                            Remover plano
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground">Sem plano</span>
+                        )}
                       </td>
                     </tr>
                   );
