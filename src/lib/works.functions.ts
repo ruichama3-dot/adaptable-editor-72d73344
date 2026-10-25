@@ -221,7 +221,16 @@ async function findAcademicImages(topic: string, limit = 3): Promise<string> {
     });
     if (!response.ok) return "";
     const data = await response.json() as {
-      query?: { pages?: Record<string, { title?: string; imageinfo?: { thumburl?: string; descriptionurl?: string; extmetadata?: Record<string, { value?: string }> }[]> };
+      query?: {
+        pages?: Record<string, {
+          title?: string;
+          imageinfo?: Array<{
+            thumburl?: string;
+            descriptionurl?: string;
+            extmetadata?: Record<string, { value?: string }>;
+          }>;
+        }>;
+      };
     };
     const plain = (value?: string) => (value ?? "").replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
     const images = Object.values(data.query?.pages ?? {}).flatMap((page) => {
