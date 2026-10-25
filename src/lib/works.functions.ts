@@ -241,7 +241,7 @@ async function findAcademicImages(topic: string, limit = 3): Promise<string> {
 
 function insertImagesAfterIntroduction(html: string, imageHtml: string): string {
   if (!imageHtml) return html;
-  const intro = html.search(/<h[12][^>]*>\s*introdu[cç][aã]o\\b/i);
+  const intro = html.search(/<h[12][^>]*>\s*introdu[cç][aã]o\b/i);
   const start = intro >= 0 ? intro : 0;
   const breakText = '<hr class="page-break">';
   const breakAt = html.indexOf(breakText, start);
