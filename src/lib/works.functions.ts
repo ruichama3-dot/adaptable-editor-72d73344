@@ -175,7 +175,9 @@ async function callAI(prompt: string): Promise<string> {
 
   if (!geminiKey && !gatewayKey) {
     console.error("[IA] Nenhuma chave de IA configurada no servidor.");
-    throw new Error(BUSY_MSG);
+    throw new Error(
+      "O serviço de IA ainda não está configurado. O administrador deve adicionar uma GEMINI_API_KEY ou LOVABLE_API_KEY válida em Vercel → Project Settings → Environment Variables e voltar a publicar.",
+    );
   }
 
   // Duas rondas completas antes de desistir.
