@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DocPages, type DocPagesHandle } from "@/components/DocPages";
 import { DownloadWorkButton } from "@/components/DownloadWorkButton";
+import { AcademicImageTools } from "@/components/AcademicImageTools";
 import { joinPages, splitPages } from "@/lib/doc-pages";
+import { downloadPowerPoint } from "@/lib/powerpoint";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -21,6 +23,7 @@ import {
   Save,
   Share2,
   FilePlus2,
+  Presentation,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/trabalho/$id")({
@@ -100,6 +103,16 @@ function Editor() {
     if (url) cmd("insertImage", url);
   }
 
+  async function exportPowerPoint() {
+    try {
+      await downloadPowerPoint(work?.title ?? "Apresentação RuJe IA", currentHtml());
+      toast.success("Apresentação PowerPoint preparada.");
+    } catch (error) {
+      console.error("[pptx]", error);
+      toast.error("Não foi possível preparar o PowerPoint.");
+    }
+  }
+
   function insertTable() {
     const cols = Number(window.prompt("Número de colunas:", "3")) || 3;
     const rows = Number(window.prompt("Número de linhas:", "3")) || 3;
@@ -136,7 +149,10 @@ function Editor() {
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {html !== null && work && (
-            <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
+            <>
+              <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
+              <Button variant="outline" onClick={() => void exportPowerPoint()}><Presentation className="h-4 w-4" /> PowerPoint</Button>
+            </>
           )}
           <Button onClick={save} disabled={saving}>
             <Save className="h-4 w-4" /> Guardar
@@ -206,6 +222,8 @@ function Editor() {
           <FilePlus2 className="h-4 w-4" /> Nova página
         </Button>
       </div>
+
+      <div className="mt-3"><AcademicImageTools onInsert={(imageHtml) => { docRef.current?.focusedPage()?.focus(); document.execCommand("insertHTML", false, imageHtml); }} /></div>
 
       {html !== null && <DocPages ref={docRef} html={html} editable version={version} />}
 

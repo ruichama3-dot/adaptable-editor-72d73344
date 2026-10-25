@@ -6,13 +6,31 @@ import { resolveAccess } from "@/lib/access";
 
 const GenerateInput = z.object({ workId: z.string().uuid() });
 
+const WORK_TYPE_GUIDANCE: Record<string, string> = {
+  "trabalho escolar": "Linguagem adequada à classe; introdução, desenvolvimento por tópicos, conclusão e referências apropriadas ao nível.",
+  "trabalho científico": "Problema, objetivos, justificativa, fundamentação teórica, metodologia, análise crítica e conclusão.",
+  "monografia": "Elementos pré-textuais conforme as normas, introdução, problema, objetivos, justificativa, fundamentação teórica em capítulos, metodologia, análise de resultados apenas com dados reais, conclusão, recomendações e referências. Não inventar trabalho de campo.",
+  "projeto de pesquisa": "Proposta de investigação: tema delimitado, problema, pergunta, objetivos, justificativa, fundamentação, metodologia proposta, cronograma/orçamento quando necessários, resultados esperados e referências. Não apresentar resultados como obtidos.",
+  "relatório": "Contexto, objetivos, local/instituição e período quando disponíveis, atividades efetivamente informadas, procedimentos, análise, conclusão e recomendações. Não inventar atividades realizadas.",
+  "artigo científico": "Título, resumo, palavras-chave, introdução, metodologia quando aplicável, discussão, resultados apenas com dados reais, conclusão e referências. Evitar capa e capítulos de monografia salvo pedido expresso.",
+  "seminário": "Conteúdo preparado para exposição oral: introdução, objetivos, tópicos claros, exemplos pertinentes, síntese, conclusão e referências; evitar monografia extensa.",
+  "revisão bibliográfica": "Questão/objetivo, método bibliográfico quando conhecido, secções temáticas, síntese crítica de fontes verificáveis, lacunas, conclusão e referências. Não inventar artigos ou autores.",
+  "estudo de caso": "Contexto do caso baseado nos dados fornecidos, problema, objetivos, enquadramento teórico, metodologia, análise, discussão, conclusões e recomendações. Assinalar dados em falta.",
+  "dissertação": "Estrutura ajustada ao grau e às normas: introdução, problema, objetivos, revisão crítica, metodologia, resultados apenas com dados válidos, discussão, conclusão e referências. Não simular investigação.",
+  "tcc": "Estrutura de trabalho de conclusão de curso adaptada ao curso e às normas: introdução, problema, objetivos, justificativa, fundamentação, metodologia, análise, conclusão e referências. Não inventar resultados.",
+};
+
+function workTypeGuidance(type: string) {
+  return WORK_TYPE_GUIDANCE[type.trim().toLocaleLowerCase("pt")] ?? WORK_TYPE_GUIDANCE["trabalho científico"];
+}
+
 function buildPrompt(w: Record<string, unknown>) {
   const opt = (w['options'] ?? {}) as Record<string, boolean>;
   const f = (k: string) => (w[k] ? String(w[k]) : "—");
   const isGroup = String(w['work_mode'] ?? "individual") === "grupo";
   const manualRefs = String(w['references_mode'] ?? "automatica") === "manual";
 
-  return `És um assistente académico especialista. Escreve um trabalho académico COMPLETO em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}. Segue a organização da amostra da RuJe IA: capa, folha de rosto, índice, introdução, desenvolvimento em capítulos temáticos, conclusão e bibliografia. Não copies o conteúdo nem o tema da amostra; adapta a estrutura aos dados deste trabalho.
+  return `És um assistente académico especialista. Escreve um trabalho académico COMPLETO em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}. A estrutura deve corresponder ao formato selecionado e não a um modelo genérico. Usa a amostra da RuJe IA apenas para regras visuais quando forem adequadas; não forces capa, índice ou capítulos de monografia em artigos, relatórios ou seminários.
 
 DADOS:
 - Tema: ${f("theme")}
@@ -25,20 +43,14 @@ ${isGroup ? `- Elementos do grupo (lista numerada na folha de rosto): ${f("group
 - Local: ${f("city")}, ${f("country")} | Data de entrega: ${f("due_date")}
 - Extensão alvo: aproximadamente ${f("pages")} páginas (escreve texto extenso e denso, sem repetições).
 
-ESTRUTURA OBRIGATÓRIA (modelo académico moçambicano), por esta ordem, cada item em página própria quando indicado:
-${opt['cover'] === false ? "" : `1. CAPA (página única, tudo centrado): nome da instituição em maiúsculas; ${isGroup ? '"TRABALHO EM GRUPO"' : '"TRABALHO INDIVIDUAL"'} em destaque; "Cadeira: <disciplina>"; "Tema: <tema>"; e no fim "<cidade>, <ano>".
-2. FOLHA DE ROSTO (página única): instituição em maiúsculas centrada; ${isGroup ? '"TRABALHO EM GRUPO"' : '"TRABALHO INDIVIDUAL"'} centrado; depois uma <table class=\"rosto\"> de duas colunas: à esquerda ${isGroup ? '"Elementos do grupo:" com um nome por linha' : '"Discente:" com o nome e número do estudante'}, à direita "Docente:" com o nome do docente; depois centrado "Cadeira: <disciplina>", "Tema: <tema>", curso e turma se existirem; no fim "<cidade>, <ano>".
-`}${opt['index'] === false ? "" : "3. ÍNDICE (página única): título <h1>Índice</h1> e uma lista <ul> com todos os títulos e subtítulos do trabalho, sem números de página.\n"}4. Introdução (página nova)
-5. Objetivos: Objetivo Geral e Objetivos Específicos
-6. Metodologia
-7. Desenvolvimento / Fundamentação Teórica, dividido em capítulos <h1> e subtítulos <h2>/<h3> claros e específicos ao tema, como na amostra. Cada capítulo principal começa numa página nova; os subtítulos continuam na mesma página quando houver espaço.
-8. Conclusão (página nova)
-9. Referências Bibliográficas (página nova, título "Bibliografia"), em ordem alfabética
+INSTRUÇÕES ESPECÍFICAS DO FORMATO SELECIONADO:\n${workTypeGuidance(f("work_type"))}\n\nESTRUTURA BASE FLEXÍVEL: aplica apenas os elementos adequados ao tipo selecionado; não forces uma estrutura única.
+${opt['cover'] === false ? "" : `CAPA E FOLHA DE ROSTO: inclui apenas quando forem adequadas ao formato. Usa dados fornecidos e omite campos vazios; não acrescentes páginas pré-textuais a artigos curtos ou seminários quando não forem apropriadas.\n`}${opt['index'] === false ? "" : "ÍNDICE: inclui apenas quando o documento for suficientemente extenso e adequado; lista somente títulos escritos.\n"}
+ORGANIZAÇÃO DO CORPO: segue a estrutura específica indicada acima. Não imponhas automaticamente introdução + objetivos + metodologia + capítulos + conclusão a todos os tipos. Cria secções, páginas novas, anexos ou recomendações apenas quando fizerem sentido. Usa títulos <h1>, subtítulos <h2>/<h3> e separadores de página entre blocos completos quando o documento for extenso.
 
 REFERÊNCIAS BIBLIOGRÁFICAS:
 ${manualRefs
   ? `- O utilizador escolheu REFERÊNCIAS MANUAIS. Usa EXACTAMENTE e apenas as referências indicadas abaixo, formatando-as segundo as normas ${f("norms")}, e cita-as no corpo do texto:\n${f("manual_references")}`
-  : `- Gera referências bibliográficas reais e credíveis segundo as normas ${f("norms")}${opt['citations'] === false ? "" : ", com citações no corpo do texto (Autor, ano)"}.`}
+  : `- Usa apenas referências verificáveis e reais que conheças com confiança. Não inventes autores, títulos, editoras, anos ou DOI. Se não conseguires verificar referências, declara essa limitação e prioriza fontes fornecidas pelo utilizador ou pesquisa externa disponível. Formata as referências segundo as normas ${f("norms")}${opt['citations'] === false ? "" : ", com citações no corpo do texto (Autor, ano)"}.`}
 
 REGRAS DE SAÍDA:
 - Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <strong>, <em>. Sem markdown, sem \`\`\`, sem <html>, <head> ou <body>, sem comentários.
@@ -237,3 +249,54 @@ export const generateWork = createServerFn({ method: "POST" })
     return { content: html };
   });
 
+
+
+const GenerateIllustrationInput = z.object({
+  prompt: z.string().trim().min(5).max(800),
+});
+
+export const generateIllustration = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => GenerateIllustrationInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const access = await resolveAccess(context.supabase, context.userId);
+    if (!access.isAdmin && !access.hasAccess) {
+      throw new Error("Precisa de um plano activo para gerar imagens.");
+    }
+
+    const { geminiKey } = readKeys();
+    if (!geminiKey) {
+      throw new Error("A geração de imagens requer uma GEMINI_API_KEY válida nas variáveis de ambiente da Vercel.");
+    }
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: "Cria uma ilustração original, adequada a um documento académico. Não incluas texto, letras, marcas de água nem logótipos. Pedido: " + data.prompt }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const detail = (await response.text().catch(() => "")).slice(0, 250);
+      console.error("[IA imagens] Falha Gemini:", response.status, detail);
+      if (response.status === 400 || response.status === 403) {
+        throw new Error("O modelo de geração de imagens não está disponível para esta chave ou projeto Google. Verifique o acesso à API Gemini.");
+      }
+      if (response.status === 429) throw new Error("Limite de geração de imagens atingido. Tente novamente mais tarde.");
+      throw new Error("Não foi possível gerar a imagem neste momento.");
+    }
+
+    const result = await response.json() as {
+      candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string }; text?: string }[] } }[];
+    };
+    const image = result.candidates?.[0]?.content?.parts?.find((part) => part.inlineData?.data)?.inlineData;
+    if (!image?.data || !image.mimeType?.startsWith("image/")) {
+      throw new Error("A IA não devolveu uma imagem. Tente reformular a descrição.");
+    }
+    return { dataUrl: `data:${image.mimeType};base64,${image.data}`, mimeType: image.mimeType };
+  });
