@@ -29,8 +29,16 @@ function buildPrompt(w: Record<string, unknown>) {
   const f = (k: string) => (w[k] ? String(w[k]) : "—");
   const isGroup = String(w['work_mode'] ?? "individual") === "grupo";
   const manualRefs = String(w['references_mode'] ?? "automatica") === "manual";
+  const includeImages = opt["includeImages"] === true;
+  const outputFormat = opt["outputFormat"] === "powerpoint" ? "powerpoint" : "normal";
+  const formatInstruction = outputFormat === "powerpoint"
+    ? "FORMATO POWERPOINT: gera uma apresentação de 8 a 14 diapositivos. Cada diapositivo começa com <h1> ou <h2> e contém 3 a 5 pontos curtos em <p> ou <ul><li>. Não escrevas um ensaio longo, capa extensa, folha de rosto, índice paginado nem parágrafos longos. Organiza: tema, contextualização, objetivos, conceitos principais, desenvolvimento por tópicos, conclusão e referências essenciais."
+    : "FORMATO NORMAL: segue de perto a amostra oficial RuJe IA 'Escola Clássica da Economia' no estilo e organização, sem copiar o conteúdo: capa centrada, folha de rosto, índice, introdução, desenvolvimento com títulos e subtítulos hierárquicos, conclusão e bibliografia. Usa <div class=\"sample-cover\"> nas páginas de capa/rosto, <hr class=\"page-break\"> entre páginas, e inicia introdução, conclusão e bibliografia em página nova. Usa apenas dados fornecidos; o índice deve refletir títulos reais. Mantém a estrutura específica do tipo escolhido, mas conserva o mesmo padrão visual da amostra.";
+  const imageInstruction = includeImages
+    ? "O utilizador pediu imagens: reserva um ponto adequado no documento para imagens ilustrativas relevantes com legenda, fonte, autor e licença. Não inventes imagens nem atribuições."
+    : "O utilizador pediu um documento sem imagens: não incluas imagens nem figuras.";
 
-  return `És um assistente académico especialista. Escreve um trabalho académico COMPLETO em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}. A estrutura deve corresponder ao formato selecionado e não a um modelo genérico. Usa a amostra da RuJe IA apenas para regras visuais quando forem adequadas; não forces capa, índice ou capítulos de monografia em artigos, relatórios ou seminários.
+  return `És um assistente académico especialista em trabalhos usados em Moçambique. ${formatInstruction} ${imageInstruction} Escreve um resultado completo em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}. Não transformes automaticamente todos os tipos de trabalho em monografias.
 
 DADOS:
 - Tema: ${f("theme")}
