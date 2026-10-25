@@ -28,7 +28,7 @@ function documentSlides(html: string): Slide[] {
         flush();
         sectionTitle = text.slice(0, 100);
       } else {
-        const words = text.split(/\\s+/);
+        const words = text.split(/\s+/);
         let line = "";
         for (const word of words) {
           if ((line + " " + word).trim().length > 100 && line) { bullets.push(line); line = word; }
