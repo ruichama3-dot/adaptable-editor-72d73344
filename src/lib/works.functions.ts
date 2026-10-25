@@ -62,7 +62,7 @@ ${manualRefs
 
 REGRAS DE SAÍDA:
 - Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <strong>, <em>. Sem markdown, sem \`\`\`, sem <html>, <head> ou <body>, sem comentários.
-- Cada secção principal usa <h1>; subtítulos usam <h2>/<h3>. Parágrafos completos de 4 a 7 linhas, justificados, sem frases soltas.
+- No formato normal, cada secção principal usa <h1>, subtítulos usam <h2>/<h3> e os parágrafos são completos, justificados e académicos. No PowerPoint, cada diapositivo usa um título claro e 3 a 5 pontos curtos, sem parágrafos longos.
 - PAGINAÇÃO: se outputFormat for normal, separa páginas com exactamente <hr class="page-break"> entre blocos completos; capa, folha de rosto e índice ficam em páginas separadas, e introdução, conclusão e bibliografia começam em página nova. Se outputFormat for powerpoint, não uses separadores de página nem limites de palavras por página; cada bloco de título e pontos representa um diapositivo.
 - No formato normal, usa capa e folha de rosto no estilo da amostra com <div class="sample-cover">, quando adequadas. Omite campos vazios e não inventes nomes. No PowerPoint, não cries páginas de capa/rosto extensas.
 - Na introdução contextualiza o tema, apresenta a questão central e anuncia os capítulos. Organiza o desenvolvimento com argumentação progressiva e transições naturais. O índice deve listar apenas títulos efetivamente escritos e nunca páginas fictícias. Mantém uma bibliografia específica ao assunto; não inventes obras, datas ou autores de que não tenhas certeza.
