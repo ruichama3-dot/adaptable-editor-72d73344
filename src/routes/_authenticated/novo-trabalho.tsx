@@ -379,6 +379,11 @@ function NovoTrabalho() {
               text="Conteúdo organizado em diapositivos para apresentação oral."
             />
           </div>
+          {outputFormat === "powerpoint" && includeImages && (
+            <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+              Nota: nesta versão, as imagens são incorporadas no documento normal. A exportação PowerPoint ainda não coloca imagens dentro dos diapositivos.
+            </p>
+          )}
         </section>
 
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
