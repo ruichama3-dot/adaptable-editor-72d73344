@@ -232,7 +232,7 @@ async function findAcademicImages(topic: string, limit = 3): Promise<string> {
       const license = plain(info.extmetadata?.LicenseShortName?.value) || "Consultar licença na fonte";
       return ['<figure class="academic-image"><img src="' + escapeImageHtml(info.thumburl) + '" alt="' + escapeImageHtml(title) + '" style="max-width:100%;height:auto"><figcaption><small>Figura: ' + escapeImageHtml(title) + '. Fonte: <a href="' + escapeImageHtml(info.descriptionurl) + '">' + escapeImageHtml(info.descriptionurl) + '</a>. Autor: ' + escapeImageHtml(author) + '. Licença: ' + escapeImageHtml(license) + '.</small></figcaption></figure>'];
     });
-    return images.length ? "<h2>Imagens ilustrativas</h2>\\n" + images.join("\\n") : "";
+    return images.length ? "<h2>Imagens ilustrativas</h2>\\n" + images.join("\n") : "";
   } catch (error) {
     console.warn("[IA imagens] A pesquisa falhou; o trabalho será gerado sem imagens.", error);
     return "";
@@ -241,15 +241,15 @@ async function findAcademicImages(topic: string, limit = 3): Promise<string> {
 
 function insertImagesAfterIntroduction(html: string, imageHtml: string): string {
   if (!imageHtml) return html;
-  const intro = html.search(/<h[12][^>]*>\\s*introdu[cç][aã]o\\b/i);
+  const intro = html.search(/<h[12][^>]*>\s*introdu[cç][aã]o\\b/i);
   const start = intro >= 0 ? intro : 0;
   const breakText = '<hr class="page-break">';
   const breakAt = html.indexOf(breakText, start);
   if (breakAt >= 0) {
     const end = breakAt + breakText.length;
-    return html.slice(0, end) + "\\n" + imageHtml + "\\n" + html.slice(end);
+    return html.slice(0, end) + "\n" + imageHtml + "\n" + html.slice(end);
   }
-  return html + "\\n" + imageHtml;
+  return html + "\n" + imageHtml;
 }
 
 export const generateWork = createServerFn({ method: "POST" })
