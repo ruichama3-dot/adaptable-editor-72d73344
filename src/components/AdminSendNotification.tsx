@@ -98,6 +98,7 @@ export function AdminSendNotification({ users }: { users: U[] }) {
   }
 
   return (
+    <>
     <form onSubmit={send} className="shadow-soft mt-4 grid gap-5 rounded-2xl border border-border bg-card p-5 sm:max-w-2xl sm:p-6">
       <div>
         <div className="flex items-center gap-2 text-base font-semibold">
@@ -204,5 +205,6 @@ export function AdminSendNotification({ users }: { users: U[] }) {
         </div>
       )}
     </section>
+    </>
   );
 }
