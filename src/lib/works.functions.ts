@@ -78,9 +78,8 @@ function startOfTodayISO() {
 
 /** Modelos reais da API pública do Google Gemini, por ordem de preferência. */
 const GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-flash-latest",
-  "gemini-2.5-pro",
+  "gemini-3.8-flash",
+  "gemini-3.1-pro-preview",
 ];
 
 /** Todas as chaves candidatas, lidas apenas do servidor (nunca VITE_*). */
@@ -125,6 +124,11 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
             "CONFIG_KEY_INVALID",
           );
         }
+        if (res.status === 429 && /quota|billing|limit: 0|limit reached/i.test(errText)) {
+          console.error("[IA] A quota da API Gemini foi esgotada. Verifique os limites e a faturação do projeto Google AI Studio.");
+          errors.push(`${model}: quota esgotada (429)`);
+          break;
+        }
         errors.push(`${model}: ${res.status} ${errText}`);
         if (res.status === 429 || res.status >= 500) continue;
         break;
@@ -155,7 +159,7 @@ async function callLovableGateway(prompt: string, apiKey: string): Promise<strin
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
     body: JSON.stringify({
-      model: "google/gemini-3-flash",
+      model: "google/gemini-3.8-flash",
       messages: [{ role: "user", content: prompt }],
     }),
   });
