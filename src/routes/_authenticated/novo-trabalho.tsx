@@ -390,7 +390,7 @@ function NovoTrabalho() {
             />
             <Choice
               active={outputFormat === "powerpoint"}
-              onClick={() => setOutputFormat("powerpoint")}
+              onClick={() => { setIncludeImages(false); setOutputFormat("powerpoint"); }}
               icon={Presentation}
               title="Apresentação PowerPoint"
               text="Conteúdo organizado em diapositivos para apresentação oral."
