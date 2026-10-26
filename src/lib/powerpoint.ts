@@ -8,12 +8,12 @@ function xmlEscape(value: string) {
 
 function documentSlides(html: string, presentationTitle: string, requestedSlides = 10): Slide[] {
   // A apresentação é uma síntese oral: sem índice, páginas de rosto extensas ou texto corrido.
-  const cleanHtml = html
-    .replace(/<div class="sample-cover"[^>]*>[\\s\\S]*?<\\/div>/gi, "")
-    .replace(/<h[1-3]\\b[^>]*>\\s*(?:índice|indice|table of contents)\\s*<\\/h[1-3]>[\\s\\S]*?(?=<h[1-3]\\b|$)/gi, "")
+    .replace(/<div class="sample-cover"[^>]*>[\s\S]*?<\/div>/gi, "")
+    .replace(/<h[1-3]\b[^>]*>\s*(?:índice|indice|table of contents)\s*<\/h[1-3]>[\s\S]*?(?=<h[1-3]\b|$)/gi, "")
+    .replace(/<hr\b[^>]*class=["']page-break["'][^>]*>/gi, "");
     .replace(/<hr\\b[^>]*class=["']page-break["'][^>]*>/gi, "");
   const node = document.createElement("div");
-  node.innerHTML = cleanHtml;
+  const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
   const elements = Array.from(node.querySelectorAll("h1,h2,h3,p,li,td"));
   const normalize = (value: string) => value.replace(/\\s+/g, " ").trim();
   const ignored = /^(índice|indice|sumário|sumario|table of contents|folha de rosto|bibliografia|referências|referencias|resumo|abstract|palavras-chave)$/i;
