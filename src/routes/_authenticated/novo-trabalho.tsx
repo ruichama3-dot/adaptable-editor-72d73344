@@ -400,7 +400,7 @@ function NovoTrabalho() {
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">{isPowerPoint ? "Opções da apresentação" : "Configurações do documento"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {!isPowerPoint && <Field id="pages" label="Quantidade de páginas" type="number" min={2} max={60} defaultValue={10} />}
+            {!isPowerPoint && <Field id="pages" label="Quantidade de páginas" type="number" min={2} step={1} defaultValue={10} placeholder="Ex.: 25, 50, 100..." />}
             <Sel id="language" label="Idioma" options={LANGS} />
             <Sel id="academic_level" label="Nível académico" options={LEVELS} />
             {!isPowerPoint && <Sel id="norms" label="Normas académicas" options={NORMS} />}
