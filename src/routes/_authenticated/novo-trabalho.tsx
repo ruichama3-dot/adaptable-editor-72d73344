@@ -131,7 +131,7 @@ function NovoTrabalho() {
   const [includeImages, setIncludeImages] = useState(false);
   const [outputFormat, setOutputFormat] = useState<"normal" | "powerpoint">("normal");
   const [workType, setWorkType] = useState(sample?.work_type ?? "Trabalho Escolar");
-  const [mode, setMode = useState<"individual" | "grupo">("individual");
+  const [mode, setMode] = useState<"individual" | "grupo">("individual");
   const [refsMode, setRefsMode] = useState<"automatica" | "manual">("automatica");
 
   useEffect(() => {
