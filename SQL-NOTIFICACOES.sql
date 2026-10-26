@@ -9,13 +9,20 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-GRANT SELECT, INSERT, DELETE ON public.notifications TO authenticated;
+GRANT SELECT, INSERT ON public.notifications TO authenticated;
 GRANT ALL ON public.notifications TO service_role;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "read own or broadcast notifications" ON public.notifications FOR SELECT TO authenticated
   USING (user_id = auth.uid() OR user_id IS NULL);
-CREATE POLICY "admins manage notifications" ON public.notifications FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+DROP POLICY IF EXISTS "admins manage notifications" ON public.notifications;
+DROP POLICY IF EXISTS "admins create notifications" ON public.notifications;
+CREATE POLICY "admins create notifications" ON public.notifications
+  FOR INSERT TO authenticated
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role) AND created_by = auth.uid());
+DROP POLICY IF EXISTS "admins read all notifications" ON public.notifications;
+CREATE POLICY "admins read all notifications" ON public.notifications
+  FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE TABLE IF NOT EXISTS public.notification_reads (
   notification_id uuid NOT NULL REFERENCES public.notifications(id) ON DELETE CASCADE,
@@ -43,4 +50,14 @@ DROP TRIGGER IF EXISTS payment_requests_notify_admins ON public.payment_requests
 CREATE TRIGGER payment_requests_notify_admins AFTER INSERT ON public.payment_requests
   FOR EACH ROW EXECUTE FUNCTION public.notify_admins_new_payment();
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+DO $
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'notifications'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+  END IF;
+END $;
