@@ -56,7 +56,7 @@ DROP TRIGGER IF EXISTS payment_requests_notify_admins ON public.payment_requests
 CREATE TRIGGER payment_requests_notify_admins AFTER INSERT ON public.payment_requests
   FOR EACH ROW EXECUTE FUNCTION public.notify_admins_new_payment();
 
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication_tables
@@ -66,4 +66,4 @@ BEGIN
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
   END IF;
-END $;
+END $$;
