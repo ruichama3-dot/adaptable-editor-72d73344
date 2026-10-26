@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 
 CREATE INDEX IF NOT EXISTS notifications_recipient_created_at_idx
   ON public.notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS notifications_created_at_idx
+  ON public.notifications (created_at DESC);
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 GRANT SELECT, INSERT ON public.notifications TO authenticated;
@@ -35,6 +37,14 @@ CREATE POLICY "admins create notifications"
     public.has_role(auth.uid(), 'admin'::public.app_role)
     AND created_by = auth.uid()
   );
+
+-- Admins need to see the delivery history in the admin panel.
+DROP POLICY IF EXISTS "admins read all notifications" ON public.notifications;
+CREATE POLICY "admins read all notifications"
+  ON public.notifications
+  FOR SELECT
+  TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE TABLE IF NOT EXISTS public.notification_reads (
   notification_id uuid NOT NULL REFERENCES public.notifications(id) ON DELETE CASCADE,
