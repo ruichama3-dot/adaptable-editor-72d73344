@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 GRANT SELECT, INSERT ON public.notifications TO authenticated;
 GRANT ALL ON public.notifications TO service_role;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS notifications_recipient_created_at_idx ON public.notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS notifications_created_at_idx ON public.notifications (created_at DESC);
+DROP POLICY IF EXISTS "read own or broadcast notifications" ON public.notifications;
 CREATE POLICY "read own or broadcast notifications" ON public.notifications FOR SELECT TO authenticated
   USING (user_id = auth.uid() OR user_id IS NULL);
 DROP POLICY IF EXISTS "admins manage notifications" ON public.notifications;
@@ -33,6 +36,9 @@ CREATE TABLE IF NOT EXISTS public.notification_reads (
 GRANT SELECT, INSERT, DELETE ON public.notification_reads TO authenticated;
 GRANT ALL ON public.notification_reads TO service_role;
 ALTER TABLE public.notification_reads ENABLE ROW LEVEL SECURITY;
+GRANT UPDATE ON public.notification_reads TO authenticated;
+DROP POLICY IF EXISTS "own reads" ON public.notification_reads;
+DROP POLICY IF EXISTS "users manage own notification reads" ON public.notification_reads;
 CREATE POLICY "own reads" ON public.notification_reads FOR ALL TO authenticated
   USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
