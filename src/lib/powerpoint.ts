@@ -6,42 +6,57 @@ function xmlEscape(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-function documentSlides(html: string): Slide[] {
-  const slides: Slide[] = [];
-  for (const page of splitPages(html)) {
-    const node = document.createElement("div");
-    node.innerHTML = page;
-    const elements = Array.from(node.querySelectorAll("h1,h2,h3,p,li,td"));
-    let sectionTitle = "";
-    let bullets: string[] = [];
-    const flush = () => {
-      for (let i = 0; i < bullets.length; i += 5) {
-        const chunk = bullets.slice(i, i + 5);
-        if (sectionTitle || chunk.length) slides.push({ title: sectionTitle || "RuJe IA — Apresentação", paragraphs: chunk });
-      }
-      bullets = [];
-    };
-    for (const element of elements) {
-      const text = (element.textContent ?? "").replace(/\s+/g, " ").trim();
-      if (!text) continue;
-      if (/^H[1-3]$/.test(element.tagName)) {
-        flush();
-        sectionTitle = text.slice(0, 100);
-      } else {
-        const words = text.split(/\s+/);
-        let line = "";
-        for (const word of words) {
-          if ((line + " " + word).trim().length > 100 && line) { bullets.push(line); line = word; }
-          else line = (line + " " + word).trim();
-        }
-        if (line) bullets.push(line);
+function documentSlides(html: string, presentationTitle: string): Slide[] {
+  // PowerPoint uses only the academic content: no table of contents, printed cover pages or page breaks.
+  const cleanHtml = html
+    .replace(/<div class="sample-cover"[^>]*>[\s\S]*?<\/div>/gi, "")
+    .replace(/<h[1-3]\b[^>]*>\s*(?:índice|indice|table of contents)\s*<\/h[1-3]>[\s\S]*?(?=<h[1-3]\b|$)/gi, "")
+    .replace(/<hr\b[^>]*class=["']page-break["'][^>]*>/gi, "");
+  const node = document.createElement("div");
+  node.innerHTML = cleanHtml;
+  const elements = Array.from(node.querySelectorAll("h1,h2,h3,p,li,td"));
+  const slides: Slide[] = [{
+    title: presentationTitle.replace(/\s+/g, " ").trim().slice(0, 90) || "Apresentação académica",
+    paragraphs: ["RuJe IA · Apresentação académica"],
+  }];
+  let sectionTitle = "";
+  let bullets: string[] = [];
+  const flush = () => {
+    for (let i = 0; i < bullets.length; i += 4) {
+      if (slides.length >= 10) break;
+      const chunk = bullets.slice(i, i + 4);
+      if (sectionTitle || chunk.length) {
+        slides.push({ title: sectionTitle || "Desenvolvimento", paragraphs: chunk });
       }
     }
-    flush();
+    bullets = [];
+  };
+  const excludedHeading = /^(índice|indice|introdução|introducao|bibliografia|referências|referencias|resumo|abstract|palavras-chave)$/i;
+  for (const element of elements) {
+    const text = (element.textContent ?? "").replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    if (/^H[1-3]$/.test(element.tagName)) {
+      flush();
+      if (slides.length >= 10) break;
+      sectionTitle = text.slice(0, 90);
+      if (excludedHeading.test(sectionTitle)) sectionTitle = "";
+    } else if (sectionTitle || !excludedHeading.test(text)) {
+      const words = text.split(/\s+/);
+      let line = "";
+      for (const word of words) {
+        if ((line + " " + word).trim().length > 105 && line) {
+          bullets.push(line);
+          line = word;
+        } else {
+          line = (line + " " + word).trim();
+        }
+      }
+      if (line) bullets.push(line);
+    }
   }
-  return slides.length ? slides : [{ title: "Apresentação RuJe IA", paragraphs: ["Adicione conteúdo ao documento para gerar uma apresentação."] }];
+  flush();
+  return slides.slice(0, 10);
 }
-
 function crc32(bytes: Uint8Array) {
   let crc = -1;
   for (const byte of bytes) {
@@ -89,11 +104,11 @@ function slideXml(slide: Slide, index: number) {
   const title = xmlEscape(slide.title);
   const body = slide.paragraphs.map((line) => `<a:p><a:pPr lvl="0"><a:buChar char="•"/></a:pPr><a:r><a:rPr lang="pt-PT" sz="1900"/><a:t xml:space="preserve">${xmlEscape(line)}</a:t></a:r><a:endParaRPr lang="pt-PT"/></a:p>`).join("");
   const shape = (id: number, name: string, x: number, y: number, cx: number, cy: number, text: string) => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr wrap="square" lIns="91440" tIns="45720" rIns="91440" bIns="45720"/><a:lstStyle/>${text}</p:txBody></p:sp>`;
-  const titleBody = `<a:p><a:pPr algn="l"/><a:r><a:rPr lang="pt-PT" sz="3000" b="1" dirty="0"/><a:t>${title}</a:t></a:r><a:endParaRPr lang="pt-PT"/></a:p>`;
+  const titleBody = `<a:p><a:pPr algn="l"/><a:r><a:rPr lang="pt-PT" sz="3000" b="1" dirty="0"><a:solidFill><a:srgbClr val="173F35"/></a:solidFill></a:rPr><a:t>${title}</a:t></a:r><a:endParaRPr lang="pt-PT"/></a:p>`;
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${shape(2, `Title ${index}`, 500000, 250000, 8200000, 850000, titleBody)}${shape(3, `Content ${index}`, 550000, 1250000, 8100000, 3850000, body)}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
 }
 export async function downloadPowerPoint(title: string, html: string) {
-  const slides = documentSlides(html);
+  const slides = documentSlides(html, title);
   const files: { name: string; text: string }[] = [
     { name: "[Content_Types].xml", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slides.map((_, i) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("")}</Types>` },
     { name: "_rels/.rels", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>` },
