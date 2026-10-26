@@ -6,7 +6,7 @@ function xmlEscape(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-function documentSlides(html: string, presentationTitle: string): Slide[] {
+function documentSlides(html: string, presentationTitle: string, requestedSlides = 10): Slide[] {
   // A apresentação é uma síntese oral: sem índice, páginas de rosto extensas ou texto corrido.
   const cleanHtml = html
     .replace(/<div class="sample-cover"[^>]*>[\\s\\S]*?<\\/div>/gi, "")
@@ -53,7 +53,7 @@ function documentSlides(html: string, presentationTitle: string): Slide[] {
     .filter((section) => section.title && (section.points.length > 0 || /conclusão|considerações finais|recomendações|referências/i.test(section.title)));
 
   // Seleciona no máximo nove secções para além da capa. Mantém a ordem lógica do trabalho.
-  const maxContentSlides = 9;
+  const maxContentSlides = Math.max(3, Math.min(29, Math.floor(requestedSlides) - 1));
   const chosen = compactSections.slice(0, maxContentSlides);
   for (const section of chosen) {
     const points = section.points.slice(0, 5);
@@ -71,7 +71,7 @@ function documentSlides(html: string, presentationTitle: string): Slide[] {
       slides.push({ title: i === 0 ? "Desenvolvimento" : "Pontos complementares", paragraphs: fallback.slice(i, i + 4) });
     }
   }
-  return slides.slice(0, 10);
+  return slides.slice(0, Math.max(4, Math.min(30, Math.floor(requestedSlides))));
 }
 function crc32(bytes: Uint8Array) {
   let crc = -1;
@@ -136,8 +136,8 @@ function slideXml(slide: Slide, index: number) {
   const footerShape = isCover ? "" : shape(5, "Footer", 6100000, 4750000, 2500000, 250000, footerBody);
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="${isCover ? "173F35" : "FFFFFF"}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${isCover ? "" : accent}${titleShape}${bodyShape}${footerShape}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
 }
-export async function downloadPowerPoint(title: string, html: string) {
-  const slides = documentSlides(html, title);
+export async function downloadPowerPoint(title: string, html: string, requestedSlides = 10) {
+  const slides = documentSlides(html, title, requestedSlides);
   const files: { name: string; text: string }[] = [
     { name: "[Content_Types].xml", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slides.map((_, i) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("")}</Types>` },
     { name: "_rels/.rels", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>` },
