@@ -130,13 +130,9 @@ function NovoTrabalho() {
   const [opts, setOpts] = useState({ cover: true, index: true, citations: true, references: true });
   const [includeImages, setIncludeImages] = useState(false);
   const [outputFormat, setOutputFormat] = useState<"normal" | "powerpoint">("normal");
-  const [workType, setWorkType] = useState(sample?.work_type ?? "Trabalho Escolar");
+  const [workType, setWorkType] = useState("Trabalho Escolar");
   const [mode, setMode] = useState<"individual" | "grupo">("individual");
   const [refsMode, setRefsMode] = useState<"automatica" | "manual">("automatica");
-
-  useEffect(() => {
-    if (sample?.work_type && WORK_TYPES.includes(sample.work_type)) setWorkType(sample.work_type);
-  }, [sample?.work_type]);
 
   const isPowerPoint = outputFormat === "powerpoint";
   const isExtendedForm = ["Trabalho Científico", "Monografia", "Projeto de Pesquisa", "Dissertação", "TCC"].includes(workType);
@@ -163,6 +159,9 @@ function NovoTrabalho() {
     },
   });
 
+  useEffect(() => {
+    if (sample?.work_type && WORK_TYPES.includes(sample.work_type)) setWorkType(sample.work_type);
+  }, [sample?.work_type]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
