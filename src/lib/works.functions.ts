@@ -52,7 +52,7 @@ ${isGroup ? `- Elementos do grupo (lista numerada na folha de rosto): ${f("group
 - Extensão alvo: aproximadamente ${f("pages")} páginas (escreve texto extenso e denso, sem repetições).
 
 INSTRUÇÕES ESPECÍFICAS DO FORMATO SELECIONADO:\n${workTypeGuidance(f("work_type"))}\n\nESTRUTURA BASE FLEXÍVEL: aplica apenas os elementos adequados ao tipo selecionado; não forces uma estrutura única.
-${opt['cover'] === false ? "" : `CAPA E FOLHA DE ROSTO: inclui apenas quando forem adequadas ao formato. Usa dados fornecidos e omite campos vazios; não acrescentes páginas pré-textuais a artigos curtos ou seminários quando não forem apropriadas.\n`}${opt['index'] === false ? "" : "ÍNDICE: inclui apenas quando o documento for suficientemente extenso e adequado; lista somente títulos escritos.\n"}
+${opt['cover'] === false ? "" : `CAPA E FOLHA DE ROSTO: inclui apenas quando forem adequadas ao formato. Usa dados fornecidos e omite campos vazios; não acrescentes páginas pré-textuais a artigos curtos ou seminários quando não forem apropriadas.\n`}${outputFormat === "powerpoint" ? "" : (opt['index'] === false ? "" : "ÍNDICE: inclui apenas quando o documento for suficientemente extenso e adequado; lista somente títulos escritos.\n")}
 ORGANIZAÇÃO DO CORPO: segue a estrutura específica indicada acima. Não imponhas automaticamente introdução + objetivos + metodologia + capítulos + conclusão a todos os tipos. Cria secções, páginas novas, anexos ou recomendações apenas quando fizerem sentido. Usa títulos <h1>, subtítulos <h2>/<h3> e separadores de página entre blocos completos quando o documento for extenso.
 
 REFERÊNCIAS BIBLIOGRÁFICAS:
