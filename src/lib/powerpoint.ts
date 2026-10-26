@@ -8,14 +8,14 @@ function xmlEscape(value: string) {
 
 function documentSlides(html: string, presentationTitle: string, requestedSlides = 10): Slide[] {
   // A apresentação é uma síntese oral: sem índice, páginas de rosto extensas ou texto corrido.
+  const cleanHtml = html
     .replace(/<div class="sample-cover"[^>]*>[\s\S]*?<\/div>/gi, "")
     .replace(/<h[1-3]\b[^>]*>\s*(?:índice|indice|table of contents)\s*<\/h[1-3]>[\s\S]*?(?=<h[1-3]\b|$)/gi, "")
     .replace(/<hr\b[^>]*class=["']page-break["'][^>]*>/gi, "");
-    .replace(/<hr\\b[^>]*class=["']page-break["'][^>]*>/gi, "");
   const node = document.createElement("div");
-  const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+  node.innerHTML = cleanHtml;
   const elements = Array.from(node.querySelectorAll("h1,h2,h3,p,li,td"));
-  const normalize = (value: string) => value.replace(/\\s+/g, " ").trim();
+  const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
   const ignored = /^(índice|indice|sumário|sumario|table of contents|folha de rosto|bibliografia|referências|referencias|resumo|abstract|palavras-chave)$/i;
   const sections: Array<{ title: string; points: string[] }> = [];
   let current: { title: string; points: string[] } | null = null;
@@ -31,7 +31,6 @@ function documentSlides(html: string, presentationTitle: string, requestedSlides
         current = { title: "Pontos essenciais", points: [] };
         sections.push(current);
       }
-      // Um item por ideia; limitar o comprimento evita blocos ilegíveis no diapositivo.
       const chunks = text.match(/[^.!?;]+[.!?;]?/g) ?? [text];
       for (const chunk of chunks) {
         const point = normalize(chunk);
@@ -52,10 +51,8 @@ function documentSlides(html: string, presentationTitle: string, requestedSlides
     }) }))
     .filter((section) => section.title && (section.points.length > 0 || /conclusão|considerações finais|recomendações|referências/i.test(section.title)));
 
-  // Seleciona no máximo nove secções para além da capa. Mantém a ordem lógica do trabalho.
   const maxContentSlides = Math.max(3, Math.min(29, Math.floor(requestedSlides) - 1));
-  const chosen = compactSections.slice(0, maxContentSlides);
-  for (const section of chosen) {
+  for (const section of compactSections.slice(0, maxContentSlides)) {
     const points = section.points.slice(0, 5);
     if (!points.length && /conclusão|considerações finais/i.test(section.title)) {
       points.push("Síntese dos principais resultados e ideias desenvolvidas no trabalho.");
@@ -63,11 +60,10 @@ function documentSlides(html: string, presentationTitle: string, requestedSlides
     if (points.length) slides.push({ title: section.title, paragraphs: points });
   }
 
-  // Se a IA entregou poucos títulos, reaproveita o conteúdo em blocos temáticos em vez de deixar slides vazios.
   if (slides.length < 4) {
     const allPoints = sections.flatMap((section) => section.points);
     const fallback = allPoints.length ? allPoints : [title];
-    for (let i = 0; i < fallback.length && slides.length < maxContentSlides + 1; i += 4) {
+    for (let i = 0; i < fallback.length && slides.length < Math.min(30, requestedSlides); i += 4) {
       slides.push({ title: i === 0 ? "Desenvolvimento" : "Pontos complementares", paragraphs: fallback.slice(i, i + 4) });
     }
   }
