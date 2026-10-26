@@ -39,8 +39,8 @@ export function NotificationBell() {
         db.from("notifications").select("id,title,body,link,created_at").order("created_at", { ascending: false }).limit(30),
         db.from("notification_reads").select("notification_id").eq("user_id", uid),
       ]);
-      if (listError) throw new Error(readableDbError(listError));
-      if (readsError) throw new Error(readableDbError(readsError));
+      if (listError) throw new Error(readableDbError(listError) ?? "Falha ao consultar notificações.");
+      if (readsError) throw new Error(readableDbError(readsError) ?? "Falha ao consultar o estado de leitura.");
       const readSet = new Set<string>((reads ?? []).map((r: { notification_id: string }) => r.notification_id));
       return { uid, items: (list ?? []) as Notif[], readSet };
     },
