@@ -105,13 +105,13 @@ function Editor() {
 
   async function exportPowerPoint() {
     const answer = window.prompt(
-      "Quantos diapositivos pretende na apresentação? Escolha entre 4 e 30.",
+      "Quantos diapositivos pretende na apresentação? Indique 4 ou mais, sem limite fixo.",
       "12",
     );
     if (answer === null) return;
     const requested = Number(answer);
-    if (!Number.isInteger(requested) || requested < 4 || requested > 30) {
-      toast.error("Indique um número inteiro entre 4 e 30 diapositivos.");
+    if (!Number.isSafeInteger(requested) || requested < 4) {
+      toast.error("Indique um número inteiro igual ou superior a 4 diapositivos.");
       return;
     }
     try {
