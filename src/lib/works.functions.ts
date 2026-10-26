@@ -238,6 +238,40 @@ async function findAcademicImages(topic: string, limit = 1): Promise<string> {
   }
 }
 
+function buildAutomaticIndex(html: string): string {
+  let pages = html.split(/<hr\b[^>]*class=["']page-break["'][^>]*>/i);
+  const headingPattern = /<h([1-3])\b([^>]*)>([\s\S]*?)<\/h\1>/gi;
+  const cleanText = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
+  const esc = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const headings: Array<{ level: number; title: string; page: number; id: string }> = [];
+  let indexPage = -1;
+  pages.forEach((page, pageIndex) => {
+    const firstHeading = page.match(/<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/i);
+    if (firstHeading && /^(índice|indice|sumário|sumario|table of contents)$/i.test(cleanText(firstHeading[1]))) indexPage = pageIndex;
+    let match: RegExpExecArray | null;
+    headingPattern.lastIndex = 0;
+    while ((match = headingPattern.exec(page))) {
+      const title = cleanText(match[3]);
+      if (!title || /^(índice|indice|sumário|sumario|table of contents)$/i.test(title)) continue;
+      headings.push({ level: Number(match[1]), title, page: pageIndex + 1, id: "ruje-sec-" + (headings.length + 1) });
+    }
+  });
+  if (!headings.length) return html;
+  let headingNumber = 0;
+  pages = pages.map((page) => page.replace(headingPattern, (full, level: string, attrs: string, inner: string) => {
+    const title = cleanText(inner);
+    if (!title || /^(índice|indice|sumário|sumario|table of contents)$/i.test(title)) return full;
+    headingNumber += 1;
+    return "<h" + level + attrs + ' id="ruje-sec-' + headingNumber + '">' + inner + "</h" + level + ">";
+  }));
+  if (indexPage >= 0) {
+    const indexHeading = pages[indexPage].match(/<h[1-3]\b[^>]*>[\s\S]*?<\/h[1-3]>/i)?.[0] ?? "<h1>Índice</h1>";
+    const rows = headings.map((item) => '<li style="margin:0.35em 0;padding-left:' + ((item.level - 1) * 1.2) + 'em"><a href="#' + item.id + '" style="color:inherit;text-decoration:none">' + esc(item.title) + '</a><span style="float:right">' + item.page + "</span></li>").join("");
+    pages[indexPage] = indexHeading + '<ol class="ruje-automatic-index" style="list-style:none;padding:0">' + rows + "</ol>";
+  }
+  return pages.join('<hr class="page-break">');
+}
+
 async function insertRelevantImages(html: string, theme: string): Promise<{ html: string; count: number }> {
   const chunks = html.split(/(?=<h[1-3]\b)/i);
   const output: string[] = [];
@@ -319,6 +353,8 @@ export const generateWork = createServerFn({ method: "POST" })
       .replace(/\`\`\`$/i, "")
       .trim();
     if (!html) throw new Error(BUSY_MSG);
+
+    if (outputFormat === "normal") html = buildAutomaticIndex(html);
 
     let imagesAdded = 0;
     if (includeImages && outputFormat === "normal") {
