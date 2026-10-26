@@ -104,9 +104,19 @@ function Editor() {
   }
 
   async function exportPowerPoint() {
+    const answer = window.prompt(
+      "Quantos diapositivos pretende na apresentação? Escolha entre 4 e 30.",
+      "12",
+    );
+    if (answer === null) return;
+    const requested = Number(answer);
+    if (!Number.isInteger(requested) || requested < 4 || requested > 30) {
+      toast.error("Indique um número inteiro entre 4 e 30 diapositivos.");
+      return;
+    }
     try {
-      await downloadPowerPoint(work?.title ?? "Apresentação RuJe IA", currentHtml());
-      toast.success("Apresentação PowerPoint preparada.");
+      await downloadPowerPoint(work?.title ?? "Apresentação RuJe IA", currentHtml(), requested);
+      toast.success("Apresentação PowerPoint preparada. Pode editar, reorganizar e substituir elementos no PowerPoint.");
     } catch (error) {
       console.error("[pptx]", error);
       toast.error("Não foi possível preparar o PowerPoint.");
