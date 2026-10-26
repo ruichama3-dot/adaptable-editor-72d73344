@@ -32,10 +32,10 @@ function buildPrompt(w: Record<string, unknown>) {
   const includeImages = opt["includeImages"] === true;
   const outputFormat = opt["outputFormat"] === "powerpoint" ? "powerpoint" : "normal";
   const formatInstruction = outputFormat === "powerpoint"
-    ? "FORMATO POWERPOINT: gera uma apresentação de 8 a 14 diapositivos. Cada diapositivo começa com <h1> ou <h2> e contém 3 a 5 pontos curtos em <p> ou <ul><li>. Não escrevas um ensaio longo, capa extensa, folha de rosto, índice paginado nem parágrafos longos. Organiza: tema, contextualização, objetivos, conceitos principais, desenvolvimento por tópicos, conclusão e referências essenciais."
+    ? "FORMATO POWERPOINT: gera apenas o conteúdo para uma apresentação profissional com no máximo 10 diapositivos no total. NÃO incluas índice, capa extensa, folha de rosto, numeração de páginas nem parágrafos longos. O primeiro diapositivo é uma capa simples com o título e, se fornecidos, estudante/instituição. Os restantes resumem o desenvolvimento do tema em sequência lógica, com títulos objetivos e 3 a 5 pontos breves por diapositivo. Termina com síntese/conclusão; inclui referências apenas de forma compacta quando forem relevantes. Cada diapositivo deve ter conteúdo conciso, claro e próprio para exposição oral."
     : "FORMATO NORMAL: segue de perto a amostra oficial RuJe IA 'Escola Clássica da Economia' no estilo e organização, sem copiar o conteúdo: capa centrada, folha de rosto, índice, introdução, desenvolvimento com títulos e subtítulos hierárquicos, conclusão e bibliografia. Usa <div class=\"sample-cover\"> nas páginas de capa/rosto, <hr class=\"page-break\"> entre páginas, e inicia introdução, conclusão e bibliografia em página nova. Usa apenas dados fornecidos; o índice deve refletir títulos reais. Mantém a estrutura específica do tipo escolhido, mas conserva o mesmo padrão visual da amostra.";
   const imageInstruction = includeImages
-    ? "O utilizador pediu imagens: reserva um ponto adequado no documento para imagens ilustrativas relevantes com legenda, fonte, autor e licença. Não inventes imagens nem atribuições."
+    ? "O utilizador pediu imagens: NÃO cries uma secção geral de imagens nem as coloques no índice. As imagens serão inseridas automaticamente no desenvolvimento, junto da secção cujo conteúdo ilustram. Não inventes imagens nem atribuições."
     : "O utilizador pediu um documento sem imagens: não incluas imagens nem figuras.";
 
   return `És um assistente académico especialista em trabalhos usados em Moçambique. ${formatInstruction} ${imageInstruction} Escreve um resultado completo em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}. Não transformes automaticamente todos os tipos de trabalho em monografias.
@@ -62,8 +62,8 @@ ${manualRefs
 
 REGRAS DE SAÍDA:
 - Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <strong>, <em>. Sem markdown, sem \`\`\`, sem <html>, <head> ou <body>, sem comentários.
-- No formato normal, cada secção principal usa <h1>, subtítulos usam <h2>/<h3> e os parágrafos são completos, justificados e académicos. No PowerPoint, cada diapositivo usa um título claro e 3 a 5 pontos curtos, sem parágrafos longos.
-- PAGINAÇÃO: se outputFormat for normal, separa páginas com exactamente <hr class="page-break"> entre blocos completos; capa, folha de rosto e índice ficam em páginas separadas, e introdução, conclusão e bibliografia começam em página nova. Se outputFormat for powerpoint, não uses separadores de página nem limites de palavras por página; cada bloco de título e pontos representa um diapositivo.
+- No formato normal, cada secção principal usa <h1>, subtítulos usam <h2>/<h3> e os parágrafos são completos, justificados e académicos. No PowerPoint, produz no máximo 10 diapositivos, cada um com título claro e 3 a 5 pontos curtos, sem índice nem parágrafos longos.
+- PAGINAÇÃO: se outputFormat for normal, separa páginas com exactamente <hr class="page-break"> entre blocos completos; capa, folha de rosto e índice ficam em páginas separadas, e introdução, conclusão e bibliografia começam em página nova. Se outputFormat for powerpoint, não uses separadores de página, índice, folha de rosto extensa ou conteúdo de paginação; organiza somente os pontos essenciais para até 10 diapositivos.
 - No formato normal, usa capa e folha de rosto no estilo da amostra com <div class="sample-cover">, quando adequadas. Omite campos vazios e não inventes nomes. No PowerPoint, não cries páginas de capa/rosto extensas.
 - Na introdução contextualiza o tema, apresenta a questão central e anuncia os capítulos. Organiza o desenvolvimento com argumentação progressiva e transições naturais. O índice deve listar apenas títulos efetivamente escritos e nunca páginas fictícias. Mantém uma bibliografia específica ao assunto; não inventes obras, datas ou autores de que não tenhas certeza.
 - Revê ortografia e gramática: o texto final não pode ter erros, repetições nem marcadores de exemplo.
@@ -209,7 +209,7 @@ function escapeImageHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-async function findAcademicImages(topic: string, limit = 3): Promise<string> {
+async function findAcademicImages(topic: string, limit = 1): Promise<string> {
   try {
     const params = new URLSearchParams({
       action: "query", generator: "search", gsrsearch: topic, gsrnamespace: "6",
@@ -221,44 +221,55 @@ async function findAcademicImages(topic: string, limit = 3): Promise<string> {
     });
     if (!response.ok) return "";
     const data = await response.json() as {
-      query?: {
-        pages?: Record<string, {
-          title?: string;
-          imageinfo?: Array<{
-            thumburl?: string;
-            descriptionurl?: string;
-            extmetadata?: Record<string, { value?: string }>;
-          }>;
-        }>;
-      };
+      query?: { pages?: Record<string, { title?: string; imageinfo?: Array<{ thumburl?: string; descriptionurl?: string; extmetadata?: Record<string, { value?: string }> }> }> };
     };
     const plain = (value?: string) => (value ?? "").replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&").trim();
-    const images = Object.values(data.query?.pages ?? {}).flatMap((page) => {
+    return Object.values(data.query?.pages ?? {}).flatMap((page) => {
       const info = page.imageinfo?.[0];
       if (!info?.thumburl || !info.descriptionurl) return [];
       const title = (page.title ?? "Imagem").replace(/^File:/, "");
       const author = plain(info.extmetadata?.Artist?.value) || "Autor não indicado";
       const license = plain(info.extmetadata?.LicenseShortName?.value) || "Consultar licença na fonte";
       return ['<figure class="academic-image"><img src="' + escapeImageHtml(info.thumburl) + '" alt="' + escapeImageHtml(title) + '" style="max-width:100%;height:auto"><figcaption><small>Figura: ' + escapeImageHtml(title) + '. Fonte: <a href="' + escapeImageHtml(info.descriptionurl) + '">' + escapeImageHtml(info.descriptionurl) + '</a>. Autor: ' + escapeImageHtml(author) + '. Licença: ' + escapeImageHtml(license) + '.</small></figcaption></figure>'];
-    });
-    return images.length ? "<h2>Imagens ilustrativas</h2>\\n" + images.join("\n") : "";
+    }).join("\n");
   } catch (error) {
     console.warn("[IA imagens] A pesquisa falhou; o trabalho será gerado sem imagens.", error);
     return "";
   }
 }
 
-function insertImagesAfterIntroduction(html: string, imageHtml: string): string {
-  if (!imageHtml) return html;
-  const intro = html.search(/<h[12][^>]*>\s*introdu[cç][aã]o\b/i);
-  const start = intro >= 0 ? intro : 0;
-  const breakText = '<hr class="page-break">';
-  const breakAt = html.indexOf(breakText, start);
-  if (breakAt >= 0) {
-    const end = breakAt + breakText.length;
-    return html.slice(0, end) + "\n" + imageHtml + "\n" + html.slice(end);
+async function insertRelevantImages(html: string, theme: string): Promise<{ html: string; count: number }> {
+  const chunks = html.split(/(?=<h[1-3]\b)/i);
+  const output: string[] = [];
+  let count = 0;
+  for (const chunk of chunks) {
+    const heading = chunk.match(/^<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/i);
+    if (!heading || count >= 3) {
+      output.push(chunk);
+      continue;
+    }
+    const title = heading[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    if (/^(índice|indice|introdução|introducao|conclusão|conclusao|bibliografia|referências|referencias|resumo|abstract|palavras-chave)/i.test(title)) {
+      output.push(chunk);
+      continue;
+    }
+    const pageBreakAt = chunk.indexOf('<hr class="page-break">');
+    const section = pageBreakAt >= 0 ? chunk.slice(0, pageBreakAt) : chunk;
+    const firstParagraph = /<p\b[^>]*>[\s\S]*?<\/p>/i.exec(section);
+    if (!firstParagraph || section.length < heading[0].length + 40) {
+      output.push(chunk);
+      continue;
+    }
+    const images = await findAcademicImages(theme + " " + title, 1);
+    if (!images) {
+      output.push(chunk);
+      continue;
+    }
+    const insertAt = firstParagraph.index + firstParagraph[0].length;
+    output.push(chunk.slice(0, insertAt) + "\n" + images + "\n" + chunk.slice(insertAt));
+    count++;
   }
-  return html + "\n" + imageHtml;
+  return { html: output.join(""), count };
 }
 
 export const generateWork = createServerFn({ method: "POST" })
@@ -310,12 +321,10 @@ export const generateWork = createServerFn({ method: "POST" })
     if (!html) throw new Error(BUSY_MSG);
 
     let imagesAdded = 0;
-    if (includeImages) {
-      const imageHtml = await findAcademicImages(String(work.theme ?? work.title ?? "educação"), 3);
-      if (imageHtml) {
-        html = insertImagesAfterIntroduction(html, imageHtml);
-        imagesAdded = (imageHtml.match(/<figure class="academic-image">/g) ?? []).length;
-      }
+    if (includeImages && outputFormat === "normal") {
+      const inserted = await insertRelevantImages(html, String(work.theme ?? work.title ?? "educação"));
+      html = inserted.html;
+      imagesAdded = inserted.count;
     }
 
     const { error: upErr } = await context.supabase
