@@ -51,7 +51,7 @@ function documentSlides(html: string, presentationTitle: string, requestedSlides
     }) }))
     .filter((section) => section.title && (section.points.length > 0 || /conclusão|considerações finais|recomendações|referências/i.test(section.title)));
 
-  const maxContentSlides = Math.max(3, Math.min(29, Math.floor(requestedSlides) - 1));
+  const maxContentSlides = Math.max(3, Math.floor(requestedSlides) - 1);
   for (const section of compactSections.slice(0, maxContentSlides)) {
     const points = section.points.slice(0, 5);
     if (!points.length && /conclusão|considerações finais/i.test(section.title)) {
@@ -63,11 +63,11 @@ function documentSlides(html: string, presentationTitle: string, requestedSlides
   if (slides.length < 4) {
     const allPoints = sections.flatMap((section) => section.points);
     const fallback = allPoints.length ? allPoints : [title];
-    for (let i = 0; i < fallback.length && slides.length < Math.min(30, requestedSlides); i += 4) {
+    for (let i = 0; i < fallback.length && slides.length < Math.floor(requestedSlides); i += 4) {
       slides.push({ title: i === 0 ? "Desenvolvimento" : "Pontos complementares", paragraphs: fallback.slice(i, i + 4) });
     }
   }
-  return slides.slice(0, Math.max(4, Math.min(30, Math.floor(requestedSlides))));
+  return slides.slice(0, Math.max(4, Math.floor(requestedSlides)));
 }
 function crc32(bytes: Uint8Array) {
   let crc = -1;
