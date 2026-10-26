@@ -78,8 +78,6 @@ function startOfTodayISO() {
 
 /** Modelos reais da API pública do Google Gemini, por ordem de preferência. */
 const GEMINI_MODELS = [
-  "gemini-3.6-flash",
-  "gemini-3-flash-preview",
   "gemini-2.5-flash",
   "gemini-flash-latest",
   "gemini-2.5-pro",
@@ -107,8 +105,6 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const errors: string[] = [];
 
   for (const model of GEMINI_MODELS) {
-   for (let attempt = 0; attempt < 2; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1000));
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -148,7 +144,6 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
       }
       errors.push(`${model}: ${message}`);
     }
-   }
   }
 
   console.error("[IA] Falha em todos os modelos principais:", errors.join(" | "));
@@ -188,17 +183,14 @@ async function callAI(prompt: string): Promise<string> {
     );
   }
 
-  // Duas rondas completas antes de desistir.
-  for (let round = 0; round < 2; round++) {
-    if (round > 0) await new Promise((r) => setTimeout(r, 3000));
-    if (geminiKey) {
-      const text = await callGemini(prompt, geminiKey);
-      if (text.trim()) return text;
-    }
-    if (gatewayKey) {
-      const text = await callLovableGateway(prompt, gatewayKey).catch(() => "");
-      if (text.trim()) return text;
-    }
+  // Uma passagem por fornecedor evita multiplicar pedidos quando a API limita a taxa.
+  if (geminiKey) {
+    const text = await callGemini(prompt, geminiKey);
+    if (text.trim()) return text;
+  }
+  if (gatewayKey) {
+    const text = await callLovableGateway(prompt, gatewayKey).catch(() => "");
+    if (text.trim()) return text;
   }
 
   throw new Error(BUSY_MSG);
