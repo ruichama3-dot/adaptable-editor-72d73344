@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -62,11 +62,15 @@ function Sel({
   label,
   options,
   defaultValue,
+  value,
+  onChange,
 }: {
   id: string;
   label: string;
   options: string[];
   defaultValue?: string | undefined;
+  value?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
     <div className="space-y-1.5">
@@ -74,7 +78,9 @@ function Sel({
       <select
         id={id}
         name={id}
-        defaultValue={defaultValue}
+        defaultValue={value === undefined ? defaultValue : undefined}
+        value={value}
+        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
         className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         {options.map((o) => (
@@ -124,8 +130,19 @@ function NovoTrabalho() {
   const [opts, setOpts] = useState({ cover: true, index: true, citations: true, references: true });
   const [includeImages, setIncludeImages] = useState(false);
   const [outputFormat, setOutputFormat] = useState<"normal" | "powerpoint">("normal");
-  const [mode, setMode] = useState<"individual" | "grupo">("individual");
+  const [workType, setWorkType] = useState(sample?.work_type ?? "Trabalho Escolar");
+  const [mode, setMode = useState<"individual" | "grupo">("individual");
   const [refsMode, setRefsMode] = useState<"automatica" | "manual">("automatica");
+
+  useEffect(() => {
+    if (sample?.work_type && WORK_TYPES.includes(sample.work_type)) setWorkType(sample.work_type);
+  }, [sample?.work_type]);
+
+  const isPowerPoint = outputFormat === "powerpoint";
+  const isExtendedForm = ["Trabalho Científico", "Monografia", "Projeto de Pesquisa", "Dissertação", "TCC"].includes(workType);
+  const isArticle = ["Artigo Científico", "Revisão Bibliográfica"].includes(workType);
+  const usesCoverDetails = !isPowerPoint && !isArticle;
+  const showInstitutionalDetails = !isPowerPoint;
 
   const fetchAccess = useServerFn(getAccess);
   const { data: access, isLoading: loadingAccess } = useQuery({
@@ -248,7 +265,7 @@ function NovoTrabalho() {
       )}
 
       <form onSubmit={onSubmit} className="mt-7 space-y-6">
-        <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
+        {!isPowerPoint && <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">Modalidade do trabalho</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Choice
@@ -277,7 +294,7 @@ function NovoTrabalho() {
               />
             </div>
           )}
-        </section>
+        </section>}
 
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">Informações académicas</h2>
@@ -295,26 +312,26 @@ function NovoTrabalho() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="title" label="Título do trabalho" defaultValue={sample?.title ?? ""} />
-              <Sel id="work_type" label="Tipo de trabalho" options={WORK_TYPES} defaultValue={sample?.work_type} />
-              <Field id="student_name" label="Nome do estudante" />
-              <Field id="student_number" label="Número do estudante" />
-              <Field id="course" label="Curso" />
-              <Field id="class_group" label="Turma" />
-              <Field id="grade_year" label="Classe / Ano" />
-              <Field id="institution" label="Instituição de ensino" defaultValue={sample?.institution ?? ""} />
-              <Field id="faculty" label="Faculdade" />
-              <Field id="department" label="Departamento" />
-              <Field id="subject" label="Disciplina" />
-              <Field id="teacher" label="Nome do docente" />
-              <Field id="city" label="Cidade" defaultValue="Maputo" />
-              <Field id="country" label="País" defaultValue="Moçambique" />
-              <Field id="due_date" label="Data de entrega" type="date" />
+              <Sel id="work_type" label="Tipo de trabalho" options={WORK_TYPES} value={workType} onChange={setWorkType} />
+              {usesCoverDetails && <Field id="student_name" label="Nome do estudante" />}
+              {usesCoverDetails && <Field id="student_number" label="Número do estudante" />}
+              {showInstitutionalDetails && <Field id="course" label="Curso" />}
+              {isExtendedForm && <Field id="class_group" label="Turma" />}
+              {isExtendedForm && <Field id="grade_year" label="Classe / Ano" />}
+              {showInstitutionalDetails && <Field id="institution" label="Instituição de ensino" defaultValue={sample?.institution ?? ""} />}
+              {isExtendedForm && <Field id="faculty" label="Faculdade" />}
+              {isExtendedForm && <Field id="department" label="Departamento" />}
+              {showInstitutionalDetails && <Field id="subject" label="Disciplina" />}
+              {showInstitutionalDetails && <Field id="teacher" label="Nome do docente" />}
+              {showInstitutionalDetails && <Field id="city" label="Cidade" defaultValue="Maputo" />}
+              {showInstitutionalDetails && <Field id="country" label="País" defaultValue="Moçambique" />}
+              {isExtendedForm && <Field id="due_date" label="Data de entrega" type="date" />
             </div>
           </div>
         </section>
 
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
-          <h2 className="text-lg font-bold">Referências bibliográficas</h2>
+          <h2 className="text-lg font-bold">{isPowerPoint ? "Fontes e referências para a apresentação" : "Referências bibliográficas"}</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Choice
               active={refsMode === "automatica"}
@@ -345,24 +362,24 @@ function NovoTrabalho() {
         </section>
 
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
-          <h2 className="text-lg font-bold">Como pretende receber o trabalho?</h2>
+          <h2 className="text-lg font-bold">Formato de saída</h2>
           <p className="text-muted-foreground mt-1 text-sm">Escolha estas opções antes de gerar. Não alteram os restantes dados do formulário.</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {!isPowerPoint && <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Choice
               active={!includeImages}
               onClick={() => setIncludeImages(false)}
               icon={FileText}
               title="Sem imagens"
-              text="Documento focado no texto académico."
+              text="Documento académico apenas com texto."
             />
             <Choice
               active={includeImages}
               onClick={() => setIncludeImages(true)}
               icon={ImageIcon}
               title="Com imagens"
-              text="Inclui imagens ilustrativas relevantes, com indicação da fonte e licença."
+              text="Imagens colocadas junto da secção do desenvolvimento que ilustram."
             />
-          </div>
+          </div>}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Choice
               active={outputFormat === "normal"}
@@ -379,37 +396,38 @@ function NovoTrabalho() {
               text="Conteúdo organizado em diapositivos para apresentação oral."
             />
           </div>
-          {outputFormat === "powerpoint" && includeImages && (
-            <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-              Nota: nesta versão, as imagens são incorporadas no documento normal. A exportação PowerPoint ainda não coloca imagens dentro dos diapositivos.
-            </p>
-          )}
         </section>
 
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
-          <h2 className="text-lg font-bold">Configurações</h2>
+          <h2 className="text-lg font-bold">{isPowerPoint ? "Opções da apresentação" : "Configurações do documento"}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field id="pages" label="Quantidade de páginas" type="number" min={2} max={60} defaultValue={10} />
+            {!isPowerPoint && <Field id="pages" label="Quantidade de páginas" type="number" min={2} max={60} defaultValue={10} />}
             <Sel id="language" label="Idioma" options={LANGS} />
             <Sel id="academic_level" label="Nível académico" options={LEVELS} />
-            <Sel id="norms" label="Normas" options={NORMS} />
+            {!isPowerPoint && <Sel id="norms" label="Normas académicas" options={NORMS} />}
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {[
-              ["cover", "Gerar capa automática"],
-              ["index", "Gerar índice automático"],
-              ["citations", "Inserir citações automáticas"],
-              ["references", "Referências automáticas"],
-            ].map(([k, label]) => (
-              <label key={k} className="flex items-center justify-between rounded-xl border border-border px-4 py-2.5 text-sm">
-                {label}
-                <Switch
-                  checked={opts[k as keyof typeof opts]}
-                  onCheckedChange={(v) => setOpts((o) => ({ ...o, [k as string]: v }))}
-                />
-              </label>
-            ))}
-          </div>
+          {isPowerPoint ? (
+            <p className="mt-4 rounded-lg border border-border bg-secondary/40 px-3 py-3 text-sm">
+              A apresentação terá até 10 diapositivos, sem índice, com conteúdo resumido para exposição oral.
+            </p>
+          ) : (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {[
+                ["cover", "Gerar capa automática"],
+                ["index", "Gerar índice automático"],
+                ["citations", "Inserir citações automáticas"],
+                ["references", "Referências automáticas"],
+              ].map(([k, label]) => (
+                <label key={k} className="flex items-center justify-between rounded-xl border border-border px-4 py-2.5 text-sm">
+                  {label}
+                  <Switch
+                    checked={opts[k as keyof typeof opts]}
+                    onCheckedChange={(v) => setOpts((o) => ({ ...o, [k as string]: v }))}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
         </section>
 
         <Button type="submit" size="lg" className="shadow-brand w-full" disabled={busy}>
