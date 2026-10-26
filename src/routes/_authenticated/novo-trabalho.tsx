@@ -325,7 +325,7 @@ function NovoTrabalho() {
               {showInstitutionalDetails && <Field id="teacher" label="Nome do docente" />}
               {showInstitutionalDetails && <Field id="city" label="Cidade" defaultValue="Maputo" />}
               {showInstitutionalDetails && <Field id="country" label="País" defaultValue="Moçambique" />}
-              {isExtendedForm && <Field id="due_date" label="Data de entrega" type="date" />
+              {isExtendedForm && <Field id="due_date" label="Data de entrega" type="date" />}
             </div>
           </div>
         </section>
