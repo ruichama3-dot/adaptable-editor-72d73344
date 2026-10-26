@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Users, UserRound, Megaphone } from "lucide-react";
+import { Send, Users, UserRound, Megaphone, Clock3, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 // The notification tables may not be present in the generated Supabase types yet.
@@ -19,6 +20,23 @@ export function AdminSendNotification({ users }: { users: U[] }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+
+  const { data: recent = [], isLoading: historyLoading, error: historyError } = useQuery({
+    queryKey: ["admin-notifications"],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("notifications")
+        .select("id,title,body,user_id,created_at")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) {
+        if (error.code === "42P01") throw new Error("As tabelas de notificações ainda não foram criadas no Supabase.");
+        if (error.code === "42501") throw new Error("Sem permissão para consultar o histórico. Aplique a política de administrador da migração SQL.");
+        throw new Error(error.message || "Não foi possível carregar o histórico.");
+      }
+      return (data ?? []) as Array<{ id: string; title: string; body: string; user_id: string | null; created_at: string }>;
+    },
+  });
 
   async function send(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -145,5 +163,46 @@ export function AdminSendNotification({ users }: { users: U[] }) {
         <Send className="h-4 w-4" /> {sending ? "A enviar..." : target === "all" ? "Enviar para todos" : "Enviar notificação"}
       </Button>
     </form>
+
+    <section className="shadow-soft mt-5 grid gap-3 rounded-2xl border border-border bg-card p-5 sm:max-w-2xl sm:p-6">
+      <div className="flex items-center gap-2">
+        <Clock3 className="h-5 w-5 text-primary" />
+        <div>
+          <h3 className="font-semibold">Últimas notificações</h3>
+          <p className="text-muted-foreground text-xs">As 10 mensagens mais recentes enviadas a partir deste painel.</p>
+        </div>
+      </div>
+      {historyError ? (
+        <p className="flex items-start gap-2 text-sm text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          {historyError instanceof Error ? historyError.message : "Não foi possível carregar o histórico."}
+        </p>
+      ) : historyLoading ? (
+        <p className="text-muted-foreground text-sm">A carregar histórico…</p>
+      ) : recent.length === 0 ? (
+        <p className="text-muted-foreground rounded-lg border border-dashed border-border p-4 text-center text-sm">Ainda não há notificações enviadas.</p>
+      ) : (
+        <div className="divide-y divide-border">
+          {recent.map((n) => {
+            const recipient = n.user_id ? users.find((u) => u.id === n.user_id) : null;
+            return (
+              <article key={n.id} className="py-3 first:pt-0 last:pb-0">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold">{n.title}</p>
+                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
+                    {n.user_id ? "Individual" : "Todos"}
+                  </span>
+                </div>
+                {n.body && <p className="text-muted-foreground mt-1 whitespace-pre-line text-sm">{n.body}</p>}
+                <p className="text-muted-foreground mt-2 text-xs">
+                  {n.user_id ? "Para: " + (recipient?.full_name || recipient?.email || "Utilizador") : "Para todos os utilizadores"}
+                  {" · "}{new Date(n.created_at).toLocaleString("pt-PT")}
+                </p>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
