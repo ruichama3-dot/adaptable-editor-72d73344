@@ -36,7 +36,7 @@ export const studyExamWithAI = createServerFn({ method: "POST" })
       console.error("[RuJe IA exames] Gemini error", response.status, detail.slice(0, 300));
       throw new Error("Não foi possível analisar o PDF. Confirma a chave Gemini e tenta novamente com um ficheiro menor.");
     }
-    const payload = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] }[] }[] };
+    const payload = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     const lesson = payload.candidates?.[0]?.content?.parts?.map(part => part.text ?? "").join("").trim() ?? "";
     if (!lesson) throw new Error("A IA não conseguiu ler o exame. Experimenta um PDF com texto legível.");
     return { lesson };
