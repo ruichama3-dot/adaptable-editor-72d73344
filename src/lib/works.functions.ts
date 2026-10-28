@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-guard";
 import { z } from "zod";
 import { FREE_DAILY_LIMIT } from "@/lib/plans";
-import { resolveAccess } from "@/lib/access";
+import { resolveAccess, canUsePremiumFeatures } from "@/lib/access";
 
 const GenerateInput = z.object({ workId: z.string().uuid() });
 
@@ -342,6 +342,9 @@ export const generateWork = createServerFn({ method: "POST" })
     const workOptions = (work.options ?? {}) as Record<string, unknown>;
     const includeImages = workOptions.includeImages === true;
     const outputFormat = workOptions.outputFormat === "powerpoint" ? "powerpoint" : "normal";
+    if (!canUsePremiumFeatures(access) && (includeImages || outputFormat === "powerpoint")) {
+      throw new Error("A criação de imagens e apresentações PowerPoint está disponível apenas nos planos de 250 MT e 400 MT. Actualize o seu plano para utilizar estas funcionalidades.");
+    }
     const rawContent = await callAI(buildPrompt(work as Record<string, unknown>));
 
     let html = rawContent
@@ -381,6 +384,9 @@ export const generateIllustration = createServerFn({ method: "POST" })
     const access = await resolveAccess(context.supabase, context.userId);
     if (!access.isAdmin && !access.hasAccess) {
       throw new Error("Precisa de um plano activo para gerar imagens.");
+    }
+    if (!canUsePremiumFeatures(access)) {
+      throw new Error("A criação de imagens está disponível apenas nos planos de 250 MT e 400 MT. Actualize o seu plano para utilizar esta funcionalidade.");
     }
 
     const { geminiKey } = readKeys();
