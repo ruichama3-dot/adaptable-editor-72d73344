@@ -1,101 +1,158 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { BookOpenCheck, CheckCircle2, RotateCcw, Sparkles } from "lucide-react";
+import { BookOpenCheck, BrainCircuit, CheckCircle2, Copy, Download, FileText, Loader2, ShoppingCart, Sparkles, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { generateExam, type ExamQuestion } from "@/lib/exams.functions";
+import { Textarea } from "@/components/ui/textarea";
+import { studyExamWithAI } from "@/lib/exam-study.functions";
 
 export const Route = createFileRoute("/_authenticated/exames")({
-  head: () => ({ meta: [{ title: "Exames e simulados | RuJe IA" }, { name: "description", content: "Pratique com exames e simulados, respostas e correção." }] }),
+  head: () => ({ meta: [{ title: "Comprar exames e estudar com IA | RuJe IA" }, { name: "description", content: "Compra exames por 125 MT e prepara-te com aulas explicadas por IA." }] }),
   component: ExamesPage,
 });
 
-type ExamResult = { title: string; notice: string; questions: ExamQuestion[] };
+const METHODS = [
+  { id: "emola", name: "Emola", number: "872954503", holder: "Laura Ermelindo" },
+  { id: "mpesa", name: "M-Pesa", number: "851589567", holder: "JEREMIAS NIUONENO ROMAO" },
+];
 
 function ExamesPage() {
-  const generate = useServerFn(generateExam);
-  const [subject, setSubject] = useState("");
-  const [level, setLevel] = useState("Ensino Secundário");
-  const [topic, setTopic] = useState("");
-  const [type, setType] = useState<"simulado" | "anterior">("simulado");
-  const [questionCount, setQuestionCount] = useState("10");
-  const [exam, setExam] = useState<ExamResult | null>(null);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { user } = Route.useRouteContext();
+  const queryClient = useQueryClient();
+  const study = useServerFn(studyExamWithAI);
+  const [method, setMethod] = useState("emola");
+  const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [lesson, setLesson] = useState("");
+  const [studying, setStudying] = useState(false);
+  const pay = METHODS.find(m => m.id === method)!;
 
-  async function createExam() {
-    if (subject.trim().length < 2 || topic.trim().length < 2) {
-      toast.error("Indica a disciplina e a matéria do exame.");
+  const { data: requests = [], isLoading } = useQuery({
+    queryKey: ["exam-purchase-status", user.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("payment_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const purchase = requests.find((p: any) => String(p.plan ?? "").toLowerCase() === "pacote de exames");
+  const isApproved = Boolean(purchase && /aprov|approved|pago/i.test(String(purchase.status ?? "")));
+  const isPending = Boolean(purchase && /pend/i.test(String(purchase.status ?? "")));
+
+  async function copyNumber() {
+    await navigator.clipboard.writeText(pay.number).catch(() => undefined);
+    toast.success("Número copiado.");
+  }
+
+  async function buyExams(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (busy || isPending || isApproved) return;
+    const form = e.currentTarget;
+    const fields = new FormData(form);
+    const fullName = String(fields.get("full_name") ?? "").trim();
+    const phone = String(fields.get("phone") ?? "").trim();
+    const proof = String(fields.get("proof") ?? "").trim();
+    if (!fullName || !phone || !proof) {
+      toast.error("Preenche o nome, telefone e comprovativo ou referência da transação.");
       return;
     }
-    setLoading(true);
-    setExam(null);
-    setAnswers({});
-    setSubmitted(false);
+    setBusy(true);
+    const { error } = await supabase.from("payment_requests").insert({
+      user_id: user.id,
+      plan: "Pacote de exames",
+      amount: 125,
+      method: pay.name,
+      full_name: fullName,
+      phone,
+      proof,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("Não foi possível enviar o pedido. Tenta novamente.");
+      return;
+    }
+    form.reset();
+    await queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] });
+    await queryClient.invalidateQueries({ queryKey: ["my-payments"] });
+    toast.success("Pedido enviado. O acesso será liberado depois da aprovação do pagamento.");
+  }
+
+  async function studyUploadedExam() {
+    if (!file) {
+      toast.error("Escolhe o PDF do exame primeiro.");
+      return;
+    }
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Só são aceites documentos PDF.");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast.error("O PDF deve ter no máximo 12 MB.");
+      return;
+    }
+    setStudying(true);
+    setLesson("");
     try {
-      const result = await generate({ data: { subject: subject.trim(), level, topic: topic.trim(), type, questionCount: Number(questionCount) } });
-      setExam(result);
+      const buffer = await file.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      const base64 = btoa(binary);
+      const result = await study({ data: { fileName: file.name, mimeType: "application/pdf", base64 } });
+      setLesson(result.lesson);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível gerar o exame.");
+      toast.error(error instanceof Error ? error.message : "Não foi possível analisar o exame.");
     } finally {
-      setLoading(false);
+      setStudying(false);
     }
   }
 
-  const score = exam?.questions.reduce((sum, q, i) => sum + (answers[i] === q.correctAnswer ? 1 : 0), 0) ?? 0;
+  function downloadLesson() {
+    if (!lesson) return;
+    const blob = new Blob([lesson], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "aula-de-preparacao-ruje-ia.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-7 sm:px-6 sm:py-10">
       <div className="flex items-start gap-3">
         <div className="rounded-2xl bg-primary/10 p-3 text-primary"><BookOpenCheck className="h-7 w-7" /></div>
-        <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Exames e simulados</h1>
-          <p className="mt-1 text-muted-foreground">Estuda, responde às perguntas e recebe correção com explicações.</p>
-        </div>
+        <div><h1 className="text-2xl font-extrabold sm:text-3xl">Comprar exames</h1><p className="mt-1 text-muted-foreground">Prepara-te para as provas com exames e explicações inteligentes.</p></div>
       </div>
 
-      {!exam && <section className="mt-7 rounded-2xl border border-border bg-card p-5 sm:p-7">
-        <h2 className="text-lg font-bold">Preparar exame</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Preenche apenas os dados essenciais para criar um exame adaptado ao teu nível.</p>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2"><Label htmlFor="exam-subject">Disciplina</Label><Input id="exam-subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Ex.: Matemática" /></div>
-          <div className="space-y-2"><Label htmlFor="exam-level">Nível / classe / curso</Label><Input id="exam-level" value={level} onChange={e => setLevel(e.target.value)} placeholder="Ex.: 12.ª classe" /></div>
-          <div className="space-y-2 sm:col-span-2"><Label htmlFor="exam-topic">Matéria ou tema</Label><Input id="exam-topic" value={topic} onChange={e => setTopic(e.target.value)} placeholder="Ex.: Funções, trigonometria e equações" /></div>
-          <div className="space-y-2"><Label>Tipo de exame</Label><div className="grid grid-cols-2 gap-2"><Button type="button" variant={type === "simulado" ? "brand" : "glass"} onClick={() => setType("simulado")}>Simulado</Button><Button type="button" variant={type === "anterior" ? "brand" : "glass"} onClick={() => setType("anterior")}>Modelo anterior</Button></div></div>
-          <div className="space-y-2"><Label htmlFor="exam-count">Número de perguntas</Label><select id="exam-count" value={questionCount} onChange={e => setQuestionCount(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="5">5 perguntas</option><option value="10">10 perguntas</option><option value="15">15 perguntas</option><option value="20">20 perguntas</option></select></div>
+      <section className="mt-7 rounded-2xl border-2 border-primary/30 bg-card p-5 sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"><ShoppingCart className="h-3.5 w-3.5" /> PACOTE DE EXAMES</span><h2 className="mt-3 text-2xl font-extrabold">Acesso por 125 MT</h2><p className="mt-1 text-sm text-muted-foreground">Consulta os exames disponíveis e estuda com explicações passo a passo da IA.</p></div>
+          <div className="rounded-2xl bg-primary/10 p-4 text-center"><p className="text-3xl font-extrabold">125 MT</p><p className="text-xs text-muted-foreground">pagamento único</p></div>
         </div>
-        {type === "anterior" && <p className="mt-4 rounded-xl bg-muted p-3 text-sm text-muted-foreground">Serão criadas questões-modelo inspiradas no formato de exames anteriores. Para provas oficiais de anos específicos, consulta também os documentos originais da escola ou do Ministério da Educação.</p>}
-        <Button className="mt-5 w-full" variant="brand" onClick={createExam} disabled={loading}>{loading ? <><span className="animate-spin">◌</span> A preparar exame...</> : <><Sparkles className="h-4 w-4" /> Gerar exame</>}</Button>
-      </section>}
+        {isLoading ? <p className="mt-5 text-sm text-muted-foreground">A verificar o teu acesso...</p> : isApproved ? <div className="mt-5 rounded-xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="h-5 w-5" /> Pagamento aprovado</p><p className="mt-1">O teu acesso ao pacote de exames está confirmado.</p></div> : isPending ? <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4"><p className="font-bold">Pagamento em verificação</p><p className="mt-1 text-sm text-muted-foreground">O pedido foi enviado. Assim que o administrador aprovar o pagamento, esta área será desbloqueada.</p><Button className="mt-3" variant="glass" onClick={() => queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] })}>Atualizar estado</Button></div> : <form className="mt-6 space-y-4" onSubmit={buyExams}>
+          <div className="space-y-2"><Label>Método de pagamento</Label><div className="grid grid-cols-2 gap-2">{METHODS.map(m => <Button key={m.id} type="button" variant={method === m.id ? "brand" : "glass"} onClick={() => setMethod(m.id)}>{m.name}</Button>)}</div></div>
+          <div className="rounded-xl bg-muted p-4"><p className="text-sm">Envia <strong>125 MT</strong> para:</p><p className="mt-2 text-lg font-extrabold">{pay.number}</p><p className="text-sm text-muted-foreground">{pay.holder}</p><Button className="mt-3" type="button" variant="glass" size="sm" onClick={copyNumber}><Copy className="h-4 w-4" /> Copiar número</Button></div>
+          <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="exam-buyer-name">Nome completo</Label><Input id="exam-buyer-name" name="full_name" required placeholder="O teu nome" /></div><div className="space-y-2"><Label htmlFor="exam-buyer-phone">Telefone usado no pagamento</Label><Input id="exam-buyer-phone" name="phone" required placeholder="84... / 85... / 86... / 87..." /></div></div>
+          <div className="space-y-2"><Label htmlFor="exam-proof">Comprovativo ou referência da transação</Label><Textarea id="exam-proof" name="proof" required placeholder="Indica o código da transação ou informação do comprovativo." /></div>
+          <Button type="submit" variant="brand" className="w-full" disabled={busy}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A enviar pedido...</> : <><ShoppingCart className="h-4 w-4" /> Comprar exames por 125 MT</>}</Button>
+        </form>}
+      </section>
 
-      {exam && <section className="mt-7 space-y-5">
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-          <h2 className="text-xl font-bold">{exam.title}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{exam.notice}</p>
-          <p className="mt-2 text-sm font-medium">{exam.questions.length} perguntas · {subject} · {level}</p>
+      {isApproved && <section className="mt-7 space-y-5">
+        <div><h2 className="text-xl font-extrabold">Biblioteca de exames</h2><p className="mt-1 text-sm text-muted-foreground">Os exames devem estar organizados por disciplina, classe e ano. Ainda não existem PDFs oficiais adicionados à biblioteca deste projeto.</p></div>
+        <div className="rounded-2xl border border-dashed border-border p-6 text-center sm:p-8"><FileText className="mx-auto h-10 w-10 text-muted-foreground" /><h3 className="mt-3 font-bold">Adicionar ou estudar um exame em PDF</h3><p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">Quando tiveres um exame em PDF, podes carregá-lo aqui. A IA vai analisar o documento e preparar uma aula completa com resoluções e explicações.</p>
+          <div className="mx-auto mt-5 max-w-lg space-y-3 text-left"><Label htmlFor="exam-pdf">Ficheiro do exame (PDF, até 12 MB)</Label><Input id="exam-pdf" type="file" accept="application/pdf,.pdf" onChange={e => { setFile(e.target.files?.[0] ?? null); setLesson(""); }} /><Button variant="brand" className="w-full" onClick={studyUploadedExam} disabled={studying || !file}>{studying ? <><Loader2 className="h-4 w-4 animate-spin" /> A analisar todas as páginas...</> : <><BrainCircuit className="h-4 w-4" /> Estudar este exame com IA</>}</Button></div>
         </div>
-        {exam.questions.map((q, i) => <article key={i} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-          <h3 className="font-semibold leading-relaxed">{i + 1}. {q.question}</h3>
-          <div className="mt-4 space-y-2">
-            {q.options.map((option, j) => {
-              const chosen = answers[i] === j;
-              const correct = submitted && q.correctAnswer === j;
-              const wrong = submitted && chosen && q.correctAnswer !== j;
-              return <button key={j} type="button" onClick={() => !submitted && setAnswers(prev => ({ ...prev, [i]: j }))} disabled={submitted} className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left text-sm transition-colors ${correct ? "border-green-600 bg-green-50 text-green-950" : wrong ? "border-red-500 bg-red-50 text-red-950" : chosen ? "border-primary bg-primary/10" : "border-border hover:bg-muted/60"}`}>
-                <span className="font-bold">{String.fromCharCode(65 + j)}.</span><span>{option}</span>{correct && <CheckCircle2 className="ml-auto h-4 w-4 shrink-0" />}
-              </button>;
-            })}
-          </div>
-          {submitted && <div className="mt-4 rounded-xl bg-muted p-4 text-sm"><p className="font-semibold">Explicação</p><p className="mt-1">{q.explanation}</p></div>}
-        </article>)}
-        <div className="sticky bottom-3 rounded-2xl border border-border bg-background/95 p-3 shadow-lg backdrop-blur sm:p-4">
-          {submitted ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="font-bold">Resultado: {score}/{exam.questions.length} ({Math.round(score / exam.questions.length * 100)}%)</p><div className="flex gap-2"><Button variant="glass" onClick={() => { setExam(null); setAnswers({}); setSubmitted(false); }}><RotateCcw className="h-4 w-4" /> Novo exame</Button><Button variant="brand" onClick={() => { setAnswers({}); setSubmitted(false); }}>Tentar novamente</Button></div></div> : <Button variant="brand" className="w-full" onClick={() => { if (Object.keys(answers).length < exam.questions.length) { toast.error("Responde a todas as perguntas antes de corrigir."); return; } setSubmitted(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Corrigir respostas</Button>}
-        </div>
+        {file && <p className="text-sm text-muted-foreground">Ficheiro selecionado: {file.name}</p>}
+        {lesson && <article className="rounded-2xl border border-border bg-card p-5 sm:p-7"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h3 className="text-xl font-extrabold">Aula de preparação</h3><Button variant="glass" onClick={downloadLesson}><Download className="h-4 w-4" /> Baixar aula</Button></div><div className="mt-5 whitespace-pre-wrap text-sm leading-7">{lesson}</div></article>}
       </section>}
+      <p className="mt-6 text-xs text-muted-foreground">Nota: a IA é uma ferramenta de estudo. Confirma sempre as respostas com os materiais oficiais do professor ou da instituição.</p>
     </main>
   );
 }
