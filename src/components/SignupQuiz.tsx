@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MessageCircle, GraduationCap, Sparkles } from "lucide-react";
+import { LayoutDashboard, MessageCircle, GraduationCap, Sparkles } from "lucide-react";
 
 type Answers = {
   institution: string;
@@ -24,7 +24,7 @@ const GOALS = [
  * Pequeno questionário mostrado logo após a criação da conta.
  * Guarda instituição e curso no perfil e encaminha para os planos.
  */
-export function SignupQuiz({ onFinish }: { onFinish: () => void }) {
+export function SignupQuiz({ onFinish, onGoPanel }: { onFinish: () => void; onGoPanel: () => void }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [a, setA] = useState<Answers>({ institution: "", course: "", level: "", goal: "" });
@@ -184,6 +184,9 @@ export function SignupQuiz({ onFinish }: { onFinish: () => void }) {
               >
                 <MessageCircle className="h-4 w-4" /> Comunidade WhatsApp
               </a>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={onGoPanel}>
+              <LayoutDashboard className="h-4 w-4" /> Ir no painel
             </Button>
           </div>
         </div>
