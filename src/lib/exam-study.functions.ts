@@ -11,7 +11,29 @@ const StudyExamInput = z.object({
 export const studyExamWithAI = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator(StudyExamInput)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // A interface não é uma barreira de segurança: confirmar a compra no servidor
+    // antes de enviar qualquer PDF para o serviço de IA.
+    const { data: payments, error: paymentError } = await context.supabase
+      .from("payment_requests")
+      .select("id, status, amount, plan")
+      .eq("user_id", context.userId)
+      .eq("plan", "Pacote de exames");
+
+    if (paymentError) {
+      console.error("[RuJe IA exames] Não foi possível confirmar o pagamento", paymentError.message);
+      throw new Error("Não foi possível confirmar o teu acesso. Atualiza a página e tenta novamente.");
+    }
+
+    const hasApprovedPurchase = (payments ?? []).some((payment) =>
+      Number(payment.amount) >= 125 &&
+      /^(aprovado|aprovada|approved|pago|paid)$/i.test(String(payment.status ?? "").trim())
+    );
+
+    if (!hasApprovedPurchase) {
+      throw new Error("O estudo com IA está disponível depois da aprovação do pagamento de 125 MT.");
+    }
+
     const apiKey = process.env.GEMINI_API_KEY?.trim()
       || process.env.GOOGLE_API_KEY?.trim()
       || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
