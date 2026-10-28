@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { generateWork } from "@/lib/works.functions";
 import { getAccess } from "@/lib/access.functions";
+import { canUsePremiumFeatures } from "@/lib/access";
 import { referenceSample } from "@/lib/reference-sample";
 
 import { Button } from "@/components/ui/button";
@@ -147,6 +148,8 @@ function NovoTrabalho() {
     staleTime: 60 * 1000,
   });
 
+  const premiumFeatures = access ? canUsePremiumFeatures(access) : false;
+
   const { data: sample, isLoading: loadingSample } = useQuery({
     queryKey: ["sample", amostra],
     enabled: Boolean(amostra),
@@ -257,6 +260,7 @@ function NovoTrabalho() {
       )}
       <h1 className="text-3xl font-extrabold">Criar novo trabalho</h1>
       <p className="text-muted-foreground mt-1">Quanto mais completo o formulário, melhor o resultado.</p>
+      {access && !premiumFeatures && <p className="mt-3 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm">A criação de imagens e apresentações PowerPoint está disponível nos planos de 250 MT e 400 MT.</p>}
       {sample && (
         <p className="mt-3 rounded-xl border border-primary bg-secondary/50 px-4 py-2.5 text-sm">
           A usar o modelo: <strong>{sample.title}</strong>. Altere os dados para o seu trabalho.
@@ -363,7 +367,7 @@ function NovoTrabalho() {
         <section className="shadow-soft rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-bold">Formato de saída</h2>
           <p className="text-muted-foreground mt-1 text-sm">Escolha estas opções antes de gerar. Não alteram os restantes dados do formulário.</p>
-          {!isPowerPoint && <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {!isPowerPoint && premiumFeatures && <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Choice
               active={!includeImages}
               onClick={() => setIncludeImages(false)}
@@ -387,13 +391,13 @@ function NovoTrabalho() {
               title="Trabalho normal"
               text="Documento académico organizado segundo o modelo de referência da RuJe IA."
             />
-            <Choice
+            {premiumFeatures && <Choice
               active={outputFormat === "powerpoint"}
               onClick={() => { setIncludeImages(false); setOutputFormat("powerpoint"); }}
               icon={Presentation}
               title="Apresentação PowerPoint"
               text="Conteúdo organizado em diapositivos para apresentação oral."
-            />
+            />}
           </div>
         </section>
 
