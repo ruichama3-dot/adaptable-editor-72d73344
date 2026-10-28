@@ -17,6 +17,7 @@ import {
   Sparkles,
   Settings,
   BookOpen,
+  BookOpenCheck,
   MessageCircle,
   Copy,
   Eye,
@@ -153,6 +154,11 @@ function Painel() {
         aria-label="Acessos rápidos"
         className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/60 p-2.5 sm:w-fit"
       >
+        <Button asChild variant="brand" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
+          <Link to="/exames">
+            <BookOpenCheck className="h-4 w-4" /> Exames e simulados
+          </Link>
+        </Button>
         <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
           <Link to="/planos">
             <CreditCard className="h-4 w-4" /> Planos
