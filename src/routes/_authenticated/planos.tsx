@@ -167,6 +167,16 @@ function Planos() {
                 <p className="mt-1.5 flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-primary" /> Editor completo e partilha
                 </p>
+                {p.days >= 14 && (
+                  <>
+                    <p className="mt-1.5 flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" /> Geração e inserção de imagens com IA
+                    </p>
+                    <p className="mt-1.5 flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" /> Criação e exportação de PowerPoint
+                    </p>
+                  </>
+                )}
                 <Button className="mt-5 w-full" onClick={() => choose(p.id)}>
                   Pagar {p.name.replace("Plano ", "plano ")}
                 </Button>
