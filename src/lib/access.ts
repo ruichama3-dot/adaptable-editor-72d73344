@@ -64,8 +64,6 @@ export async function resolveAccess(
 
   const activeSub = (subs ?? []).find((s) => new Date(s.expires_at).getTime() > now);
   if (activeSub) {
-    // A definição actual do plano é a fonte de verdade; o valor guardado
-    // serve apenas para planos personalizados fora da lista.
     const plan = planById(activeSub.plan);
     return {
       isAdmin: false,
@@ -111,4 +109,11 @@ export async function resolveAccess(
     expiresAt: null,
     source: "none",
   };
+}
+
+/** Imagens e PowerPoint são funcionalidades premium (planos de 250 MT e 400 MT). */
+export function canUsePremiumFeatures(access: Access): boolean {
+  if (access.isAdmin) return true;
+  const plan = planById(access.plan);
+  return access.hasAccess && (plan?.price ?? 0) >= 250;
 }
