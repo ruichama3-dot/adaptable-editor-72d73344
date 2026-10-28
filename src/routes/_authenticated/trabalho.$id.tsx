@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { DocPages, type DocPagesHandle } from "@/components/DocPages";
 import { DownloadWorkButton } from "@/components/DownloadWorkButton";
 import { AcademicImageTools } from "@/components/AcademicImageTools";
+import { getAccess } from "@/lib/access.functions";
+import { canUsePremiumFeatures } from "@/lib/access";
+import { useServerFn } from "@tanstack/react-start";
 import { joinPages, splitPages } from "@/lib/doc-pages";
 import { downloadPowerPoint } from "@/lib/powerpoint";
 import { Button } from "@/components/ui/button";
@@ -49,6 +52,9 @@ function Editor() {
   const [saving, setSaving] = useState(false);
   const [html, setHtml] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
+  const fetchAccess = useServerFn(getAccess);
+  const { data: access } = useQuery({ queryKey: ["my-access"], queryFn: () => fetchAccess({ data: undefined }), staleTime: 60 * 1000 });
+  const premiumFeatures = access ? canUsePremiumFeatures(access) : false;
 
   const { data: work } = useQuery({
     queryKey: ["work", id],
@@ -161,7 +167,7 @@ function Editor() {
           {html !== null && work && (
             <>
               <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
-              <Button variant="outline" onClick={() => void exportPowerPoint()}><Presentation className="h-4 w-4" /> {(work.options as Record<string, unknown> | null)?.outputFormat === "powerpoint" ? "Descarregar apresentação" : "PowerPoint"}</Button>
+              {premiumFeatures && <Button variant="outline" onClick={() => void exportPowerPoint()}><Presentation className="h-4 w-4" /> {(work.options as Record<string, unknown> | null)?.outputFormat === "powerpoint" ? "Descarregar apresentação" : "PowerPoint"}</Button>}
             </>
           )}
           <Button onClick={save} disabled={saving}>
@@ -233,7 +239,7 @@ function Editor() {
         </Button>
       </div>
 
-      <div className="mt-3"><AcademicImageTools onInsert={(imageHtml) => { docRef.current?.focusedPage()?.focus(); document.execCommand("insertHTML", false, imageHtml); }} /></div>
+      {premiumFeatures && <div className="mt-3"><AcademicImageTools onInsert={(imageHtml) => { docRef.current?.focusedPage()?.focus(); document.execCommand("insertHTML", false, imageHtml); }} /></div>}
 
       {html !== null && <DocPages ref={docRef} html={html} editable version={version} />}
 
