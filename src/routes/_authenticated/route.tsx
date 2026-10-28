@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { applyTheme, readTheme, t, usePreferences } from "@/lib/preferences";
-import { LogOut, Settings, CreditCard, ShieldCheck, LayoutDashboard } from "lucide-react";
+import { LogOut, Settings, CreditCard, ShieldCheck, LayoutDashboard, BookOpenCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -62,6 +62,11 @@ function AuthedLayout() {
                 </Link>
               </Button>
             )}
+            <Button asChild variant="glass" size="sm" className={navBtn}>
+              <Link to="/exames">
+                <BookOpenCheck className="h-4 w-4" /> Exames
+              </Link>
+            </Button>
             <Button asChild variant="glass" size="sm" className={navBtn}>
               <Link to="/planos">
                 <CreditCard className="h-4 w-4" /> {t(lang, "planos")}
