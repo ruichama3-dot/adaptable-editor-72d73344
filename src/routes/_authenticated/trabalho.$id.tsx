@@ -228,9 +228,9 @@ function Editor() {
         <button type="button" className={btn} onClick={() => cmd("insertOrderedList")} aria-label="Lista numerada">
           <ListOrdered className="h-4 w-4" />
         </button>
-        <button type="button" className={btn} onClick={insertImage} aria-label="Inserir imagem">
+        {premiumFeatures && <button type="button" className={btn} onClick={insertImage} aria-label="Inserir imagem">
           <ImageIcon className="h-4 w-4" />
-        </button>
+        </button>}
         <button type="button" className={btn} onClick={insertTable} aria-label="Inserir tabela">
           <TableIcon className="h-4 w-4" />
         </button>
