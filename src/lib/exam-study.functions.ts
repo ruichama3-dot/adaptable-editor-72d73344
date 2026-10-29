@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-guard";
 import { z } from "zod";
+import { createHash } from "node:crypto";
+import { get, put } from "@vercel/blob";
 
 const StudyExamInput = z.object({
   fileName: z.string().trim().min(1).max(180),
@@ -34,7 +36,7 @@ export const studyExamWithAI = createServerFn({ method: "POST" })
       throw new Error("O estudo com IA está disponível depois da aprovação do pagamento de 125 MT.");
     }
 
-    const apiKey = process.env.GEMINI_API_KEY?.trim()
+    // Reutiliza uma aula já preparada para este PDF. Assim, abrir o mesmo exame\n    // novamente não faz uma nova chamada paga à API Gemini.\n    const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();\n    const cacheKey = createHash("sha256").update(data.fileName).update(":").update(data.base64).digest("hex");\n    const cachePath = `exam-lessons/${cacheKey}.json`;\n    if (blobToken) {\n      try {\n        const cached = await get(cachePath, { access: "private", token: blobToken });\n        if (cached) {\n          const cachedText = await new Response(cached.stream).text();\n          const saved = JSON.parse(cachedText) as { lesson?: string };\n          if (saved.lesson?.trim()) return { lesson: saved.lesson, cached: true };\n        }\n      } catch { /* Cache ausente: preparar a aula uma única vez. */ }\n    }\n\n    const apiKey = process.env.GEMINI_API_KEY?.trim()
       || process.env.GOOGLE_API_KEY?.trim()
       || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
     if (!apiKey) throw new Error("O serviço de IA não está configurado. O administrador deve configurar GEMINI_API_KEY na Vercel.");
