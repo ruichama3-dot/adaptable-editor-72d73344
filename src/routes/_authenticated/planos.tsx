@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, CheckCircle2, Clock, Copy, Crown, Loader2 } from "lucide-react";
+import { BookOpenCheck, Check, CheckCircle2, Clock, Copy, Crown, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/planos")({
@@ -111,7 +111,30 @@ function Planos() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-5 sm:py-8">
       <h1 className="text-3xl font-extrabold">Planos RuJe IA</h1>
-      <p className="text-muted-foreground mt-1">Escolha o plano, pague por Emola ou M-Pesa e envie o comprovativo.</p>
+      <p className="text-muted-foreground mt-1">Escolha o que pretende comprar: acesso para criar trabalhos académicos ou o pacote de exames.</p>
+
+      <section aria-label="Escolher produto" className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border-2 border-primary bg-card p-5 sm:p-6">
+          <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary">
+            <GraduationCap className="h-6 w-6" />
+          </div>
+          <h2 className="mt-4 text-lg font-extrabold">Criar trabalhos académicos</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Escolha um plano para criar monografias, TCC, relatórios, seminários e outros trabalhos com IA.</p>
+          <Button className="mt-5 w-full" onClick={() => document.getElementById("planos-trabalhos")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+            Ver planos para trabalhos
+          </Button>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary">
+            <BookOpenCheck className="h-6 w-6" />
+          </div>
+          <h2 className="mt-4 text-lg font-extrabold">Comprar exames</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Acesso ao pacote de exames por 125 MT, com opção de estudar os conteúdos e as respostas com IA.</p>
+          <Button asChild variant="outline" className="mt-5 w-full">
+            <Link to="/exames">Ver pacote de exames · 125 MT</Link>
+          </Button>
+        </div>
+      </section>
 
       {sub && (
         <div className="mt-5 rounded-2xl border border-primary bg-secondary/60 p-5">
@@ -138,7 +161,7 @@ function Planos() {
         </div>
       ) : (
         <>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section id="planos-trabalhos" className="mt-8 scroll-mt-6">\n            <h2 className="text-2xl font-extrabold">Planos para criar trabalhos</h2>\n            <p className="text-muted-foreground mt-1 text-sm">Escolha a duração do acesso que melhor se adapta a si.</p>\n          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p) => (
               <div
                 key={p.id}
@@ -184,7 +207,7 @@ function Planos() {
             ))}
           </div>
 
-          {plan && (
+          </section>\n\n          {plan && (
             <section id="pagamento" className="shadow-soft mt-8 rounded-2xl border border-border bg-card p-6">
               <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
                 Passo {step === 2 ? "1" : "2"} de 2
