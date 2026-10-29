@@ -81,5 +81,14 @@ export const studyExamWithAI = createServerFn({ method: "POST" })
     const payload = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     const lesson = payload.candidates?.[0]?.content?.parts?.map(part => part.text ?? "").join("").trim() ?? "";
     if (!lesson) throw new Error("A IA não conseguiu ler o exame. Experimenta um PDF com texto legível.");
-    return { lesson };
+    if (blobToken) {
+      try {
+        await put(cachePath, JSON.stringify({ lesson, fileName: data.fileName, preparedAt: new Date().toISOString() }), {
+          access: "private", token: blobToken, addRandomSuffix: false, contentType: "application/json",
+        });
+      } catch (cacheError) {
+        console.error("[RuJe IA exames] Não foi possível guardar a aula em cache", cacheError);
+      }
+    }
+    return { lesson, cached: false };
   });
