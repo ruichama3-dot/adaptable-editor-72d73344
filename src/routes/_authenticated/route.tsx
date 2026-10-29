@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Logo } from "@/components/Logo";
@@ -23,6 +23,15 @@ function AuthedLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAdmin } = useIsAdmin();
+  const { user } = Route.useRouteContext();
+  const { data: hasExamPurchase = false } = useQuery({
+    queryKey: ["nav-exam-purchase", user.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("payment_requests").select("status, amount, plan").eq("user_id", user.id).eq("plan", "Pacote de exames");
+      if (error) return false;
+      return (data ?? []).some((payment) => Number(payment.amount) >= 125 && /^(aprovado|aprovada|approved|pago|paid)$/i.test(String(payment.status ?? "").trim()));
+    },
+  });
   const { lang } = usePreferences();
   const [confirmOut, setConfirmOut] = useState(false);
 
@@ -64,7 +73,7 @@ function AuthedLayout() {
             )}
             <Button asChild variant="glass" size="sm" className={navBtn}>
               <Link to="/exames">
-                <BookOpenCheck className="h-4 w-4" /> Exames
+                <BookOpenCheck className="h-4 w-4" /> {hasExamPurchase ? "Ver Exames" : "Comprar Exames"}
               </Link>
             </Button>
             <Button asChild variant="glass" size="sm" className={navBtn}>
