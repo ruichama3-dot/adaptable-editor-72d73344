@@ -19,6 +19,43 @@ export function prepareExamLesson(exam: PreparedExam): string {
   const normalizedSubject = subject.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
   const normalizedName = name.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
   const isMathematics2020 = normalizedSubject.includes("matemat") && year === "2020";
+  if (normalizedSubject.includes("matemat") && year === "2021") {
+    return common + `LEITURA ORIENTADA — MATEMÁTICA, 12.ª CLASSE, 2021
+
+O enunciado de 2021 contém 40 questões de escolha múltipla. A leitura do PDF mostra estes blocos: lógica matemática (1–6), expressões algébricas e equações, inequações e valor absoluto, contagem e probabilidade (aprox. 19–23), logaritmos e funções (24–26), sucessões e limites (27–33). Estuda cada bloco com o enunciado aberto e aplica o método às alternativas.
+
+1. LÓGICA MATEMÁTICA (1–6)
+Uma proposição é uma frase declarativa que pode ser verdadeira ou falsa. “x+1=4” depende do valor de x; “3+4=7” já tem valor lógico definido. Usa ¬ para negação, ∧ para “e”, ∨ para “ou” e ⇒ para implicação. Leis de De Morgan: ¬(p∧q)=¬p∨¬q e ¬(p∨q)=¬p∧¬q. A negação de x²>1 é x²≤1, incluindo a igualdade. Para negar “para todo”, usa “existe pelo menos um”; para negar “existe”, usa “para todo”.
+Método: traduz primeiro as palavras para símbolos e só depois aplica a regra lógica.
+
+2. EXPRESSÕES, DOMÍNIO E EQUAÇÕES
+Numa fracção, o denominador não pode ser zero. Numa raiz quadrada real, o radicando deve ser maior ou igual a zero. Num logaritmo, o argumento deve ser positivo e a base positiva e diferente de 1. Resolve equações simplificando ambos os membros e verifica as soluções na expressão original.
+Para equações biquadradas, como x⁴−5x²+4=0, substitui t=x²: t²−5t+4=(t−1)(t−4)=0. Logo x²=1 ou x²=4 e as soluções são x=−2, −1, 1, 2. Este método só deve ser usado quando a equação tem potências compatíveis com a substituição.
+
+3. INEQUAÇÕES E VALOR ABSOLUTO
+Ao multiplicar ou dividir uma inequação por um número negativo, inverte o sinal. Numa fracção racional, marca os zeros do numerador e os valores proibidos do denominador e constrói uma tabela de sinais.
+|x−a| representa distância entre x e a. A igualdade |u|=u exige u≥0; |u|=−u exige u≤0. Ao resolver |x−4|=3x−2, começa por impor 3x−2≥0, pois o valor absoluto nunca é negativo; resolve depois os dois casos x−4=3x−2 e −(x−4)=3x−2, verifica as condições e rejeita soluções incompatíveis.
+
+4. CONTAGEM E PROBABILIDADE (aprox. 19–23)
+Para ordenar n objectos distintos, usa n!. Para formar palavras que começam por uma vogal, escolhe a vogal inicial e ordena as letras restantes; se houver letras repetidas, corrige a contagem. Em combinações, a ordem não importa: C(n,k)=n!/[k!(n−k)!].
+Duas moedas têm quatro resultados equiprováveis: cara-cara, cara-coroa, coroa-cara e coroa-coroa. Só um tem coroa nos dois lançamentos, logo a probabilidade é 1/4. O contrário de um acontecimento certo é um acontecimento impossível.
+
+5. LOGARITMOS E FUNÇÕES (24–26)
+Para f(x)=log_b(x+c), exige x+c>0. Para encontrar o zero, resolve log_b(x+c)=0; como log_b(1)=0, resulta x+c=1, respeitando o domínio. Uma função é bijectiva quando é injectiva e sobrejectiva: entradas diferentes não partilham imagem e todos os elementos do contradomínio são atingidos.
+
+6. SUCESSÕES E LIMITES (27–33)
+A sucessão 1,4,9,16,25,… é formada por quadrados perfeitos, pelo que uₙ=n², começando em n=1. Numa progressão aritmética, r=aₙ−aₙ₋₁ e aₙ=a₁+(n−1)r. Para limites, tenta primeiro a substituição directa; se surgir indeterminação, factoriza, racionaliza ou compara os termos de maior grau. A regra do quociente só pode ser aplicada directamente se o limite do denominador for diferente de zero.
+Quando o limite tende para infinito, analisa o sinal e o comportamento do gráfico; não escolhas uma opção apenas pela aparência.
+
+PLANO DE PREPARAÇÃO PARA 2026
+1. Refaz as perguntas de lógica e escreve as negações passo a passo.
+2. Treina domínio de expressões antes de resolver equações e inequações.
+3. Em contagem, decide se a ordem importa; em probabilidade, enumera os casos possíveis.
+4. Revê domínio e zeros de logaritmos.
+5. Resolve sucessões e limites mostrando cada transformação.
+6. Compara o resultado final com as alternativas do enunciado antes de responder.
+`;
+  }
   if (isMathematics2020) {
     return common + `LEITURA ORIENTADA DO EXAME — MATEMÁTICA, 12.ª CLASSE, 2020
 Este enunciado tem 40 perguntas de escolha múltipla. O exame combina técnicas de cálculo algébrico, contagem e probabilidade, sucessões, limites, continuidade e cálculo diferencial. A preparação deve focar o método de resolução: identificar o tema, escolher a regra adequada, calcular sem saltar passos e só depois comparar o resultado com as alternativas.
