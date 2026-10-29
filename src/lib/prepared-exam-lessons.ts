@@ -17,6 +17,67 @@ export function prepareExamLesson(exam: PreparedExam): string {
     "Exame": `1. Leitura estratégica do enunciado\nLeia todas as instruções e observe os verbos de comando: define pede significado preciso; explica pede causa ou funcionamento; compara exige semelhanças e diferenças; calcula exige operações demonstradas; justifica pede razões ou evidências. Sublinhe dados, unidades e condições.\n\n2. Estrutura de uma resposta completa\nComece pela resposta directa. Acrescente a regra, conceito ou fórmula que a sustenta. Mostre o raciocínio em ordem e conclua com uma frase curta. Em cálculos, indique dados, fórmula, substituição, resultado e unidade. Em respostas teóricas, use termos técnicos e exemplos apenas quando forem relevantes.\n\n3. Verificação final\nConfirme que respondeu a todas as alíneas, que os números foram copiados correctamente, que as unidades são coerentes e que a resposta corresponde ao verbo de comando. Esta secção é um guia de método; os conteúdos específicos dependem da disciplina identificada no exame.`
   };
   const normalizedSubject = subject.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  const normalizedName = name.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  const isMathematics2020 = normalizedSubject.includes("matemat") && year === "2020";
+  if (isMathematics2020) {
+    return common + `LEITURA ORIENTADA DO EXAME — MATEMÁTICA, 12.ª CLASSE, 2020
+Este enunciado tem 40 perguntas de escolha múltipla. O exame combina técnicas de cálculo algébrico, contagem e probabilidade, sucessões, limites, continuidade e cálculo diferencial. A preparação deve focar o método de resolução: identificar o tema, escolher a regra adequada, calcular sem saltar passos e só depois comparar o resultado com as alternativas.
+
+BLOCO 1 — ÁLGEBRA, FACTORIAIS E CONTAGEM (perguntas iniciais)
+Simplificação algébrica: antes de escolher uma alternativa, identifica os factores comuns, respeita parênteses e verifica se a expressão foi simplificada sem alterar o seu domínio. Em expressões com factorial, lembra-te de que n! = n(n−1)(n−2)…1 e de que (n+1)! = (n+1)n!. Esta relação permite cancelar factores com segurança.
+Anagramas: a pergunta 4 pede anagramas de CAPÍTULO terminados em P. Fixando P na última posição, restam 7 letras distintas para ordenar. Logo, o número de anagramas é 7! = 7×6×5×4×3×2×1 = 5 040. A alternativa correcta é a que apresenta 5 040.
+Como evitar o erro: não calcular 8! porque a posição final já está fixada; não multiplicar novamente por uma escolha de posição para P.
+
+BLOCO 2 — PROBABILIDADE E ACONTECIMENTOS
+Na pergunta das bolas, a urna tem 5 vermelhas, 4 brancas e 3 pretas: total = 5+4+3 = 12. Os casos favoráveis a retirar uma branca são 4. Assim, P(branca)=4/12=1/3. A resposta deve ser uma fracção simplificada.
+Num dado, enumera o espaço amostral {1,2,3,4,5,6}. “Divisor de 5” corresponde a {1,5}; “múltiplo de 2” corresponde a {2,4,6}; “divisor de 3” corresponde a {1,3}. Dois acontecimentos são compatíveis quando têm pelo menos um resultado em comum; são incompatíveis quando não partilham resultados. Faz a intersecção dos conjuntos em vez de escolher pelo significado informal das palavras.
+Fórmula de revisão: P(A)=n(A)/n(Ω), quando os resultados são equiprováveis.
+
+BLOCO 3 — SUCESSÕES E PROGRESSÕES (perguntas 7–14)
+Progressão aritmética (P.A.): a diferença entre termos consecutivos é constante. A razão é r=a₂−a₁ e o termo geral é aₙ=a₁+(n−1)r. Na sequência −40, −37, −34, −31,…, a₁=−40 e r=3; então aₙ=−40+3(n−1)=3n−43. Esta é a expressão a procurar na pergunta 10.
+Soma de uma P.A.: Sₙ=n(a₁+aₙ)/2. Na pergunta sobre a₁=6, r=4 e os primeiros 20 termos, a₂₀=6+19×4=82 e S₂₀=20(6+82)/2=880.
+Progressão geométrica (P.G.): o quociente entre termos consecutivos é constante: q=a₂/a₁. Para 2, 6, 18, 54,…, q=3. A soma dos primeiros n termos, para q≠1, é Sₙ=a₁(qⁿ−1)/(q−1). Assim, S₁₀=2(3¹⁰−1)/(3−1)=59 048.
+Para classificar uma sucessão, calcula alguns termos e compara: diferença constante indica P.A.; quociente constante indica P.G. A monotonia exige verificar se os termos crescem, decrescem ou alternam. Não confundas o termo geral com a soma dos termos.
+
+BLOCO 4 — LIMITES (perguntas 15–21, aproximadamente)
+Começa por substituir o valor indicado. Se obtiveres um número finito, esse é normalmente o limite. Se aparecer 0/0, não concluas que o limite é zero: factoriza, simplifica factores comuns ou racionaliza quando há raízes.
+Exemplo do método: lim(x→3)(x²−9)/(x−3) = lim(x→3)((x−3)(x+3))/(x−3) = lim(x→3)(x+3)=6.
+Para limites com polinómios no infinito, compara os graus e os coeficientes dos termos de maior grau. Para expressões com raízes, a racionalização pode eliminar a indeterminação. Mantém os parênteses e substitui apenas depois da simplificação válida.
+
+BLOCO 5 — CONTINUIDADE (perguntas 22–26)
+Uma função é contínua em x=a quando: (1) f(a) está definida; (2) o limite quando x tende para a existe; (3) esse limite é igual a f(a). Num gráfico, compara o comportamento pela esquerda e pela direita. Se os limites laterais forem diferentes, o limite bilateral não existe. Um ponto vazio no gráfico pode indicar um valor não definido; um ponto cheio indica o valor atribuído à função.
+Em funções definidas por ramos, calcula cada ramo no lado correspondente. Para continuidade num intervalo fechado [a,b], a função deve ser contínua no interior, contínua à direita em a e contínua à esquerda em b.
+
+BLOCO 6 — DERIVADAS, EXTREMOS E GRÁFICOS (perguntas 27–40)
+A derivada f'(a) é o declive da recta tangente ao gráfico no ponto de abcissa a. Não é, em geral, o valor da função nesse ponto. Regras essenciais:
+• (xⁿ)'=nxⁿ⁻¹; (c)'=0; (u+v)'=u'+v'.
+• Regra do produto: (uv)'=u'v+uv'.
+• Regra do quociente: (u/v)'=(u'v−uv')/v², para v≠0.
+• Regra da cadeia: se y=F(g(x)), então y'=F'(g(x))g'(x).
+• (eˣ)'=eˣ; (√u)'=u'/(2√u), onde a expressão está definida.
+Para uma função definida por ramos, deriva cada ramo no seu intervalo e verifica separadamente os pontos de junção. A derivada pode não existir em cantos, cúspides, descontinuidades ou tangentes verticais.
+Crescimento e decrescimento: constrói uma tabela de sinais de f'. Se f'>0, a função cresce; se f'<0, decresce. Os pontos críticos são onde f'=0 ou não existe. Um máximo ou mínimo local é confirmado pela mudança de sinal de f'. A segunda derivada ajuda a estudar a concavidade: f''>0 indica concavidade voltada para cima e f''<0 para baixo; um ponto de inflexão requer mudança de concavidade.
+Exemplo: para f(x)=3x²−4x+1, f'(x)=6x−4. Em x=2, f'(2)=8, portanto a tangente tem declive 8. Para estudar extremos, resolve f'(x)=0 e analisa o sinal nos intervalos.
+
+RESPOSTAS E MÉTODOS QUE PODEM SER CONFIRMADOS A PARTIR DO ENUNCIADO
+• Pergunta 4: 7! = 5 040 anagramas.
+• Pergunta 6: 4/(5+4+3)=1/3.
+• Pergunta 9: as duas primeiras sucessões são, respectivamente, P.A. e P.G.; a terceira, com diferenças constantes −2, é P.A. Logo, a sequência de classificações é P.A., P.G., P.A.
+• Pergunta 10: aₙ=3n−43.
+• Pergunta da soma dos 20 primeiros termos da P.A. com a₁=6 e r=4: S₂₀=880.
+• Pergunta da soma dos 10 primeiros termos de 2, 6, 18, 54,…: S₁₀=59 048.
+Para as restantes perguntas, resolve a expressão exactamente como aparece no PDF aberto ao lado; alguns símbolos matemáticos e gráficos precisam de ser lidos no próprio enunciado. Não escolhas uma alternativa apenas pela semelhança do tema.
+
+PLANO DE ESTUDO PARA O EXAME DE 2026
+1. Refaz primeiro as perguntas de sucessões e progressões, treinando termo geral e soma.
+2. Resolve probabilidade com espaço amostral e casos favoráveis.
+3. Pratica limites por substituição, factorizar e racionalizar.
+4. Revê continuidade por limites laterais e valor da função.
+5. Treina derivadas, tabela de sinais, extremos e concavidade.
+6. Em cada pergunta, escreve a regra usada e verifica o resultado antes de marcar a alternativa.
+`;
+  }
+
   const lessonKey = normalizedSubject.includes("matemat") ? "Matemática" : normalizedSubject.includes("quimic") ? "Química" : normalizedSubject.includes("ingles") ? "Inglês" : "Exame";
   const lesson = lessons[lessonKey] ?? lessons.Exame;
   return common + lesson + `\n\nPlano de revisão final\n1. Resolve as perguntas do exame pela ordem indicada. 2. Marca os tópicos que exigem mais treino. 3. Refaz os cálculos sem consultar a solução. 4. Confirma a apresentação e a conclusão de cada resposta.\n\nRuJe IA · Material de apoio ao estudo.`;
