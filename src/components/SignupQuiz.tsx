@@ -183,7 +183,7 @@ export function SignupQuiz({ onFinish, onGoPanel }: { onFinish: () => void; onGo
           </p>
           <div className="mt-6 space-y-3">
             <Button className="w-full" size="lg" onClick={onFinish}>
-              Ver planos e começar
+              Escolher o que pretendo fazer
             </Button>
             <Button asChild variant="outline" className="w-full">
               <a
