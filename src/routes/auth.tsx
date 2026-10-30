@@ -11,7 +11,7 @@ import { SignupQuiz } from "@/components/SignupQuiz";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: z.object({ modo: z.enum(["entrar", "registo"]).optional(), social: z.enum(["google"]).optional() }),
+  validateSearch: z.object({ modo: z.enum(["entrar", "registo"]).optional(), social: z.enum(["google", "google-login"]).optional() }),
   head: () => ({
     meta: [
       { title: "Entrar ou criar conta | RuJe IA" },
@@ -86,11 +86,12 @@ function AuthPage() {
   }
 
 
-  async function handleGoogleSignup() {
+  async function handleGoogleSignup(intent: "signup" | "login" = "signup") {
     setLoading(true);
+    const callback = intent === "signup" ? "/auth?modo=registo&social=google" : "/auth?modo=entrar&social=google-login";
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + "/auth?modo=registo&social=google" },
+      options: { redirectTo: window.location.origin + callback },
     });
     if (error) {
       setLoading(false);
@@ -136,7 +137,7 @@ function AuthPage() {
 
           <TabsContent value="entrar">
             <form onSubmit={handleLogin} className="mt-5 space-y-4">
-              <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={handleGoogleSignup}>
+              <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={() => handleGoogleSignup("login")}>
                 <span className="mr-2 font-bold text-base">G</span> Entrar com Google
               </Button>
               <div className="space-y-1.5">
@@ -158,7 +159,7 @@ function AuthPage() {
 
           <TabsContent value="registo">
             <form onSubmit={handleSignup} className="mt-5 space-y-4">
-              <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={handleGoogleSignup}>
+              <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={() => handleGoogleSignup("signup")}>
                 <span className="mr-2 font-bold text-base">G</span> Continuar com Google
               </Button>
               <p className="text-center text-xs text-muted-foreground">ou cria conta com e-mail</p>
