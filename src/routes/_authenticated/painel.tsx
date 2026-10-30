@@ -13,6 +13,7 @@ import {
   Plus,
   Trash2,
   FileText,
+  Download,
   Clock,
   Sparkles,
   BookOpen,
