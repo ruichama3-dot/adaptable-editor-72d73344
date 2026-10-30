@@ -18,7 +18,7 @@ const choices = [
     description: "Produz trabalhos escolares e académicos com apoio de inteligência artificial, incluindo monografias, TCC, relatórios, seminários e artigos.",
     detail: "Planos a partir de 30 MT",
     icon: FileText,
-    to: "/planos" as const,
+    to: "/novo-trabalho" as const,
     label: "Começar um trabalho",
   },
   {
