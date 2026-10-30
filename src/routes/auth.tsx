@@ -11,7 +11,7 @@ import { SignupQuiz } from "@/components/SignupQuiz";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: z.object({ modo: z.enum(["entrar", "registo"]).optional(), social: z.enum(["google", "google-login"]).optional() }),
+  validateSearch: z.object({ modo: z.enum(["entrar", "registo"]).optional() }),
   head: () => ({
     meta: [
       { title: "Entrar ou criar conta | RuJe IA" },
@@ -39,15 +39,14 @@ function signupErrorMessage(message: string) {
 }
 
 function AuthPage() {
-  const { modo, social } = Route.useSearch();
+  const { modo } = Route.useSearch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session && social === "google") setShowQuiz(true);
-      else if (data.session) navigate({ to: "/painel", replace: true });
+      if (data.session) navigate({ to: "/painel", replace: true });
     });
   }, [navigate]);
 
@@ -86,22 +85,6 @@ function AuthPage() {
   }
 
 
-  async function handleGoogleSignup(intent: "signup" | "login" = "signup") {
-    setLoading(true);
-    const callback = intent === "signup" ? "/auth?modo=registo&social=google" : "/auth?modo=entrar&social=google-login";
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + callback },
-    });
-    if (error) {
-      setLoading(false);
-      const message = error.message.toLowerCase();
-      toast.error(message.includes("provider") || message.includes("not enabled")
-        ? "A opção de conta Google ainda está a ser activada. Tenta novamente mais tarde."
-        : "Não foi possível continuar com Google. Tenta novamente.");
-    }
-  }
-
   async function handleReset() {
     const email = window.prompt("Indique o seu e-mail para recuperar a palavra-passe:");
     if (!email) return;
@@ -137,9 +120,6 @@ function AuthPage() {
 
           <TabsContent value="entrar">
             <form onSubmit={handleLogin} className="mt-5 space-y-4">
-              <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={() => handleGoogleSignup("login")}>
-                <span className="mr-2 font-bold text-base">G</span> Entrar com Google
-              </Button>
               <div className="space-y-1.5">
                 <Label htmlFor="l-email">E-mail</Label>
                 <Input id="l-email" name="email" type="email" required placeholder="voce@email.com" />
@@ -159,10 +139,6 @@ function AuthPage() {
 
           <TabsContent value="registo">
             <form onSubmit={handleSignup} className="mt-5 space-y-4">
-              <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={() => handleGoogleSignup("signup")}>
-                <span className="mr-2 font-bold text-base">G</span> Continuar com Google
-              </Button>
-              <p className="text-center text-xs text-muted-foreground">ou cria conta com e-mail</p>
               <div className="space-y-1.5">
                 <Label htmlFor="s-name">Nome completo</Label>
                 <Input id="s-name" name="full_name" required />
