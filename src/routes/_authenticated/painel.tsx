@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { InstallPwaButton } from "@/components/InstallPwaButton";
 import { referenceSample } from "@/lib/reference-sample";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/Logo";
 import {
   Plus,
   Trash2,
@@ -134,279 +135,64 @@ function Painel() {
       : "Sem plano activo · escolha um plano para criar trabalhos";
 
   return (
-
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
-      {/* Cabeçalho + acção principal */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="break-words text-2xl font-extrabold capitalize sm:text-3xl">Olá, {firstName} 👋</h1>
-          <p className="text-muted-foreground mt-1">Pronto para criar o próximo trabalho?</p>
-        </div>
-        <Button asChild variant="brand" size="lg" className="w-full sm:w-auto">
-          <Link to="/novo-trabalho">
-            <Plus className="h-4 w-4" /> Criar Novo Trabalho
-          </Link>
-        </Button>
-      </div>
-
-      {/* Acessos rápidos */}
-      <nav
-        aria-label="Acessos rápidos"
-        className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/60 p-2.5 sm:w-fit"
-      >
-        <Button asChild variant="brand" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
-          <Link to="/exames">
-            <BookOpenCheck className="h-4 w-4" /> Exames e simulados
-          </Link>
-        </Button>
-        <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
-          <Link to="/planos">
-            <CreditCard className="h-4 w-4" /> Planos
-          </Link>
-        </Button>
-        <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
-          <Link to="/amostra/$id" params={{ id: referenceSample.id }}>
-            <Eye className="h-4 w-4" /> Amostra
-          </Link>
-        </Button>
-        {isAdmin && (
-          <Button asChild variant="glass" size="sm" className="w-full grow px-3 sm:w-auto sm:grow-0">
-            <Link to="/admin">
-              <ShieldCheck className="h-4 w-4" /> Painel admin
-            </Link>
-          </Button>
-        )}
-
-      </nav>
-
-      {pending && !isAdmin && (
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-border bg-card p-5">
-          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div>
-            <p className="font-semibold">Pedido enviado · a aguardar aprovação</p>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {pending.plan} · {pending.amount} MT via {pending.method}. Aguarde — o administrador está a verificar o
-              seu comprovativo e o plano será activado assim que for aprovado.
-            </p>
+    <div className="min-h-screen bg-[#f5f8f6] pb-28 text-[#17251d]">
+      <header className="sticky top-0 z-30 border-b border-[#e4ece6] bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <Link to="/painel" aria-label="RuJe IA — Início" className="shrink-0"><Logo /></Link>
+          <div className="flex items-center gap-2">
+            <span className="hidden text-right sm:block"><span className="block text-sm font-semibold">Olá, {firstName}</span><span className="block text-xs text-[#718078]">Área do estudante</span></span>
+            <div className="grid h-10 w-10 place-items-center rounded-full border border-[#dce9df] bg-[#edf7ef] text-sm font-bold text-[#16834a]">{firstName.slice(0, 1).toUpperCase()}</div>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* Plano actual */}
-      <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-primary/25 bg-secondary/50 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="flex min-w-0 items-start gap-2 font-semibold break-words">
-          {isAdmin ? (
-            <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" />
-          ) : (
-            <Crown className="mt-1 h-4 w-4 shrink-0 text-primary" />
-          )}
-          {planLabel}
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {isAdmin && (
-            <Button asChild variant="glass">
-              <Link to="/admin">
-                <ShieldCheck className="h-4 w-4" /> Painel admin
-              </Link>
-            </Button>
-          )}
-          {!isAdmin && (
-            <Button asChild variant="brand">
-              <Link to="/planos">
-                {sub ? "Renovar plano" : "Ver planos"} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Instalação */}
-      <section className="mt-4 flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-semibold">Instalar a RuJe IA no seu telemóvel</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Aceda à RuJe IA directamente pelo ícone no ecrã principal.
-          </p>
-        </div>
-        <InstallPwaButton variant="glass" className="w-full sm:w-auto" />
-      </section>
-
-      {/* Estatísticas */}
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        {stats.map((s) => (
-          <div key={s.label} className="shadow-soft rounded-2xl border border-border bg-card p-5">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <s.icon className="h-4 w-4" /> {s.label}
-            </div>
-            <p className="mt-2 text-2xl font-bold">{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Amostras */}
-      {samples.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-bold">Trabalhos de amostra</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Veja um trabalho completo feito na RuJe IA e crie o seu no mesmo modelo.
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {samples.map((s) => (
-              <div key={s.id} className="shadow-soft rounded-2xl border border-border bg-card p-5">
-                <span className="bg-brand rounded-full px-2.5 py-1 text-[11px] font-bold text-primary-foreground">
-                  AMOSTRA
-                </span>
-                <p className="mt-3 font-semibold">{s.title}</p>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {s.work_type} · {s.work_mode === "grupo" ? "Trabalho em grupo" : "Individual"}
-                  {s.institution ? ` · ${s.institution}` : ""}
-                </p>
-                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                  <Button asChild variant="glass" className="w-full sm:w-auto">
-                    <Link to="/amostra/$id" params={{ id: s.id }}>
-                      <Eye className="h-4 w-4" /> Ver trabalho
-                    </Link>
-                  </Button>
-                  <Button asChild variant="brand" className="w-full sm:w-auto">
-                    <Link to="/novo-trabalho" search={{ amostra: s.id }}>
-                      <Copy className="h-4 w-4" /> Fazer igual
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <section className="flex flex-col gap-4 rounded-3xl border border-[#dcebe0] bg-gradient-to-br from-white via-white to-[#eaf7ee] p-5 shadow-[0_8px_28px_rgba(22,101,52,0.06)] sm:flex-row sm:items-center sm:justify-between sm:p-7">
+          <div className="min-w-0"><p className="text-sm font-semibold text-[#16834a]">O teu espaço académico</p><h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#17251d] sm:text-3xl">Olá, {firstName} 👋</h1><p className="mt-2 text-sm text-[#66766c] sm:text-base">Organiza os teus estudos e continua a construir o teu futuro.</p></div>
+          <Button asChild variant="brand" size="lg" className="h-12 w-full shrink-0 rounded-xl px-5 shadow-sm sm:w-auto"><Link to="/novo-trabalho"><Plus className="h-5 w-5" /> Criar novo trabalho</Link></Button>
         </section>
-      )}
 
-      {/* Histórico */}
-      <section className="mt-10">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-bold">Histórico de trabalhos</h2>
-          {works.length > 0 &&
-            (selecting ? (
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button variant="glass" onClick={() => { setSelecting(false); setSelected([]); }} className="w-full sm:w-auto">
-                  <X className="h-4 w-4" /> Cancelar
-                </Button>
-                <Button variant="danger" onClick={deleteSelected} disabled={selected.length === 0} className="w-full sm:w-auto">
-                  <Trash2 className="h-4 w-4" /> Eliminar seleccionados ({selected.length})
-                </Button>
-              </div>
-            ) : (
-              <Button variant="danger" onClick={() => setSelecting(true)} className="w-full sm:w-auto">
-                <Trash2 className="h-4 w-4" /> Eliminar trabalhos
-              </Button>
-            ))}
-        </div>
-        {selecting && (
-          <p className="text-muted-foreground mt-2 text-sm">Toque nos trabalhos que deseja eliminar.</p>
-        )}
-        {isLoading ? (
-          <p className="text-muted-foreground mt-4 text-sm">A carregar…</p>
-        ) : works.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-border p-10 text-center">
-            <p className="text-muted-foreground">Ainda não criou nenhum trabalho.</p>
-            <Button asChild variant="brand" className="mt-4 w-full sm:w-auto">
-              <Link to="/novo-trabalho">
-                <Plus className="h-4 w-4" /> Criar o primeiro
-              </Link>
-            </Button>
+        <section className="mt-6">
+          <div className="mb-3"><h2 className="text-lg font-bold text-[#1b2b21]">Acesso rápido</h2><p className="mt-1 text-sm text-[#718078]">Encontra rapidamente aquilo de que precisas.</p></div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Link to="/novo-trabalho" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><FileText className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Criar trabalho</span><span className="mt-1 block text-xs text-[#718078]">Gerar com IA</span></Link>
+            <Link to="/exames" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><BookOpenCheck className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Comprar exames</span><span className="mt-1 block text-xs text-[#718078]">Exames e simulados</span></Link>
+            <Link to="/planos" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><CreditCard className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Planos</span><span className="mt-1 block text-xs text-[#718078]">Ver opções de acesso</span></Link>
+            <Link to="/amostra/$id" params={{ id: referenceSample.id }} className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Eye className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Ver amostra</span><span className="mt-1 block text-xs text-[#718078]">Conhecer um exemplo</span></Link>
           </div>
-        ) : (
-          <div className="mt-4 grid gap-3">
-            {selecting && works.map((w) => {
-              const on = selected.includes(w.id);
-              return (
-                <label
-                  key={w.id}
-                  className={cn(
-                    "shadow-soft flex cursor-pointer items-start gap-3 rounded-2xl border bg-card p-4 sm:p-5",
-                    on ? "border-destructive/60 bg-destructive/5" : "border-border",
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => toggle(w.id)}
-                    className="mt-1 h-5 w-5 shrink-0 accent-[var(--destructive)]"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-semibold break-words">{w.title}</p>
-                    <p className="text-muted-foreground mt-0.5 text-sm break-words">
-                      {w.work_type} · {new Date(w.created_at).toLocaleDateString("pt-PT")}
-                    </p>
-                  </div>
-                </label>
-              );
-            })}
-            {!selecting && works.map((w) => (
-              <Link
-                key={w.id}
-                to="/trabalho/$id"
-                params={{ id: w.id }}
-                className="shadow-soft group flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/50 sm:flex-row sm:items-center sm:justify-between sm:p-5"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold break-words">{w.title}</p>
-                  <p className="text-muted-foreground mt-0.5 text-sm break-words">
-                    {w.work_type} · {w.work_mode === "grupo" ? "Grupo" : "Individual"} · {w.theme}
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Criado: {new Date(w.created_at).toLocaleDateString("pt-PT")} · Editado:{" "}
-                    {new Date(w.updated_at).toLocaleDateString("pt-PT")} · {w.download_count} downloads
-                  </p>
-                </div>
-                <span
-                  className={cn(
-                    buttonVariants({ variant: "brand", size: "sm" }),
-                    "w-full shrink-0 sm:w-auto sm:px-5",
-                  )}
-                >
-                  Abrir trabalho <ArrowRight className="h-4 w-4" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+          {isAdmin && <Link to="/admin" className="mt-3 flex items-center justify-between rounded-xl border border-[#cfe5d5] bg-[#eff9f1] px-4 py-3 text-sm font-semibold text-[#167543]"><span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Painel de administração</span><ArrowRight className="h-4 w-4" /></Link>}
+        </section>
 
-      {/* Comunidade */}
-      <section className="mt-12">
-        <h2 className="text-xl font-bold">Comunidade WhatsApp</h2>
-        <div className="shadow-soft mt-4 rounded-2xl border border-border bg-card p-5">
-          <p className="text-muted-foreground text-sm">
-            Converse com outros estudantes, partilhe opiniões e fique atento aos cursos com certificado.
-          </p>
-          <Button asChild variant="brand" className="mt-4 w-full sm:w-auto">
-            <a
-              href="https://chat.whatsapp.com/CU2WmZIWDDvJURM2eqOtKT"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Users className="h-4 w-4" /> Entrar na comunidade
-            </a>
-          </Button>
-        </div>
-      </section>
+        {pending && !isAdmin && <section className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div><p className="font-semibold">Pagamento a aguardar aprovação</p><p className="mt-1 text-sm text-amber-900">{pending.plan} · {pending.amount} MT via {pending.method}. O plano será activado após a verificação do comprovativo.</p></div></section>}
 
-      {/* Outros programas */}
-      <section className="mt-12">
-        <h2 className="text-xl font-bold">Outros programas da RuJe IA</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {[
-            { icon: Sparkles, title: "RuJe Resumos", text: "Resumos automáticos de livros e artigos. Em breve." },
-            { icon: BookOpen, title: "RuJe Citações", text: "Gerador de referências APA/ABNT. Em breve." },
-            { icon: Settings, title: "RuJe Apresentações", text: "Slides académicos automáticos. Em breve." },
-          ].map((p) => (
-            <div key={p.title} className="rounded-2xl border border-border bg-secondary/50 p-5">
-              <p.icon className="h-5 w-5 text-primary" />
-              <p className="mt-3 font-semibold">{p.title}</p>
-              <p className="text-muted-foreground mt-1 text-sm">{p.text}</p>
-            </div>
-          ))}
+        <section className="mt-5 rounded-2xl border border-[#dcebe0] bg-white p-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-5">
+          <div className="flex min-w-0 items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]">{isAdmin ? <ShieldCheck className="h-5 w-5" /> : <Crown className="h-5 w-5" />}</span><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-[#718078]">O teu acesso</p><p className="mt-1 text-sm font-semibold leading-6 text-[#203128]">{planLabel}</p></div></div>
+          {!isAdmin && <Button asChild variant="brand" className="mt-4 w-full rounded-xl sm:mt-0 sm:w-auto"><Link to="/planos">{sub ? "Renovar plano" : "Ver planos"}<ArrowRight className="h-4 w-4" /></Link></Button>}
+          {isAdmin && <Button asChild variant="glass" className="mt-4 w-full sm:mt-0 sm:w-auto"><Link to="/admin"><ShieldCheck className="h-4 w-4" /> Administração</Link></Button>}
+        </section>
+
+        <section className="mt-5 rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-4"><div><p className="font-bold text-[#203128]">Instalar a RuJe IA no telemóvel</p><p className="mt-1 text-sm text-[#718078]">Acede à plataforma directamente pelo ecrã principal.</p></div><InstallPwaButton variant="glass" className="mt-3 w-full sm:mt-0 sm:w-auto" /></section>
+
+        <section className="mt-7"><div className="mb-3"><h2 className="text-lg font-bold text-[#1b2b21]">Resumo da actividade</h2><p className="mt-1 text-sm text-[#718078]">Acompanha o teu progresso na plataforma.</p></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-3">{stats.map((s) => <div key={s.label} className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><s.icon className="h-5 w-5" /></span><span className="text-sm text-[#718078]">{s.label}</span></div><p className="mt-3 text-2xl font-extrabold tabular-nums text-[#203128]">{s.value}</p></div>)}</div></section>
+
+        {samples.length > 0 && <section className="mt-9"><div className="mb-3"><h2 className="text-lg font-bold text-[#1b2b21]">Trabalhos de amostra</h2><p className="mt-1 text-sm text-[#718078]">Consulta um exemplo e usa-o como referência.</p></div><div className="grid gap-3 sm:grid-cols-2">{samples.map((s) => <article key={s.id} className="rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-sm"><span className="inline-flex rounded-full bg-[#e8f6ec] px-3 py-1 text-[11px] font-bold tracking-wide text-[#16834a]">AMOSTRA</span><h3 className="mt-3 font-bold text-[#203128]">{s.title}</h3><p className="mt-1 text-sm text-[#718078]">{s.work_type} · {s.work_mode === "grupo" ? "Trabalho em grupo" : "Individual"}{s.institution ? ` · ${s.institution}` : ""}</p><div className="mt-4 flex flex-col gap-2 sm:flex-row"><Button asChild variant="glass" className="w-full sm:w-auto"><Link to="/amostra/$id" params={{ id: s.id }}><Eye className="h-4 w-4" /> Ver trabalho</Link></Button><Button asChild variant="brand" className="w-full sm:w-auto"><Link to="/novo-trabalho" search={{ amostra: s.id }}><Copy className="h-4 w-4" /> Usar como modelo</Link></Button></div></article>)}</div></section>}
+
+        <section className="mt-9"><div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-lg font-bold text-[#1b2b21]">Os meus trabalhos</h2><p className="mt-1 text-sm text-[#718078]">Abre, consulta ou organiza os trabalhos que já criaste.</p></div>{works.length > 0 && (selecting ? <div className="flex gap-2"><Button variant="glass" onClick={() => { setSelecting(false); setSelected([]); }}><X className="h-4 w-4" /> Cancelar</Button><Button variant="danger" onClick={deleteSelected} disabled={selected.length === 0}><Trash2 className="h-4 w-4" /> Eliminar ({selected.length})</Button></div> : <Button variant="glass" onClick={() => setSelecting(true)}><Trash2 className="h-4 w-4" /> Organizar</Button>)}</div>
+          {selecting && <p className="mb-3 text-sm text-[#718078]">Selecciona os trabalhos que pretendes eliminar.</p>}
+          {isLoading ? <div className="rounded-2xl border border-[#e1ebe4] bg-white p-8 text-center text-sm text-[#718078]">A carregar os teus trabalhos…</div> : works.length === 0 ? <div className="rounded-2xl border border-dashed border-[#cbdccf] bg-white px-5 py-10 text-center"><span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#e8f6ec] text-[#16834a]"><FileText className="h-6 w-6" /></span><p className="mt-3 font-semibold text-[#203128]">Ainda não tens trabalhos</p><p className="mt-1 text-sm text-[#718078]">Quando criares um trabalho, ele aparecerá aqui.</p><Button asChild variant="brand" className="mt-4"><Link to="/novo-trabalho"><Plus className="h-4 w-4" /> Criar primeiro trabalho</Link></Button></div> : <div className="grid gap-3">{selecting ? works.map((w) => { const on = selected.includes(w.id); return <label key={w.id} className={cn("flex cursor-pointer items-start gap-3 rounded-2xl border bg-white p-4 shadow-sm", on ? "border-red-300 bg-red-50" : "border-[#e1ebe4]")}><input type="checkbox" checked={on} onChange={() => toggle(w.id)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--destructive)]" /><span className="min-w-0"><span className="block font-semibold text-[#203128]">{w.title}</span><span className="mt-1 block text-sm text-[#718078]">{w.work_type} · {new Date(w.created_at).toLocaleDateString("pt-PT")}</span></span></label>; }) : works.map((w) => <Link key={w.id} to="/trabalho/$id" params={{ id: w.id }} className="flex flex-col gap-3 rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:border-[#9bcbaa] hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-5"><span className="min-w-0"><span className="block break-words font-bold text-[#203128]">{w.title}</span><span className="mt-1 block break-words text-sm text-[#718078]">{w.work_type} · {w.work_mode === "grupo" ? "Grupo" : "Individual"} · {w.theme}</span><span className="mt-1 block text-xs text-[#89968e]">Criado: {new Date(w.created_at).toLocaleDateString("pt-PT")} · Actualizado: {new Date(w.updated_at).toLocaleDateString("pt-PT")} · {w.download_count} downloads</span></span><span className={cn(buttonVariants({ variant: "brand", size: "sm" }), "w-full shrink-0 sm:w-auto")}>Abrir trabalho <ArrowRight className="h-4 w-4" /></span></Link>)}</div>}
+        </section>
+
+        <section className="mt-8 grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Users className="h-5 w-5" /></span><h2 className="mt-3 font-bold text-[#203128]">Comunidade WhatsApp</h2><p className="mt-1 text-sm text-[#718078]">Partilha ideias, conversa com outros estudantes e acompanha novidades.</p><Button asChild variant="brand" className="mt-4 w-full sm:w-auto"><a href="https://chat.whatsapp.com/CU2WmZIWDDvJURM2eqOtKT" target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" /> Entrar na comunidade</a></Button></div><div className="rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-sm"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Sparkles className="h-5 w-5" /></span><h2 className="mt-3 font-bold text-[#203128]">Mais ferramentas a caminho</h2><p className="mt-1 text-sm text-[#718078]">A RuJe IA continua a evoluir para apoiar cada etapa da tua aprendizagem.</p><div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-[#39734e]"><span className="rounded-full bg-[#edf7ef] px-3 py-1.5">Resumos</span><span className="rounded-full bg-[#edf7ef] px-3 py-1.5">Citações</span><span className="rounded-full bg-[#edf7ef] px-3 py-1.5">Apresentações</span></div></div></section>
+      </main>
+
+      <nav aria-label="Navegação principal" className="fixed inset-x-0 bottom-0 z-40 border-t border-[#dce8df] bg-white/90 px-3 pb-[max(env(safe-area-inset-bottom),10px)] pt-2 shadow-[0_-8px_28px_rgba(20,60,35,0.08)] backdrop-blur-xl">
+        <div className="mx-auto grid max-w-xl grid-cols-4 gap-1">
+          <Link to="/painel" className="flex flex-col items-center gap-1 rounded-xl bg-[#eaf7ee] py-2 text-[#16834a]"><span className="grid h-6 place-items-center"><BookOpen className="h-5 w-5" /></span><span className="text-[11px] font-semibold">Início</span></Link>
+          <Link to="/novo-trabalho" className="flex flex-col items-center gap-1 rounded-xl py-2 text-[#64746a] transition hover:bg-[#f1f7f2] hover:text-[#16834a]"><span className="grid h-6 place-items-center"><Plus className="h-5 w-5" /></span><span className="text-[11px] font-medium">Criar</span></Link>
+          <Link to="/exames" className="flex flex-col items-center gap-1 rounded-xl py-2 text-[#64746a] transition hover:bg-[#f1f7f2] hover:text-[#16834a]"><span className="grid h-6 place-items-center"><GraduationCap className="h-5 w-5" /></span><span className="text-[11px] font-medium">Exames</span></Link>
+          <Link to="/planos" className="flex flex-col items-center gap-1 rounded-xl py-2 text-[#64746a] transition hover:bg-[#f1f7f2] hover:text-[#16834a]"><span className="grid h-6 place-items-center"><CreditCard className="h-5 w-5" /></span><span className="text-[11px] font-medium">Planos</span></Link>
         </div>
-      </section>
-    </main>
+      </nav>
+    </div>
   );
 }
