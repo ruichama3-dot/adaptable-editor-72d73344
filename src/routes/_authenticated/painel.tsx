@@ -18,6 +18,7 @@ import {
   Sparkles,
   BookOpen,
   BookOpenCheck,
+  Contact,
   GraduationCap,
   MessageCircle,
   Copy,
@@ -144,9 +145,10 @@ function Painel() {
 
         <section className="mt-6">
           <div className="mb-3"><h2 className="text-lg font-bold text-[#1b2b21]">Acesso rápido</h2><p className="mt-1 text-sm text-[#718078]">Encontra rapidamente aquilo de que precisas.</p></div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <Link to="/novo-trabalho" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><FileText className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Criar trabalho</span><span className="mt-1 block text-xs text-[#718078]">Gerar com IA</span></Link>
             <Link to="/exames" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><BookOpenCheck className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Comprar exames</span><span className="mt-1 block text-xs text-[#718078]">Exames e simulados</span></Link>
+            <Link to="/curriculo" className="rounded-2xl border border-[#cfe5d5] bg-gradient-to-br from-white to-[#f0f8f2] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Contact className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Criar currículo</span><span className="mt-1 block text-xs font-semibold text-[#16834a]">Profissional · 125 MT</span></Link>
             <Link to="/planos" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><CreditCard className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Planos</span><span className="mt-1 block text-xs text-[#718078]">Ver opções de acesso</span></Link>
             <Link to="/amostra/$id" params={{ id: referenceSample.id }} className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Eye className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Ver amostra</span><span className="mt-1 block text-xs text-[#718078]">Conhecer um exemplo</span></Link>
           </div>
