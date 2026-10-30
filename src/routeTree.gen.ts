@@ -20,6 +20,7 @@ import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedCurriculoRouteImport } from './routes/_authenticated/curriculo'
+import { Route as AuthenticatedEscolherServicoRouteImport } from './routes/_authenticated/escolher-servico'
 import { Route as PartilhaIdRouteImport } from './routes/partilha.$id'
 import { Route as AuthenticatedAmostraIdRouteImport } from './routes/_authenticated/amostra.$id'
 import { Route as AuthenticatedTrabalhoIdRouteImport } from './routes/_authenticated/trabalho.$id'
@@ -79,6 +80,11 @@ const AuthenticatedCurriculoRoute = AuthenticatedCurriculoRouteImport.update({
   path: '/curriculo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEscolherServicoRoute = AuthenticatedEscolherServicoRouteImport.update({
+  id: '/escolher-servico',
+  path: '/escolher-servico',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const PartilhaIdRoute = PartilhaIdRouteImport.update({
   id: '/partilha/$id',
   path: '/partilha/$id',
@@ -106,7 +112,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
   '/curriculo': typeof AuthenticatedCurriculoRoute
-  '/curriculo': typeof AuthenticatedCurriculoRoute
+  '/escolher-servico': typeof AuthenticatedEscolherServicoRoute
   '/partilha/$id': typeof PartilhaIdRoute
   '/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
@@ -121,6 +127,8 @@ export interface FileRoutesByTo {
   '/painel': typeof AuthenticatedPainelRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
+  '/curriculo': typeof AuthenticatedCurriculoRoute
+  '/escolher-servico': typeof AuthenticatedEscolherServicoRoute
   '/partilha/$id': typeof PartilhaIdRoute
   '/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
@@ -137,6 +145,8 @@ export interface FileRoutesById {
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
+  '/_authenticated/curriculo': typeof AuthenticatedCurriculoRoute
+  '/_authenticated/escolher-servico': typeof AuthenticatedEscolherServicoRoute
   '/partilha/$id': typeof PartilhaIdRoute
   '/_authenticated/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/_authenticated/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
@@ -153,6 +163,8 @@ export interface FileRouteTypes {
     | '/painel'
     | '/perfil'
     | '/planos'
+    | '/curriculo'
+    | '/escolher-servico'
     | '/partilha/$id'
     | '/amostra/$id'
     | '/trabalho/$id'
@@ -182,6 +194,8 @@ export interface FileRouteTypes {
     | '/_authenticated/painel'
     | '/_authenticated/perfil'
     | '/_authenticated/planos'
+    | '/_authenticated/curriculo'
+    | '/_authenticated/escolher-servico'
     | '/partilha/$id'
     | '/_authenticated/amostra/$id'
     | '/_authenticated/trabalho/$id'
@@ -274,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCurriculoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/escolher-servico': {
+      id: '/_authenticated/escolher-servico'
+      path: '/escolher-servico'
+      fullPath: '/escolher-servico'
+      preLoaderRoute: typeof AuthenticatedEscolherServicoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/partilha/$id': {
       id: '/partilha/$id'
       path: '/partilha/$id'
@@ -306,6 +327,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
   AuthenticatedCurriculoRoute: typeof AuthenticatedCurriculoRoute
+  AuthenticatedEscolherServicoRoute: typeof AuthenticatedEscolherServicoRoute
   AuthenticatedAmostraIdRoute: typeof AuthenticatedAmostraIdRoute
   AuthenticatedTrabalhoIdRoute: typeof AuthenticatedTrabalhoIdRoute
 }
@@ -318,6 +340,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
   AuthenticatedCurriculoRoute: AuthenticatedCurriculoRoute,
+  AuthenticatedEscolherServicoRoute: AuthenticatedEscolherServicoRoute,
   AuthenticatedAmostraIdRoute: AuthenticatedAmostraIdRoute,
   AuthenticatedTrabalhoIdRoute: AuthenticatedTrabalhoIdRoute,
 }
