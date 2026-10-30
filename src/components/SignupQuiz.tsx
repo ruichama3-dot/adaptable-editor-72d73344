@@ -41,6 +41,15 @@ export function SignupQuiz({ onFinish, onGoPanel }: { onFinish: () => void; onGo
           .from("profiles")
           .update({ institution: a.institution || null, course: a.course || null })
           .eq("id", id);
+        await supabase.auth.updateUser({
+          data: {
+            institution: a.institution || null,
+            course: a.course || null,
+            academic_level: a.level || null,
+            usage_goal: a.goal || null,
+            onboarding_completed: true,
+          },
+        });
       }
     } catch {
       // Não bloqueia o utilizador se o perfil não puder ser actualizado.
