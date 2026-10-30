@@ -79,13 +79,13 @@ function Admin() {
   });
 
   async function decide(p: (typeof payments)[number], approve: boolean) {
-    if (approve) {
-      const plan = PLANS.find((x) => x.name === p.plan) ?? PLANS[0]!;
-      const expires = new Date(Date.now() + plan.days * 86400000).toISOString();
+    const subscriptionPlan = PLANS.find((x) => x.name === p.plan);
+    if (approve && subscriptionPlan) {
+      const expires = new Date(Date.now() + subscriptionPlan.days * 86400000).toISOString();
       const { error } = await supabase.from("subscriptions").insert({
         user_id: p.user_id,
-        plan: plan.name,
-        daily_limit: plan.dailyLimit,
+        plan: subscriptionPlan.name,
+        daily_limit: subscriptionPlan.dailyLimit,
         expires_at: expires,
       });
       if (error) {
@@ -103,7 +103,13 @@ function Admin() {
     }
     void queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
     void queryClient.invalidateQueries({ queryKey: ["admin-subs"] });
-    toast.success(approve ? "Plano activado para o utilizador." : "Pedido rejeitado.");
+    toast.success(
+      approve
+        ? subscriptionPlan
+          ? "Plano activado para o utilizador."
+          : `Pagamento de ${p.plan} aprovado. Serviço desbloqueado.`
+        : "Pedido rejeitado.",
+    );
   }
 
   async function removeUserPlan(userId: string, email: string | null) {
