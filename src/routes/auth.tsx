@@ -101,7 +101,7 @@ function AuthPage() {
         <Link to="/" className="mb-8">
           <Logo size="lg" />
         </Link>
-        <SignupQuiz onFinish={() => navigate({ to: "/planos" })} onGoPanel={() => navigate({ to: "/painel", replace: true })} />
+        <SignupQuiz onFinish={() => navigate({ to: "/escolher-servico" })} onGoPanel={() => navigate({ to: "/painel", replace: true })} />
       </div>
     );
   }
