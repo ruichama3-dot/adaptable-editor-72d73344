@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { jsPDF } from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 import { PAYMENT_METHODS } from "@/lib/plans";
+import { improveCurriculumWithAI } from "@/lib/curriculum-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,6 +48,7 @@ function CurriculoPage() {
   const queryClient = useQueryClient();
   const [method, setMethod] = useState(PAYMENT_METHODS[0]!.id);
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoFormat, setPhotoFormat] = useState<"JPEG" | "PNG">("JPEG");
   const [photoName, setPhotoName] = useState("");
@@ -136,7 +138,7 @@ function CurriculoPage() {
     }
   }
 
-  function createPdf(event: FormEvent<HTMLFormElement>) {
+  async function createPdf(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
@@ -155,6 +157,27 @@ function CurriculoPage() {
     const skills = value("skills");
     const languages = value("languages");
     const courses = value("courses");
+    const selectedSkills = fields.getAll("skill_choice").map(String);
+    const selectedLanguages = fields.getAll("language_choice").map(String);
+    setAiBusy(true);
+    let enhanced: Awaited<ReturnType<typeof improveCurriculumWithAI>>;
+    try {
+      enhanced = await improveCurriculumWithAI({
+        data: {
+          fullName, profession, education, experience,
+          skills: selectedSkills,
+          otherSkills: value("skills"),
+          languages: selectedLanguages,
+          objective, location, email, phone, courses,
+          photoIncluded: Boolean(photo),
+        },
+      });
+    } catch (error) {
+      setAiBusy(false);
+      toast.error(error instanceof Error ? error.message : "Não foi possível organizar o currículo.");
+      return;
+    }
+    setAiBusy(false);
 
     const pdf = new jsPDF({ unit: "mm", format: "a4", compress: true });
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -172,7 +195,7 @@ function CurriculoPage() {
     pdf.text(fullName, left, 22, { maxWidth: photo ? 122 : contentWidth });
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(10);
-    pdf.text(profession, left, 30, { maxWidth: photo ? 122 : contentWidth });
+    pdf.text(enhanced.professionalTitle || profession, left, 30, { maxWidth: photo ? 122 : contentWidth });
     const contact = [phone, email, location, linkedin].filter(Boolean).join("  |  ");
     const contactLines = pdf.splitTextToSize(contact, photo ? 122 : contentWidth);
     pdf.setFontSize(8.5);
@@ -218,13 +241,13 @@ function CurriculoPage() {
       y += 5;
     };
 
-    addSection("Perfil profissional", summary, true);
-    addSection("Objectivo profissional", objective);
-    addSection("Experiência profissional", experience);
-    addSection("Formação académica", education, true);
-    addSection("Competências", skills, true);
-    addSection("Idiomas", languages);
-    addSection("Cursos e certificações", courses);
+    addSection("Perfil profissional", enhanced.profile || summary, true);
+    addSection("Objectivo profissional", enhanced.objective || objective);
+    addSection("Experiência profissional", enhanced.experience || experience);
+    addSection("Formação académica", enhanced.education || education, true);
+    addSection("Competências", enhanced.skills || [skills, selectedSkills.join(", ")].filter(Boolean).join("\\n"), true);
+    addSection("Idiomas", enhanced.languages || [languages, selectedLanguages.join(", ")].filter(Boolean).join("\\n"));
+    addSection("Cursos e certificações", enhanced.courses || courses);
 
     const pageCount = pdf.getNumberOfPages();
     for (let page = 1; page <= pageCount; page++) {
@@ -288,9 +311,9 @@ function CurriculoPage() {
               <h3 className="flex items-center gap-2 font-bold text-[#203128]"><ClipboardList className="h-4 w-4 text-[#16834a]" /> 3. Formação e experiência</h3>
               <div className="space-y-2"><Label htmlFor="cv-education">Onde estudaste e qual é a tua formação? *</Label><Textarea id="cv-education" name="education" required rows={3} placeholder="Escola / instituição, curso ou nível, e ano de conclusão (se souberes)." /></div>
               <div className="space-y-2"><Label htmlFor="cv-experience">Já trabalhaste? Onde e quais eram as tuas tarefas?</Label><Textarea id="cv-experience" name="experience" rows={4} placeholder="Indica empresa, função, período e principais responsabilidades. Se nunca trabalhaste, podes deixar em branco." /></div>
-              <div className="space-y-2"><Label htmlFor="cv-skills">Quais são as tuas competências? *</Label><Textarea id="cv-skills" name="skills" required rows={3} placeholder="Ex.: Microsoft Word, Excel, atendimento ao cliente, comunicação, design..." /></div>
+              <div className="space-y-3"><Label>O que sabes fazer? Selecciona todas as opções verdadeiras *</Label><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{["Microsoft Word","Microsoft Excel","PowerPoint","Informática básica","Atendimento ao cliente","Vendas","Comunicação","Trabalho em equipa","Liderança","Organização","Contabilidade","Gestão","Design gráfico","Programação","Redes sociais","Marketing digital","Condução","Electricidade","Mecânica","Línguas"].map((item) => <label key={item} className="flex items-center gap-2 rounded-xl border border-[#dcebe0] bg-white p-3 text-sm"><input type="checkbox" name="skill_choice" value={item} className="accent-[#16834a]" />{item}</label>)}</div><Label htmlFor="cv-skills">Outras competências (opcional)</Label><Textarea id="cv-skills" name="skills" rows={2} placeholder="Acrescenta outras competências que realmente possuis." /></div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2"><Label htmlFor="cv-languages">Que idiomas falas e qual o teu nível?</Label><Textarea id="cv-languages" name="languages" rows={2} placeholder="Ex.: Português (fluente), Inglês (básico)." /></div>
+                <div className="space-y-2"><Label>Que idiomas falas? (podes seleccionar vários)</Label><div className="grid grid-cols-2 gap-2">{["Português","Inglês","Francês","Espanhol","Changana","Emakhuwa","Cisena","Xichangana","Cinyanja","Outro"].map((item) => <label key={item} className="flex items-center gap-2 rounded-xl border border-[#dcebe0] bg-white p-3 text-sm"><input type="checkbox" name="language_choice" value={item} className="accent-[#16834a]" />{item}</label>)}</div><Label htmlFor="cv-languages">Indica o teu nível em cada idioma (opcional)</Label><Textarea id="cv-languages" name="languages" rows={2} placeholder="Ex.: Português — fluente; Inglês — básico." /></div>
                 <div className="space-y-2"><Label htmlFor="cv-courses">Cursos, certificados ou formações adicionais</Label><Textarea id="cv-courses" name="courses" rows={2} placeholder="Indica apenas os cursos que concluíste." /></div>
               </div>
             </section>
@@ -307,7 +330,7 @@ function CurriculoPage() {
             </section>
 
             <div className="rounded-xl border border-[#cfe5d5] bg-[#f2f8f3] p-4 text-sm text-[#476653]">Antes de gerar, confirma que os dados estão correctos. A RuJe IA organiza as informações que forneceste e não acrescenta experiências, diplomas ou competências que não declaraste.</div>
-            <Button type="submit" variant="brand" size="lg" className="h-12 w-full"><Download className="h-5 w-5" /> Criar e baixar currículo em PDF</Button>
+            <Button type="submit" variant="brand" size="lg" className="h-12 w-full" disabled={aiBusy}>{aiBusy ? <><Loader2 className="h-5 w-5 animate-spin" /> A IA está a organizar o teu currículo...</> : <><Sparkles className="h-5 w-5" /> Melhorar com IA e baixar PDF</>}</Button>
           </form>
         </section>
       ) : (
