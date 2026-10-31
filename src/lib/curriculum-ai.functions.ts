@@ -33,17 +33,6 @@ export const improveCurriculumWithAI = createServerFn({ method: "POST" })
     const paid = (payments ?? []).some((p) => Number(p.amount) === 125 && /^(aprovado|aprovada|approved|pago|paid)$/i.test(String(p.status ?? "").trim()));
     if (!paid) throw new Error("O serviço fica disponível depois da aprovação do pagamento de 125 MT.");
 
-    const fallback = () => ({
-      professionalTitle: data.profession,
-      profile: "",
-      objective: data.objective,
-      experience: data.experience,
-      education: data.education,
-      skills: [...data.skills, data.otherSkills].filter(Boolean).join("\n"),
-      languages: data.languages.join("\n"),
-      courses: data.courses,
-    });
-
     const key = process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim() || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
     if (!key) {
       throw new Error("A inteligência artificial do currículo não está configurada. Contacta o suporte da RuJe IA para activar o serviço.");
