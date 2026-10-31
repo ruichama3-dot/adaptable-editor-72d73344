@@ -33,9 +33,18 @@ export const improveCurriculumWithAI = createServerFn({ method: "POST" })
     const paid = (payments ?? []).some((p) => Number(p.amount) === 125 && /^(aprovado|aprovada|approved|pago|paid)$/i.test(String(p.status ?? "").trim()));
     if (!paid) throw new Error("O serviço fica disponível depois da aprovação do pagamento de 125 MT.");
 
-    const key = process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim() || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
-    if (!key) {
-      throw new Error("A inteligência artificial do currículo não está configurada. Contacta o suporte da RuJe IA para activar o serviço.");
+    // Usa exactamente as mesmas fontes e regras de chave da geração de trabalhos académicos.
+    const env = (name: string) => process.env[name]?.trim() ?? "";
+    const allKeys = [
+      env("GEMINI_API_KEY"),
+      env("GOOGLE_API_KEY"),
+      env("GOOGLE_GENERATIVE_AI_API_KEY"),
+      env("LOVABLE_API_KEY"),
+    ].filter(Boolean);
+    const geminiKey = allKeys.find((value) => value.startsWith("AIza") || value.startsWith("AQ.")) ?? "";
+    const gatewayKey = allKeys.find((value) => value.startsWith("sk_")) ?? "";
+    if (!geminiKey && !gatewayKey) {
+      throw new Error("O serviço de IA ainda não está configurado. Contacta o suporte da RuJe IA.");
     }
 
     const prompt = `Actua como consultor sénior de carreira, especialista em recrutamento, ATS (sistemas de triagem de currículos) e redacção de CVs para Moçambique, países lusófonos e candidaturas internacionais.
@@ -58,40 +67,74 @@ DADOS REAIS DO CANDIDATO (trata-os como fonte factual; não inventes o que falta
 ${JSON.stringify(data)}`;
 
     try {
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.35, maxOutputTokens: 6500, responseMimeType: "application/json" } }),
-        signal: AbortSignal.timeout(45000),
-      });
-      if (!response.ok) {
-        const detail = (await response.text()).slice(0, 500);
-        console.error("[RuJe IA currículo] Gemini falhou:", response.status, detail);
-        if (response.status === 429) {
-          throw new Error("A inteligência artificial está temporariamente ocupada. Aguarda um minuto e tenta novamente.");
+      let raw = "";
+      const errors: string[] = [];
+
+      // Mantém a mesma ordem de modelos usada pela geração de trabalhos da RuJe IA.
+      if (geminiKey) {
+        for (const model of ["gemini-3.8-flash", "gemini-3.1-pro-preview"]) {
+          try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
+              body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.35, maxOutputTokens: 6500, responseMimeType: "application/json" },
+              }),
+              signal: AbortSignal.timeout(45000),
+            });
+            if (!response.ok) {
+              const detail = (await response.text()).slice(0, 300);
+              console.error(`[RuJe IA currículo] Gemini ${model} falhou:`, response.status, detail);
+              errors.push(`${model}: HTTP ${response.status}`);
+              if (response.status === 401 || response.status === 403) break;
+              if (response.status === 429 || response.status >= 500 || response.status === 404) continue;
+              break;
+            }
+            const payload = await response.json() as {
+              candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+              promptFeedback?: { blockReason?: string };
+            };
+            raw = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("").trim() ?? "";
+            if (raw) break;
+            errors.push(`${model}: resposta vazia`);
+          } catch (modelError) {
+            errors.push(`${model}: ${modelError instanceof Error ? modelError.message : String(modelError)}`);
+          }
         }
-        if (response.status === 400) {
-          throw new Error("Os dados enviados não foram aceites pela inteligência artificial. Revê os campos do currículo e tenta novamente.");
-        }
-        if (response.status === 401 || response.status === 403) {
-          throw new Error("A chave da inteligência artificial é inválida ou não tem autorização. Contacta o suporte da RuJe IA.");
-        }
-        if (response.status === 404) {
-          throw new Error("O modelo de inteligência artificial configurado não está disponível. Contacta o suporte da RuJe IA.");
-        }
-        throw new Error("O serviço de inteligência artificial está temporariamente indisponível. Tenta novamente dentro de instantes.");
       }
-      const payload = await response.json() as {
-        candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
-        promptFeedback?: { blockReason?: string };
-      };
-      const candidate = payload.candidates?.[0];
-      const raw = candidate?.content?.parts?.map(p => p.text ?? "").join("").trim() ?? "";
+
+      // Se a mesma configuração da plataforma usa a chave do gateway Lovable, utiliza-a também.
+      if (!raw && gatewayKey) {
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Lovable-API-Key": gatewayKey },
+          body: JSON.stringify({
+            model: "google/gemini-3.8-flash",
+            messages: [
+              { role: "system", content: "Devolve apenas JSON válido, sem markdown ou comentários." },
+              { role: "user", content: prompt },
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.35,
+            max_tokens: 6500,
+          }),
+          signal: AbortSignal.timeout(45000),
+        });
+        if (!response.ok) {
+          const detail = (await response.text()).slice(0, 300);
+          console.error("[RuJe IA currículo] Gateway falhou:", response.status, detail);
+          throw new Error("O serviço de inteligência artificial está temporariamente indisponível. Tenta novamente dentro de instantes.");
+        }
+        const payload = await response.json() as { choices?: { message?: { content?: string } }[] };
+        raw = payload.choices?.[0]?.message?.content?.trim() ?? "";
+      }
+
       if (!raw) {
-        console.error("[RuJe IA currículo] Gemini sem conteúdo:", payload.promptFeedback?.blockReason ?? candidate?.finishReason ?? "sem detalhe");
-        throw new Error("A inteligência artificial não conseguiu produzir o currículo com estes dados. Revê as informações e tenta novamente.");
+        console.error("[RuJe IA currículo] Todos os modelos falharam:", errors.join(" | "));
+        throw new Error("Não foi possível contactar os modelos de inteligência artificial da RuJe IA. Tenta novamente dentro de instantes.");
       }
-      const parsed = JSON.parse(raw.replace(/^\s*\x60{3}(?:json)?\s*/i, "").replace(/\s*\x60{3}\s*$/, "")) as Record<string, unknown>;
+      const parsed = JSON.parse(raw.replace(/^\\s*\\x60{3}(?:json)?\\s*/i, "").replace(/\\s*\\x60{3}\\s*$/, "")) as Record<string, unknown>;
       const requiredFields = ["professionalTitle", "profile", "objective", "experience", "education", "skills", "languages", "courses"];
       if (requiredFields.some((field) => typeof parsed[field] !== "string")) throw new Error("A resposta da IA veio incompleta. Tenta novamente.");
       const clean = (v: unknown) => typeof v === "string" ? v.trim().slice(0, 5000) : "";
