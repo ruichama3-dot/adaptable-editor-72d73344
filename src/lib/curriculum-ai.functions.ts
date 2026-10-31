@@ -67,30 +67,57 @@ ${JSON.stringify(data)}`;
       if (!response.ok) {
         const detail = (await response.text()).slice(0, 500);
         console.error("[RuJe IA currículo] Gemini falhou:", response.status, detail);
-        throw new Error(response.status === 429
-          ? "A inteligência artificial está temporariamente ocupada. Aguarda um minuto e tenta novamente."
-          : "Não foi possível melhorar o currículo com IA neste momento. Tenta novamente ou contacta o suporte.");
+        if (response.status === 429) {
+          throw new Error("A inteligência artificial está temporariamente ocupada. Aguarda um minuto e tenta novamente.");
+        }
+        if (response.status === 400) {
+          throw new Error("Os dados enviados não foram aceites pela inteligência artificial. Revê os campos do currículo e tenta novamente.");
+        }
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("A chave da inteligência artificial é inválida ou não tem autorização. Contacta o suporte da RuJe IA.");
+        }
+        if (response.status === 404) {
+          throw new Error("O modelo de inteligência artificial configurado não está disponível. Contacta o suporte da RuJe IA.");
+        }
+        throw new Error("O serviço de inteligência artificial está temporariamente indisponível. Tenta novamente dentro de instantes.");
       }
-      const payload = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-      const raw = payload.candidates?.[0]?.content?.parts?.map(p => p.text ?? "").join("").trim() ?? "";
-      if (!raw) throw new Error("A IA não devolveu conteúdo. Tenta novamente.");
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const payload = await response.json() as {
+        candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+        promptFeedback?: { blockReason?: string };
+      };
+      const candidate = payload.candidates?.[0];
+      const raw = candidate?.content?.parts?.map(p => p.text ?? "").join("").trim() ?? "";
+      if (!raw) {
+        console.error("[RuJe IA currículo] Gemini sem conteúdo:", payload.promptFeedback?.blockReason ?? candidate?.finishReason ?? "sem detalhe");
+        throw new Error("A inteligência artificial não conseguiu produzir o currículo com estes dados. Revê as informações e tenta novamente.");
+      }
+      const parsed = JSON.parse(raw.replace(/^\s*\x60{3}(?:json)?\s*/i, "").replace(/\s*\x60{3}\s*$/, "")) as Record<string, unknown>;
       const requiredFields = ["professionalTitle", "profile", "objective", "experience", "education", "skills", "languages", "courses"];
       if (requiredFields.some((field) => typeof parsed[field] !== "string")) throw new Error("A resposta da IA veio incompleta. Tenta novamente.");
-      const clean = (v: unknown) => typeof v === "string" ? v.slice(0, 5000) : "";
+      const clean = (v: unknown) => typeof v === "string" ? v.trim().slice(0, 5000) : "";
+      const fallbackSkills = [data.skills.join(", "), data.otherSkills].filter(Boolean).join("\n");
+      const fallbackLanguages = data.languages.join(", ");
       return {
         professionalTitle: clean(parsed.professionalTitle) || data.profession,
         profile: clean(parsed.profile),
         objective: clean(parsed.objective) || data.objective,
         experience: clean(parsed.experience) || data.experience,
         education: clean(parsed.education) || data.education,
-        skills: clean(parsed.skills) || fallback().skills,
-        languages: clean(parsed.languages) || fallback().languages,
+        skills: clean(parsed.skills) || fallbackSkills,
+        languages: clean(parsed.languages) || fallbackLanguages,
         courses: clean(parsed.courses) || data.courses,
       };
     } catch (error) {
       console.error("[RuJe IA currículo] Falha na melhoria automática:", error);
-      if (error instanceof Error && (error.message.includes("inteligência artificial") || error.message.includes("A IA") || error.message.includes("resposta da IA"))) throw error;
+      if (error instanceof Error && error.message && !/^(Unexpected token|Expected property name|JSON\.parse)/i.test(error.message)) {
+        if (error.name === "AbortError" || error.name === "TimeoutError") {
+          throw new Error("A inteligência artificial demorou demasiado tempo a responder. Verifica a ligação e tenta novamente.");
+        }
+        if (error instanceof SyntaxError) {
+          throw new Error("A inteligência artificial devolveu uma resposta inválida. Tenta novamente.");
+        }
+        throw error;
+      }
       throw new Error("A IA não conseguiu concluir a melhoria do currículo. Verifica a ligação e tenta novamente.");
     }
   });
