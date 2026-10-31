@@ -247,8 +247,8 @@ function CurriculoPage() {
     addSection("Objectivo profissional", enhanced.objective || objective);
     addSection("Experiência profissional", enhanced.experience || experience);
     addSection("Formação académica", enhanced.education || education, true);
-    addSection("Competências", enhanced.skills || [skills, selectedSkills.join(", ")].filter(Boolean).join("\\n"), true);
-    addSection("Idiomas", enhanced.languages || [languages, selectedLanguages.join(", ")].filter(Boolean).join("\\n"));
+    addSection("Competências", enhanced.skills || [skills, selectedSkills.join(", ")].filter(Boolean).join("\n"), true);
+    addSection("Idiomas", enhanced.languages || [languages, selectedLanguages.join(", ")].filter(Boolean).join("\n"));
     addSection("Cursos e certificações", enhanced.courses || courses);
 
     const pageCount = pdf.getNumberOfPages();
