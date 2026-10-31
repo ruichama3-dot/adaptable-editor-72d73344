@@ -170,7 +170,7 @@ function CurriculoPage() {
           skills: selectedSkills,
           otherSkills: value("skills"),
           languages: selectedLanguages,
-          objective, location, email, phone, courses,
+          objective, summary, linkedin, location, email, phone, courses,
           photoIncluded: Boolean(photo),
         },
       });
