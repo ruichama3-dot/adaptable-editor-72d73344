@@ -153,7 +153,7 @@ function CurriculoPage() {
     const objective = value("objective");
     const summary = value("summary");
     const experience = value("experience");
-    const education = value("education");
+    const education = [value("education"), value("education_details")].filter(Boolean).join(" — ");
     const skills = value("skills");
     const languages = value("languages");
     const courses = value("courses");
@@ -293,7 +293,7 @@ function CurriculoPage() {
               <h3 className="flex items-center gap-2 font-bold text-[#203128]"><UserRound className="h-4 w-4 text-[#16834a]" /> 1. Sobre ti</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2"><Label htmlFor="cv-name">Nome completo *</Label><Input id="cv-name" name="full_name" required placeholder="Escreve o teu nome completo" /></div>
-                <div className="space-y-2"><Label htmlFor="cv-profession">O que fazes actualmente? *</Label><Input id="cv-profession" name="profession" required placeholder="Ex.: Técnico de informática, estudante..." /></div>
+                <div className="space-y-2"><Label htmlFor="cv-profession">Área profissional / ocupação *</Label><select id="cv-profession" name="profession" required defaultValue="" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="" disabled>Selecciona uma área</option>{["Estudante","Administração e escritório","Contabilidade e finanças","Informática e tecnologia","Educação e ensino","Saúde","Vendas e comércio","Atendimento ao cliente","Construção civil","Electricidade e mecânica","Hotelaria e turismo","Agricultura","Comunicação e marketing","Design e criatividade","Motorista e transportes","Segurança","Gestão e empreendedorismo","Outra área"].map(v => <option key={v} value={v}>{v}</option>)}</select></div>
                 <div className="space-y-2"><Label htmlFor="cv-phone">Telefone / WhatsApp *</Label><Input id="cv-phone" name="phone" required placeholder="+258 ..." /></div>
                 <div className="space-y-2"><Label htmlFor="cv-email">E-mail</Label><Input id="cv-email" name="email" type="email" placeholder="nome@email.com" /></div>
                 <div className="space-y-2"><Label htmlFor="cv-location">Cidade / Província</Label><Input id="cv-location" name="location" placeholder="Ex.: Nampula, Moçambique" /></div>
@@ -309,7 +309,7 @@ function CurriculoPage() {
 
             <section className="space-y-4 border-t border-border pt-5">
               <h3 className="flex items-center gap-2 font-bold text-[#203128]"><ClipboardList className="h-4 w-4 text-[#16834a]" /> 3. Formação e experiência</h3>
-              <div className="space-y-2"><Label htmlFor="cv-education">Onde estudaste e qual é a tua formação? *</Label><Textarea id="cv-education" name="education" required rows={3} placeholder="Escola / instituição, curso ou nível, e ano de conclusão (se souberes)." /></div>
+              <div className="space-y-2"><Label htmlFor="cv-education">Nível de formação concluído ou frequentado *</Label><select id="cv-education" name="education" required defaultValue="" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="" disabled>Selecciona o teu nível</option>{["Ensino primário","Ensino básico","Ensino secundário (10ª classe)","Ensino médio (12ª classe)","Técnico profissional básico","Técnico profissional médio","Licenciatura","Pós-graduação","Mestrado","Doutoramento","A frequentar formação / estudos","Outro"].map(v => <option key={v} value={v}>{v}</option>)}</select><Label htmlFor="cv-school-details">Instituição, curso e ano (opcional)</Label><Textarea id="cv-school-details" name="education_details" rows={2} placeholder="Nome da escola ou instituição, curso e ano de conclusão." /></div>
               <div className="space-y-2"><Label htmlFor="cv-experience">Já trabalhaste? Onde e quais eram as tuas tarefas?</Label><Textarea id="cv-experience" name="experience" rows={4} placeholder="Indica empresa, função, período e principais responsabilidades. Se nunca trabalhaste, podes deixar em branco." /></div>
               <div className="space-y-3"><Label>O que sabes fazer? Selecciona todas as opções verdadeiras *</Label><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{["Microsoft Word","Microsoft Excel","PowerPoint","Informática básica","Atendimento ao cliente","Vendas","Comunicação","Trabalho em equipa","Liderança","Organização","Contabilidade","Gestão","Design gráfico","Programação","Redes sociais","Marketing digital","Condução","Electricidade","Mecânica","Línguas"].map((item) => <label key={item} className="flex items-center gap-2 rounded-xl border border-[#dcebe0] bg-white p-3 text-sm"><input type="checkbox" name="skill_choice" value={item} className="accent-[#16834a]" />{item}</label>)}</div><Label htmlFor="cv-skills">Outras competências (opcional)</Label><Textarea id="cv-skills" name="skills" rows={2} placeholder="Acrescenta outras competências que realmente possuis." /></div>
               <div className="grid gap-4 sm:grid-cols-2">
