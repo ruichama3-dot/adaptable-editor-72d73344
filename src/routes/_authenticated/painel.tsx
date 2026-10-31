@@ -138,7 +138,32 @@ function Painel() {
   return (
     <div className="min-h-screen bg-[#f5f8f6] pb-28 text-[#17251d]">
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <section className="space-y-4"><div className="rounded-3xl border border-[#dcebe0] bg-gradient-to-br from-white via-white to-[#eaf7ee] p-5 shadow-[0_8px_28px_rgba(22,101,52,0.06)] sm:p-7"><p className="text-sm font-semibold text-[#16834a]">O teu espaço académico</p><h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#17251d] sm:text-3xl">Olá, {firstName} 👋</h1><p className="mt-2 text-sm text-[#66766c] sm:text-base">Organiza os teus estudos e continua a construir o teu futuro.</p></div><div aria-label="Destaques da RuJe IA" className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]"><Link to="/curriculo" aria-label="Criar currículo profissional" className="group relative block min-w-full snap-center overflow-hidden rounded-3xl border border-[#cfe5d5] bg-[#eaf7ee] shadow-sm sm:min-w-[82%]"><img src="/images/curriculo-banner.jpg" alt="Agora é possível criar o seu currículo online na RuJe IA" className="h-auto max-h-[390px] min-h-[220px] w-full object-cover object-center transition duration-500 group-hover:scale-[1.01]" /><span className="absolute bottom-4 left-4 rounded-full bg-[#078c4b] px-4 py-2 text-sm font-bold text-white shadow-lg sm:bottom-6 sm:left-6">Criar meu currículo <ArrowRight className="ml-1 inline h-4 w-4" /></span></Link><Link to="/novo-trabalho" className="flex min-w-full snap-center flex-col justify-center rounded-3xl border border-[#cfe5d5] bg-gradient-to-br from-[#0c7742] to-[#064b2d] p-7 text-white shadow-sm sm:min-w-[82%] sm:p-10"><span className="text-sm font-semibold text-emerald-100">RUJE IA · FERRAMENTAS ACADÉMICAS</span><h2 className="mt-3 max-w-lg text-3xl font-extrabold tracking-tight sm:text-4xl">Cria um novo trabalho com inteligência artificial.</h2><p className="mt-3 max-w-md text-sm text-emerald-50 sm:text-base">Organiza as tuas ideias, prepara os teus trabalhos e poupa tempo.</p><span className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-[#08643a]">Criar novo trabalho <ArrowRight className="h-4 w-4" /></span></Link></div></section>
+        <section className="space-y-4">
+          <div className="rounded-3xl border border-[#dcebe0] bg-gradient-to-br from-white via-white to-[#eaf7ee] p-5 shadow-[0_8px_28px_rgba(22,101,52,0.06)] sm:p-7">
+            <p className="text-sm font-semibold text-[#16834a]">O teu espaço académico</p>
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#17251d] sm:text-3xl">Olá, {firstName} 👋</h1>
+            <p className="mt-2 text-sm text-[#66766c] sm:text-base">Organiza os teus estudos e continua a construir o teu futuro.</p>
+          </div>
+          <div aria-label="Carrossel de ferramentas RuJe IA" className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:thin]">
+            <Link to="/novo-trabalho" aria-label="Criar novo trabalho agora" className="flex min-h-[250px] min-w-full snap-center flex-col justify-center rounded-3xl border border-[#0c7742] bg-gradient-to-br from-[#0c7742] via-[#08703d] to-[#064b2d] p-7 text-white shadow-lg sm:min-h-[320px] sm:min-w-[82%] sm:p-10">
+              <span className="text-sm font-semibold tracking-wide text-emerald-100">RUJE IA · INTELIGÊNCIA ARTIFICIAL</span>
+              <h2 className="mt-3 max-w-xl text-3xl font-extrabold tracking-tight sm:text-5xl">Criar trabalho agora.</h2>
+              <p className="mt-3 max-w-lg text-sm text-emerald-50 sm:text-base">Gera e organiza trabalhos académicos de forma simples e rápida.</p>
+              <span className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-[#08643a]">Começar agora <ArrowRight className="h-4 w-4" /></span>
+            </Link>
+            <Link to="/curriculo" aria-label="Gerar currículo profissional" className="group relative block min-h-[250px] min-w-full snap-center overflow-hidden rounded-3xl border border-[#cfe5d5] bg-[#eaf7ee] shadow-lg sm:min-h-[320px] sm:min-w-[82%]">
+              <img src="/images/curriculo-banner.jpg" alt="Agora é possível criar o seu currículo online na RuJe IA" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.015]" />
+              <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-[#078c4b] px-4 py-2.5 text-sm font-bold text-white shadow-lg sm:bottom-6 sm:left-6">Gerar currículo <ArrowRight className="h-4 w-4" /></span>
+            </Link>
+            <Link to="/exames" aria-label="Estudar com exames e simulados" className="flex min-h-[250px] min-w-full snap-center flex-col justify-center rounded-3xl border border-[#cfe5d5] bg-gradient-to-br from-[#f4fbf6] to-[#dcefe2] p-7 shadow-sm sm:min-h-[320px] sm:min-w-[82%] sm:p-10">
+              <span className="text-sm font-bold tracking-wide text-[#16834a]">PREPARAÇÃO PARA EXAMES</span>
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#173b28] sm:text-4xl">Estudar e praticar.</h2>
+              <p className="mt-3 max-w-lg text-sm text-[#52685a] sm:text-base">Acede a exames e simulados para reforçar a tua preparação.</p>
+              <span className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-[#078c4b] px-5 py-3 font-bold text-white">Explorar exames <ArrowRight className="h-4 w-4" /></span>
+            </Link>
+          </div>
+          <p className="text-center text-xs text-[#718078]">Desliza para a esquerda para explorar mais ferramentas <span aria-hidden="true">←</span></p>
+        </section>
 
         <section className="mt-6">
           <div className="mb-3"><h2 className="text-lg font-bold text-[#1b2b21]">Acesso rápido</h2><p className="mt-1 text-sm text-[#718078]">Encontra rapidamente aquilo de que precisas.</p></div>
