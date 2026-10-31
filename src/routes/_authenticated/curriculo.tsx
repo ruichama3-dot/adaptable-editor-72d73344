@@ -49,6 +49,8 @@ function CurriculoPage() {
   const [method, setMethod] = useState(PAYMENT_METHODS[0]!.id);
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState("curriculo.pdf");
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoFormat, setPhotoFormat] = useState<"JPEG" | "PNG">("JPEG");
   const [photoName, setPhotoName] = useState("");
@@ -259,8 +261,11 @@ function CurriculoPage() {
       pdf.text("Currículo profissional · RuJe IA", left, pageHeight - 7);
       pdf.text(`Página ${page} de ${pageCount}`, pageWidth - right, pageHeight - 7, { align: "right" });
     }
-    pdf.save(`curriculo-${cleanFileName(fullName)}.pdf`);
-    toast.success("O teu currículo profissional foi criado e descarregado em PDF.");
+    const fileName = `curriculo-${cleanFileName(fullName)}.pdf`;
+    const dataUrl = pdf.output("datauristring");
+    setPdfFileName(fileName);
+    setPreviewUrl(dataUrl);
+    toast.success("O teu currículo está pronto. Podes visualizá-lo aqui e descarregar quando quiseres.");
   }
 
   return (
@@ -330,7 +335,8 @@ function CurriculoPage() {
             </section>
 
             <div className="rounded-xl border border-[#cfe5d5] bg-[#f2f8f3] p-4 text-sm text-[#476653]">Antes de gerar, confirma que os dados estão correctos. A RuJe IA organiza as informações que forneceste e não acrescenta experiências, diplomas ou competências que não declaraste.</div>
-            <Button type="submit" variant="brand" size="lg" className="h-12 w-full" disabled={aiBusy}>{aiBusy ? <><Loader2 className="h-5 w-5 animate-spin" /> A IA está a organizar o teu currículo...</> : <><Sparkles className="h-5 w-5" /> Melhorar com IA e baixar PDF</>}</Button>
+            <Button type="submit" variant="brand" size="lg" className="h-12 w-full" disabled={aiBusy}>{aiBusy ? <><Loader2 className="h-5 w-5 animate-spin" /> A IA está a organizar o teu currículo...</> : <><Sparkles className="h-5 w-5" /> Criar e visualizar currículo</>}</Button>
+            {previewUrl && <section className="mt-7 space-y-4 rounded-2xl border border-[#cfe5d5] bg-[#f6fbf7] p-4 sm:p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="font-bold text-[#203128]">Pré-visualização do teu currículo</h3><p className="mt-1 text-sm text-[#66766c]">Confere o documento antes de o descarregar.</p></div><a href={previewUrl} download={pdfFileName} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#16834a] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#116b3b]"><Download className="h-4 w-4" /> Baixar currículo</a></div><iframe title="Pré-visualização do currículo profissional" src={previewUrl} className="h-[75vh] min-h-[520px] w-full rounded-xl border border-[#dcebe0] bg-white" /></section>}
           </form>
         </section>
       ) : (
