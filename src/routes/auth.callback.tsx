@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/Logo";
@@ -9,7 +9,6 @@ export const Route = createFileRoute("/auth/callback")({
 });
 
 function AuthCallbackPage() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState<"checking" | "error">("checking");
   const [message, setMessage] = useState("A validar a sua conta com segurança…");
 
@@ -61,7 +60,7 @@ function AuthCallbackPage() {
 
       const requestedNext = url.searchParams.get("next") || "/painel";
       const next = requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "/painel";
-      if (active) navigate({ to: next, replace: true });
+      if (active) window.location.replace(next);
     };
 
     void finish().catch(() => {
@@ -71,7 +70,7 @@ function AuthCallbackPage() {
       }
     });
     return () => { active = false; };
-  }, [navigate]);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-5 py-10 text-center">
