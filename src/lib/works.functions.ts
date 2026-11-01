@@ -112,17 +112,22 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
-             generationConfig: { temperature: 0.7, maxOutputTokens: 16384 },
+             generationConfig: { maxOutputTokens: 16384 },
           }),
         },
       );
 
       if (!res.ok) {
         const errText = (await res.text().catch(() => "")).slice(0, 300);
-        if (res.status === 400 || res.status === 401 || res.status === 403) {
-          throw new Error(
-            "CONFIG_KEY_INVALID",
-          );
+        if (res.status === 401 || res.status === 403) {
+          console.error("[IA] A API Gemini recusou a chave ou as permissões:", res.status, errText);
+          errors.push(`${model}: chave sem autorização (HTTP ${res.status})`);
+          break;
+        }
+        if (res.status === 400) {
+          console.error("[IA] Pedido Gemini rejeitado; será tentado o modelo seguinte:", model, errText);
+          errors.push(`${model}: pedido inválido (HTTP 400) ${errText}`);
+          continue;
         }
         if (res.status === 429 && /quota|billing|limit: 0|limit reached/i.test(errText)) {
           console.error("[IA] A quota da API Gemini foi esgotada. Verifique os limites e a faturação do projeto Google AI Studio.");
