@@ -59,7 +59,6 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      const message = error.message.toLowerCase();
       toast.error("E-mail ou palavra-passe incorrectos. Se a conta foi criada antes desta alteração, contacte o suporte para activar o acesso.");
       return;
     }
