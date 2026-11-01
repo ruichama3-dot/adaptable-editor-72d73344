@@ -196,7 +196,7 @@ function Painel() {
               className="group relative flex min-h-[300px] min-w-full snap-center items-center overflow-hidden rounded-3xl border border-[#cfe5d5] bg-white shadow-lg transition hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#16834a]/30 sm:min-h-[380px]"
             >
               <img
-                src="/images/curriculo-banner.webp"
+                src="/imagens/curriculo-banner.webp"
                 alt="Agora é possível criar o seu currículo online na RuJe IA. Crie um currículo profissional, moderno e acessível."
                 className="absolute inset-0 h-full w-full object-cover object-center"
                 loading="eager"
