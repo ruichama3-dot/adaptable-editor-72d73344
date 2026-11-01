@@ -117,6 +117,19 @@ function AuthPage() {
     }
 
     setLoading(true);
+    const profileUpdate = await supabase.from("profiles").update({
+      onboarding_completed: true,
+      primary_goal: purpose,
+      study_level: studyLevel || null,
+      course: studyArea.trim() || null,
+      institution: institution.trim() || null,
+      exam_class: yearClass || null,
+    }).eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
+    if (profileUpdate.error) {
+      setLoading(false);
+      toast.error("Não foi possível guardar os dados do perfil. Tente novamente.");
+      return;
+    }
     const { error } = await supabase.auth.updateUser({
       data: {
         onboarding_completed: true,
@@ -129,7 +142,7 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error("Não foi possível guardar o perfil. Tente novamente.");
+      toast.error("Os dados foram guardados no perfil, mas não foi possível actualizar os metadados da conta.");
       return;
     }
     toast.success("Perfil actualizado. Bem-vindo à RuJe IA!");
