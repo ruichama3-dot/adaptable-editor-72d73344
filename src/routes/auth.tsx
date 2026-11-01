@@ -91,6 +91,20 @@ function AuthPage() {
     setOnboarding(true);
   }
 
+  async function chooseCurriculum() {
+    setPurpose("criar_curriculo");
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({
+      data: { onboarding_completed: true, primary_goal: "criar_curriculo" },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("Não foi possível guardar a sua preferência. Tente novamente.");
+      return;
+    }
+    navigate({ to: "/painel", replace: true });
+  }
+
   async function finishOnboarding() {
     if (!purpose) { toast.error("Seleccione o que veio fazer na RuJe IA."); return; }
     if (purpose === "trabalho_academico" && (!studyLevel || !studyArea.trim())) {
@@ -155,7 +169,7 @@ function AuthPage() {
                 <span className="font-semibold">2. Comprar exames</span>
                 <span className="mt-1 block text-sm text-muted-foreground">Preparar-se para provas e exames anteriores.</span>
               </button>
-              <button type="button" className={choiceClass(purpose === "criar_curriculo")} onClick={() => setPurpose("criar_curriculo")}>
+              <button type="button" className={choiceClass(purpose === "criar_curriculo")} onClick={chooseCurriculum}>
                 <span className="font-semibold">3. Criar currículo</span>
                 <span className="mt-1 block text-sm text-muted-foreground">Preparar um CV profissional para candidaturas.</span>
               </button>
