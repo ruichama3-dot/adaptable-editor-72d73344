@@ -175,12 +175,20 @@ function Painel() {
             onPointerDown={() => setCarouselPlaying(false)}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:thin] [scroll-behavior:smooth]"
           >
-            <div className="flex min-h-[270px] min-w-full snap-center flex-col justify-center rounded-3xl border border-[#dcebe0] bg-gradient-to-br from-white via-white to-[#eaf7ee] p-6 shadow-[0_8px_28px_rgba(22,101,52,0.06)] sm:min-h-[320px] sm:p-8">
-              <p className="text-sm font-semibold text-[#16834a]">O teu espaço académico</p>
-              <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#17251d] sm:text-3xl">Olá, {firstName} 👋</h1>
-              <p className="mt-2 text-sm text-[#66766c] sm:text-base">Organiza os teus estudos e continua a construir o teu futuro.</p>
-              <Button asChild variant="brand" size="lg" className="mt-6 h-12 w-fit rounded-xl px-5 shadow-sm"><Link to="/novo-trabalho"><Plus className="h-5 w-5" /> Criar novo trabalho</Link></Button>
-              <p className="mt-4 flex items-center gap-2 text-xs text-[#718078]">Desliza para explorar <ArrowRight className="h-4 w-4 animate-pulse" /></p>
+            <div className="relative isolate flex min-h-[270px] min-w-full snap-center flex-col justify-center overflow-hidden rounded-3xl border border-[#087342] bg-gradient-to-br from-[#087a43] via-[#056536] to-[#064b32] p-6 text-white shadow-[0_16px_42px_rgba(5,91,51,0.24)] sm:min-h-[320px] sm:p-8">
+              <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[34px] border-white/10" />
+              <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 right-24 h-56 w-56 rounded-full bg-[#54c987]/15 blur-2xl" />
+              <div className="relative z-10 max-w-2xl">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-[#e5fff0] shadow-sm backdrop-blur-sm">
+                  <Sparkles className="h-3.5 w-3.5" /> O TEU ESPAÇO ACADÉMICO
+                </span>
+                <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Olá, {firstName} <span aria-hidden="true">👋</span></h1>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">Organiza os teus estudos, cria trabalhos com inteligência artificial e continua a construir o teu futuro.</p>
+                <Button asChild size="lg" className="mt-6 h-12 w-fit rounded-xl border border-white/70 bg-white px-5 font-bold text-[#08663a] shadow-[0_8px_22px_rgba(0,0,0,0.14)] transition hover:-translate-y-0.5 hover:bg-[#effff4] hover:text-[#064b32]">
+                  <Link to="/novo-trabalho"><Plus className="h-5 w-5" /> Criar novo trabalho <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                </Button>
+                <p className="mt-5 flex items-center gap-2 text-xs font-medium text-white/75">Desliza para explorar <ArrowRight className="h-4 w-4 animate-pulse" /></p>
+              </div>
             </div>
             <Link
               to="/curriculo"
