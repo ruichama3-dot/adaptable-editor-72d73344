@@ -7,16 +7,17 @@ Os modelos HTML desta pasta foram preparados para a autenticação hospedada na 
 Project ref: `vlckoouduqhgmizkfwao`
 
 1. Abra [Authentication → Email Templates](https://supabase.com/dashboard/project/vlckoouduqhgmizkfwao/auth/templates).
-2. Para cada fluxo, copie o conteúdo do ficheiro correspondente desta pasta para o campo **Message** e defina o assunto:
+2. Em **Confirm signup**, cole o ficheiro `confirmation.html` actualizado e guarde. A aplicação espera um OTP numérico de 6 dígitos.
+3. Para cada fluxo, copie o conteúdo do ficheiro correspondente desta pasta para o campo **Message** e defina o assunto:
    - `confirmation.html` — `Confirme o seu e-mail | RuJe IA`
    - `recovery.html` — `Recuperar palavra-passe | RuJe IA`
    - `magic_link.html` — `Aceder à RuJe IA`
    - `email_change.html` — `Confirme a alteração do e-mail | RuJe IA`
    - `invite.html` — `Convite para a RuJe IA`
    - `reauthentication.html` — `Confirme a sua identidade | RuJe IA`
-3. Guarde e envie mensagens de teste para endereços autorizados.
+4. Guarde e envie mensagens de teste para endereços autorizados.
 
-Os modelos usam variáveis nativas da Supabase, como `{{ .ConfirmationURL }}` e `{{ .Token }}`. Não substitua estas variáveis por links fixos.
+**Confirmação de registo por código:** o ecrã de registo da aplicação já solicita um código OTP de 6 dígitos e valida-o com `supabase.auth.verifyOtp({ email, token, type: \"signup\" })`. Por isso, no modelo `confirmation.html`, mantenha `{{ .Token }}` visível no corpo da mensagem (não use `{{ .ConfirmationURL }}` para a confirmação de registo). Os restantes fluxos podem continuar a usar os links nativos, conforme o modelo correspondente.
 
 ## Remetente e entrega (SMTP)
 
