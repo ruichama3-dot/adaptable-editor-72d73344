@@ -182,37 +182,19 @@ function Painel() {
               <Button asChild variant="brand" size="lg" className="mt-6 h-12 w-fit rounded-xl px-5 shadow-sm"><Link to="/novo-trabalho"><Plus className="h-5 w-5" /> Criar novo trabalho</Link></Button>
               <p className="mt-4 flex items-center gap-2 text-xs text-[#718078]">Desliza para explorar <ArrowRight className="h-4 w-4 animate-pulse" /></p>
             </div>
-            <Link to="/curriculo" aria-label="Gerar currículo profissional" className="group relative flex min-h-[270px] min-w-full snap-center items-center overflow-hidden rounded-3xl border border-[#cfe5d5] bg-gradient-to-br from-[#eaf7ee] via-white to-[#dcefe2] p-6 shadow-lg sm:min-h-[320px] sm:p-8">
-              <div className="relative z-10 max-w-[58%]">
-                <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#16834a]">Novo serviço · RuJe IA</span>
-                <h2 className="mt-3 text-2xl font-extrabold leading-tight tracking-tight text-[#173b28] sm:text-4xl">Um currículo que abre portas.</h2>
-                <p className="mt-3 text-sm leading-relaxed text-[#52685a] sm:text-base">Cria um CV profissional, organizado e pronto para apresentar às empresas.</p>
-                <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#078c4b] px-4 py-2.5 text-sm font-bold text-white shadow-lg">Criar currículo <ArrowRight className="h-4 w-4" /></span>
-              </div>
-              <div aria-hidden="true" className="absolute -right-3 bottom-0 top-0 flex w-[48%] items-center justify-center">
-                <svg viewBox="0 0 260 300" className="h-[92%] w-full drop-shadow-xl" role="img">
-                  <rect x="34" y="20" width="190" height="260" rx="18" fill="#ffffff" stroke="#c5dfcd" strokeWidth="2" />
-                  <rect x="34" y="20" width="190" height="66" rx="18" fill="#0c7742" />
-                  <path d="M34 68 Q34 86 52 86 H206 Q224 86 224 68" fill="#0c7742" />
-                  <circle cx="78" cy="54" r="20" fill="#d8eee0" />
-                  <circle cx="78" cy="48" r="7" fill="#438b61" />
-                  <path d="M64 68 Q78 52 92 68" fill="#438b61" />
-                  <rect x="111" y="43" width="83" height="7" rx="3.5" fill="#ffffff" />
-                  <rect x="111" y="57" width="61" height="5" rx="2.5" fill="#bce3c9" />
-                  <rect x="52" y="108" width="72" height="7" rx="3.5" fill="#16834a" />
-                  <rect x="52" y="124" width="155" height="5" rx="2.5" fill="#dcebe0" />
-                  <rect x="52" y="136" width="139" height="5" rx="2.5" fill="#dcebe0" />
-                  <rect x="52" y="160" width="66" height="7" rx="3.5" fill="#16834a" />
-                  <rect x="52" y="176" width="154" height="5" rx="2.5" fill="#dcebe0" />
-                  <rect x="52" y="188" width="130" height="5" rx="2.5" fill="#dcebe0" />
-                  <rect x="52" y="212" width="70" height="7" rx="3.5" fill="#16834a" />
-                  <rect x="52" y="228" width="154" height="5" rx="2.5" fill="#dcebe0" />
-                  <rect x="52" y="240" width="118" height="5" rx="2.5" fill="#dcebe0" />
-                  <circle cx="208" cy="253" r="24" fill="#d7f0df" />
-                  <path d="M197 253 l8 8 15 -18" fill="none" stroke="#078c4b" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <span className="sr-only">Ilustração de um currículo profissional preenchido e organizado.</span>
+            <Link
+              to="/curriculo"
+              aria-label="Abrir criação de currículo profissional"
+              className="group relative flex min-h-[300px] min-w-full snap-center items-center overflow-hidden rounded-3xl border border-[#cfe5d5] bg-white shadow-lg transition hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#16834a]/30 sm:min-h-[380px]"
+            >
+              <img
+                src="/images/curriculo-banner.webp"
+                alt="Agora é possível criar o seu currículo online na RuJe IA. Crie um currículo profissional, moderno e acessível."
+                className="absolute inset-0 h-full w-full object-cover object-center"
+                loading="eager"
+                decoding="async"
+              />
+              <span className="sr-only">Criar currículo profissional na RuJe IA</span>
             </Link>
             <Link to="/exames" aria-label="Estudar com exames e simulados" className="flex min-h-[270px] min-w-full snap-center flex-col justify-center rounded-3xl border border-[#cfe5d5] bg-gradient-to-br from-[#f4fbf6] to-[#dcefe2] p-7 shadow-sm sm:min-h-[320px] sm:p-10">
               <span className="text-sm font-bold tracking-wide text-[#16834a]">PREPARAÇÃO PARA EXAMES</span>
