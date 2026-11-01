@@ -63,9 +63,13 @@ function AuthPage() {
     setLoading(false);
     if (error) {
       const message = error.message.toLowerCase();
-      toast.error(message.includes("not confirmed") || message.includes("email_not_confirmed")
-        ? "Confirme primeiro o seu e-mail através do link que enviámos. Pode pedir um novo link no ecrã de confirmação."
-        : "E-mail ou palavra-passe incorrectos.");
+      if (message.includes("not confirmed") || message.includes("email_not_confirmed")) {
+        const email = String(form.get("email")).trim();
+        setConfirmationEmail(email);
+        toast.error("O seu e-mail ainda não foi confirmado. Pode reenviar o link agora.");
+      } else {
+        toast.error("E-mail ou palavra-passe incorrectos.");
+      }
       return;
     }
     await supabase.auth.getUser();
