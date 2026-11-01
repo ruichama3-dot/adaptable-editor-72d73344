@@ -134,7 +134,7 @@ ${JSON.stringify(data)}`;
         console.error("[RuJe IA currículo] Todos os modelos falharam:", errors.join(" | "));
         throw new Error("Não foi possível contactar os modelos de inteligência artificial da RuJe IA. Tenta novamente dentro de instantes.");
       }
-      const parsed = JSON.parse(raw.replace(/^\\s*\\x60{3}(?:json)?\\s*/i, "").replace(/\\s*\\x60{3}\\s*$/, "")) as Record<string, unknown>;
+      const parsed = JSON.parse(raw.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "")) as Record<string, unknown>;
       const requiredFields = ["professionalTitle", "profile", "objective", "experience", "education", "skills", "languages", "courses"];
       if (requiredFields.some((field) => typeof parsed[field] !== "string")) throw new Error("A resposta da IA veio incompleta. Tenta novamente.");
       const clean = (v: unknown) => typeof v === "string" ? v.trim().slice(0, 5000) : "";
