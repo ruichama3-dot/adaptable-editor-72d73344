@@ -79,7 +79,7 @@ ${JSON.stringify(data)}`;
               headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
               body: JSON.stringify({
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: { maxOutputTokens: 6500, responseMimeType: "application/json" },
+                generationConfig: { maxOutputTokens: 4000, responseMimeType: "application/json" },
               }),
               signal: AbortSignal.timeout(45000),
             });
@@ -88,6 +88,9 @@ ${JSON.stringify(data)}`;
               console.error(`[RuJe IA currículo] Gemini ${model} falhou:`, response.status, detail);
               errors.push(`${model}: HTTP ${response.status}`);
               if (response.status === 401 || response.status === 403) break;
+              // Quota/billing exhaustion applies to the Google project, so switching
+              // models immediately only adds latency and another failed request.
+              if (response.status === 429 && /quota|resource_exhausted|billing|limit: 0|limit reached/i.test(detail)) break;
               if (response.status === 429 || response.status >= 500 || response.status === 404) continue;
               break;
             }
