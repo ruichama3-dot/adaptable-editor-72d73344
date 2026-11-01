@@ -79,7 +79,7 @@ ${JSON.stringify(data)}`;
               headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
               body: JSON.stringify({
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.35, maxOutputTokens: 6500, responseMimeType: "application/json" },
+                generationConfig: { maxOutputTokens: 6500, responseMimeType: "application/json" },
               }),
               signal: AbortSignal.timeout(45000),
             });
