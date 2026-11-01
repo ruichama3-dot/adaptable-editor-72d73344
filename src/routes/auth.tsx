@@ -24,30 +24,32 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-/** Traduz os erros do serviço de contas para linguagem simples. */
 function signupErrorMessage(message: string) {
   const m = message.toLowerCase();
-  if (m.includes("weak") || m.includes("pwned")) {
-    return "Essa palavra-passe é demasiado comum. Escolha outra com pelo menos 6 caracteres.";
-  }
-  if (m.includes("already registered") || m.includes("already been registered")) {
-    return "Já existe uma conta com este e-mail. Entre em vez de criar conta.";
-  }
+  if (m.includes("weak") || m.includes("pwned")) return "Essa palavra-passe é demasiado comum. Escolha outra com pelo menos 6 caracteres.";
+  if (m.includes("already registered") || m.includes("already been registered")) return "Já existe uma conta com este e-mail. Entre em vez de criar conta.";
   if (m.includes("invalid email")) return "Verifique o endereço de e-mail indicado.";
   return message;
 }
+
+type Purpose = "trabalho_academico" | "comprar_exames" | "criar_curriculo";
 
 function AuthPage() {
   const { modo } = Route.useSearch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [onboarding, setOnboarding] = useState(false);
+  const [purpose, setPurpose] = useState<Purpose | "">("");
+  const [studyLevel, setStudyLevel] = useState("");
+  const [studyArea, setStudyArea] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [yearClass, setYearClass] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/painel", replace: true });
     });
   }, [navigate]);
-
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -59,10 +61,9 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error("E-mail ou palavra-passe incorrectos. Se a conta foi criada antes desta alteração, contacte o suporte para activar o acesso.");
+      toast.error("E-mail ou palavra-passe incorrectos. Verifique os dados e tente novamente.");
       return;
     }
-    await supabase.auth.getUser();
     navigate({ to: "/painel", replace: true });
   }
 
@@ -83,10 +84,41 @@ function AuthPage() {
     setLoading(false);
     if (error) { toast.error(signupErrorMessage(error.message)); return; }
     if (!data.session) {
-      toast.error("O registo ainda está a exigir confirmação por e-mail. A configuração de confirmação precisa ser desligada no Supabase para activar a entrada imediata.");
+      toast.error("O registo ainda está a exigir confirmação por e-mail. Verifique a opção Confirm email no Supabase.");
       return;
     }
-    toast.success("Conta criada com sucesso!");
+    toast.success("Conta criada com sucesso! Vamos personalizar o seu perfil.");
+    setOnboarding(true);
+  }
+
+  async function finishOnboarding() {
+    if (!purpose) { toast.error("Seleccione o que veio fazer na RuJe IA."); return; }
+    if (purpose === "trabalho_academico" && (!studyLevel || !studyArea.trim())) {
+      toast.error("Indique o seu nível de estudos e a sua área ou curso.");
+      return;
+    }
+    if (purpose === "comprar_exames" && !yearClass) {
+      toast.error("Indique a classe ou nível de exame que procura.");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        onboarding_completed: true,
+        primary_goal: purpose,
+        study_level: studyLevel || null,
+        study_area: studyArea.trim() || null,
+        institution: institution.trim() || null,
+        exam_class: yearClass || null,
+      },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("Não foi possível guardar o perfil. Tente novamente.");
+      return;
+    }
+    toast.success("Perfil actualizado. Bem-vindo à RuJe IA!");
     navigate({ to: "/painel", replace: true });
   }
 
@@ -100,68 +132,100 @@ function AuthPage() {
     toast.success("Enviámos um link de recuperação para o seu e-mail.");
   }
 
+  const choiceClass = (active: boolean) =>
+    `w-full rounded-xl border p-4 text-left transition-colors ${active ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50"}`;
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-5 py-10">
-      <Link to="/" className="mb-8">
-        <Logo size="lg" />
-      </Link>
+      <Link to="/" className="mb-8"><Logo size="lg" /></Link>
       <div className="shadow-soft w-full max-w-md rounded-2xl border border-border bg-card p-6">
-        <Tabs defaultValue={modo === "registo" ? "registo" : "entrar"}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="entrar">Entrar</TabsTrigger>
-            <TabsTrigger value="registo">Criar conta</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="entrar">
-            <form onSubmit={handleLogin} className="mt-5 space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="l-email">E-mail</Label>
-                <Input id="l-email" name="email" type="email" autoComplete="email" required placeholder="voce@email.com" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="l-pass">Palavra-passe</Label>
-                <Input id="l-pass" name="password" type="password" required />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                Entrar
-              </Button>
-              <button type="button" onClick={handleReset} className="text-muted-foreground w-full text-sm underline">
-                Esqueci a minha palavra-passe
+        {onboarding ? (
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Configuração do perfil · 1 de 2</p>
+              <h1 className="text-2xl font-bold">O que veio fazer na RuJe IA?</h1>
+              <p className="text-sm text-muted-foreground">Escolha uma opção para adaptarmos a sua experiência.</p>
+            </div>
+            <div className="space-y-3">
+              <button type="button" className={choiceClass(purpose === "trabalho_academico")} onClick={() => setPurpose("trabalho_academico")}>
+                <span className="font-semibold">1. Fazer trabalho académico</span>
+                <span className="mt-1 block text-sm text-muted-foreground">Monografia, TCC, relatório, pesquisa e outros trabalhos.</span>
               </button>
-            </form>
-          </TabsContent>
+              <button type="button" className={choiceClass(purpose === "comprar_exames")} onClick={() => setPurpose("comprar_exames")}>
+                <span className="font-semibold">2. Comprar exames</span>
+                <span className="mt-1 block text-sm text-muted-foreground">Preparar-se para provas e exames anteriores.</span>
+              </button>
+              <button type="button" className={choiceClass(purpose === "criar_curriculo")} onClick={() => setPurpose("criar_curriculo")}>
+                <span className="font-semibold">3. Criar currículo</span>
+                <span className="mt-1 block text-sm text-muted-foreground">Preparar um CV profissional para candidaturas.</span>
+              </button>
+            </div>
 
-          <TabsContent value="registo">
-            <form onSubmit={handleSignup} className="mt-5 space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="s-name">Nome completo</Label>
-                <Input id="s-name" name="full_name" required />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="s-email">E-mail</Label>
-                <Input id="s-email" name="email" type="email" autoComplete="email" required placeholder="exemplo@gmail.com" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="s-phone">Número de telefone</Label>
-                <Input id="s-phone" name="phone" type="tel" placeholder="+258 84 000 0000" required />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+            {purpose === "trabalho_academico" && (
+              <div className="space-y-4 rounded-xl bg-muted/40 p-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="s-pass">Palavra-passe</Label>
-                  <Input id="s-pass" name="password" type="password" required minLength={6} />
-                  <p className="text-muted-foreground text-xs">Pelo menos 6 caracteres; números e símbolos não são obrigatórios.</p>
+                  <Label htmlFor="study-level">Qual é o seu nível de estudos?</Label>
+                  <select id="study-level" value={studyLevel} onChange={e => setStudyLevel(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">Seleccione o nível</option>
+                    <option>Ensino secundário</option><option>Ensino técnico-profissional</option><option>Licenciatura</option><option>Mestrado</option><option>Doutoramento</option><option>Outro</option>
+                  </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="s-confirm">Confirmar</Label>
-                  <Input id="s-confirm" name="confirm" type="password" required minLength={6} />
+                  <Label htmlFor="study-area">Qual é a sua área, curso ou ciência?</Label>
+                  <Input id="study-area" value={studyArea} onChange={e => setStudyArea(e.target.value)} placeholder="Ex.: Direito, Biologia, Informática..." />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="institution">Instituição de ensino (opcional)</Label>
+                  <Input id="institution" value={institution} onChange={e => setInstitution(e.target.value)} placeholder="Nome da escola ou universidade" />
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                Criar conta
+            )}
+
+            {purpose === "comprar_exames" && (
+              <div className="space-y-1.5 rounded-xl bg-muted/40 p-4">
+                <Label htmlFor="exam-class">Que classe ou nível procura?</Label>
+                <select id="exam-class" value={yearClass} onChange={e => setYearClass(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  <option value="">Seleccione</option><option>10ª classe</option><option>12ª classe</option><option>Ensino técnico-profissional</option><option>Outro</option>
+                </select>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => navigate({ to: "/painel", replace: true })}>Fazer depois</Button>
+              <Button type="button" className="flex-1" onClick={finishOnboarding} disabled={loading || !purpose}>
+                {loading ? "A guardar..." : "Concluir"}
               </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+            </div>
+            <p className="text-center text-xs text-muted-foreground">Pode actualizar estas informações no seu perfil mais tarde.</p>
+          </div>
+        ) : (
+          <Tabs defaultValue={modo === "registo" ? "registo" : "entrar"}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="entrar">Entrar</TabsTrigger>
+              <TabsTrigger value="registo">Criar conta</TabsTrigger>
+            </TabsList>
+            <TabsContent value="entrar">
+              <form onSubmit={handleLogin} className="mt-5 space-y-4">
+                <div className="space-y-1.5"><Label htmlFor="l-email">E-mail</Label><Input id="l-email" name="email" type="email" autoComplete="email" required placeholder="voce@email.com" /></div>
+                <div className="space-y-1.5"><Label htmlFor="l-pass">Palavra-passe</Label><Input id="l-pass" name="password" type="password" required /></div>
+                <Button type="submit" className="w-full" disabled={loading}>Entrar</Button>
+                <button type="button" onClick={handleReset} className="text-muted-foreground w-full text-sm underline">Esqueci a minha palavra-passe</button>
+              </form>
+            </TabsContent>
+            <TabsContent value="registo">
+              <form onSubmit={handleSignup} className="mt-5 space-y-4">
+                <div className="space-y-1.5"><Label htmlFor="s-name">Nome completo</Label><Input id="s-name" name="full_name" required /></div>
+                <div className="space-y-1.5"><Label htmlFor="s-email">E-mail</Label><Input id="s-email" name="email" type="email" autoComplete="email" required placeholder="exemplo@gmail.com" /></div>
+                <div className="space-y-1.5"><Label htmlFor="s-phone">Número de telefone</Label><Input id="s-phone" name="phone" type="tel" placeholder="+258 84 000 0000" required /></div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5"><Label htmlFor="s-pass">Palavra-passe</Label><Input id="s-pass" name="password" type="password" required minLength={6} /><p className="text-muted-foreground text-xs">Pelo menos 6 caracteres.</p></div>
+                  <div className="space-y-1.5"><Label htmlFor="s-confirm">Confirmar</Label><Input id="s-confirm" name="confirm" type="password" required minLength={6} /></div>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? "A criar conta..." : "Criar conta"}</Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </div>
   );
