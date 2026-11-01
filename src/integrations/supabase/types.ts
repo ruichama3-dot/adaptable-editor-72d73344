@@ -59,6 +59,10 @@ export type Database = {
       profiles: {
         Row: {
           course: string | null
+          primary_goal: string | null
+          study_level: string | null
+          exam_class: string | null
+          onboarding_completed: boolean
           created_at: string
           email: string | null
           full_name: string
@@ -69,6 +73,10 @@ export type Database = {
         }
         Insert: {
           course?: string | null
+          primary_goal?: string | null
+          study_level?: string | null
+          exam_class?: string | null
+          onboarding_completed?: boolean
           created_at?: string
           email?: string | null
           full_name?: string
