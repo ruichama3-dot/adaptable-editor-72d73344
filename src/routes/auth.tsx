@@ -43,6 +43,8 @@ function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -59,8 +61,15 @@ function AuthPage() {
       password: String(form.get("password")),
     });
     setLoading(false);
-    if (error) { toast.error("E-mail ou palavra-passe incorrectos."); return; }
-    navigate({ to: "/painel" });
+    if (error) {
+      const message = error.message.toLowerCase();
+      toast.error(message.includes("not confirmed") || message.includes("email_not_confirmed")
+        ? "Confirme primeiro o seu e-mail através do link que enviámos. Pode pedir um novo link no ecrã de confirmação."
+        : "E-mail ou palavra-passe incorrectos.");
+      return;
+    }
+    await supabase.auth.getUser();
+    navigate({ to: "/painel", replace: true });
   }
 
   async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
@@ -80,10 +89,24 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) { toast.error(signupErrorMessage(error.message)); return; }
+    if (!data.session) {
+      setConfirmationEmail(String(form.get("email")).trim());
+      toast.success("Conta criada. Falta confirmar o endereço de e-mail.");
+      return;
+    }
     toast.success("Conta criada com sucesso!");
     setShowQuiz(true);
   }
 
+
+  async function handleResendConfirmation() {
+    if (!confirmationEmail || resending) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: confirmationEmail, options: { emailRedirectTo: window.location.origin } });
+    setResending(false);
+    if (error) { toast.error("Não foi possível reenviar agora. Aguarde um pouco e tente novamente."); return; }
+    toast.success("Novo link de confirmação enviado. Verifique também a pasta de spam.");
+  }
 
   async function handleReset() {
     const email = window.prompt("Indique o seu e-mail para recuperar a palavra-passe:");
@@ -93,6 +116,22 @@ function AuthPage() {
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Enviámos um link de recuperação para o seu e-mail.");
+  }
+
+  if (confirmationEmail) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-5 py-10">
+        <Link to="/" className="mb-8"><Logo size="lg" /></Link>
+        <div className="shadow-soft w-full max-w-md rounded-2xl border border-border bg-card p-7 text-center">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary"><span className="text-2xl">✉</span></div>
+          <h1 className="mt-5 text-2xl font-extrabold">Confirme o seu e-mail</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">A conta foi criada para <strong className="text-foreground">{confirmationEmail}</strong>, mas o acesso ao painel só fica disponível depois de confirmar o endereço. Abra o link enviado para a sua caixa de entrada e, depois, entre na RuJe IA.</p>
+          <Button className="mt-6 w-full" onClick={handleResendConfirmation} disabled={resending}>{resending ? "A enviar…" : "Reenviar link de confirmação"}</Button>
+          <Button variant="outline" className="mt-3 w-full" onClick={() => setConfirmationEmail(null)}>Voltar para entrar</Button>
+          <p className="mt-4 text-xs text-muted-foreground">Verifique também Spam / Lixo electrónico. O link deve abrir em rujeia.online.</p>
+        </div>
+      </div>
+    );
   }
 
   if (showQuiz) {
