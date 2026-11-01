@@ -14,16 +14,19 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedCurriculoRouteImport } from './routes/_authenticated/curriculo'
 import { Route as AuthenticatedDefinicoesRouteImport } from './routes/_authenticated/definicoes'
+import { Route as AuthenticatedEscolherServicoRouteImport } from './routes/_authenticated/escolher-servico'
+import { Route as AuthenticatedExamesRouteImport } from './routes/_authenticated/exames'
+import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedNovoTrabalhoRouteImport } from './routes/_authenticated/novo-trabalho'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
-import { Route as AuthenticatedCurriculoRouteImport } from './routes/_authenticated/curriculo'
-import { Route as AuthenticatedEscolherServicoRouteImport } from './routes/_authenticated/escolher-servico'
 import { Route as PartilhaIdRouteImport } from './routes/partilha.$id'
 import { Route as AuthenticatedAmostraIdRouteImport } from './routes/_authenticated/amostra.$id'
 import { Route as AuthenticatedTrabalhoIdRouteImport } from './routes/_authenticated/trabalho.$id'
+import { Route as ApiPagarWebhookRouteImport } from './routes/api.pagar.webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -49,9 +52,30 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCurriculoRoute = AuthenticatedCurriculoRouteImport.update({
+  id: '/curriculo',
+  path: '/curriculo',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDefinicoesRoute = AuthenticatedDefinicoesRouteImport.update({
   id: '/definicoes',
   path: '/definicoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEscolherServicoRoute =
+  AuthenticatedEscolherServicoRouteImport.update({
+    id: '/escolher-servico',
+    path: '/escolher-servico',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExamesRoute = AuthenticatedExamesRouteImport.update({
+  id: '/exames',
+  path: '/exames',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHistoricoRoute = AuthenticatedHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNovoTrabalhoRoute =
@@ -75,16 +99,6 @@ const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
   path: '/planos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCurriculoRoute = AuthenticatedCurriculoRouteImport.update({
-  id: '/curriculo',
-  path: '/curriculo',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEscolherServicoRoute = AuthenticatedEscolherServicoRouteImport.update({
-  id: '/escolher-servico',
-  path: '/escolher-servico',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const PartilhaIdRoute = PartilhaIdRouteImport.update({
   id: '/partilha/$id',
   path: '/partilha/$id',
@@ -100,38 +114,49 @@ const AuthenticatedTrabalhoIdRoute = AuthenticatedTrabalhoIdRouteImport.update({
   path: '/trabalho/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPagarWebhookRoute = ApiPagarWebhookRouteImport.update({
+  id: '/api/pagar/webhook',
+  path: '/api/pagar/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/curriculo': typeof AuthenticatedCurriculoRoute
   '/definicoes': typeof AuthenticatedDefinicoesRoute
+  '/escolher-servico': typeof AuthenticatedEscolherServicoRoute
+  '/exames': typeof AuthenticatedExamesRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/novo-trabalho': typeof AuthenticatedNovoTrabalhoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
-  '/curriculo': typeof AuthenticatedCurriculoRoute
-  '/escolher-servico': typeof AuthenticatedEscolherServicoRoute
   '/partilha/$id': typeof PartilhaIdRoute
   '/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
+  '/api/pagar/webhook': typeof ApiPagarWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/curriculo': typeof AuthenticatedCurriculoRoute
   '/definicoes': typeof AuthenticatedDefinicoesRoute
+  '/escolher-servico': typeof AuthenticatedEscolherServicoRoute
+  '/exames': typeof AuthenticatedExamesRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/novo-trabalho': typeof AuthenticatedNovoTrabalhoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/planos': typeof AuthenticatedPlanosRoute
-  '/curriculo': typeof AuthenticatedCurriculoRoute
-  '/escolher-servico': typeof AuthenticatedEscolherServicoRoute
   '/partilha/$id': typeof PartilhaIdRoute
   '/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
+  '/api/pagar/webhook': typeof ApiPagarWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,16 +165,19 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/curriculo': typeof AuthenticatedCurriculoRoute
   '/_authenticated/definicoes': typeof AuthenticatedDefinicoesRoute
+  '/_authenticated/escolher-servico': typeof AuthenticatedEscolherServicoRoute
+  '/_authenticated/exames': typeof AuthenticatedExamesRoute
+  '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/novo-trabalho': typeof AuthenticatedNovoTrabalhoRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
-  '/_authenticated/curriculo': typeof AuthenticatedCurriculoRoute
-  '/_authenticated/escolher-servico': typeof AuthenticatedEscolherServicoRoute
   '/partilha/$id': typeof PartilhaIdRoute
   '/_authenticated/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/_authenticated/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
+  '/api/pagar/webhook': typeof ApiPagarWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,23 +186,30 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/admin'
+    | '/curriculo'
     | '/definicoes'
+    | '/escolher-servico'
+    | '/exames'
+    | '/historico'
     | '/novo-trabalho'
     | '/painel'
     | '/perfil'
     | '/planos'
-    | '/curriculo'
-    | '/escolher-servico'
     | '/partilha/$id'
     | '/amostra/$id'
     | '/trabalho/$id'
+    | '/api/pagar/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/reset-password'
     | '/admin'
+    | '/curriculo'
     | '/definicoes'
+    | '/escolher-servico'
+    | '/exames'
+    | '/historico'
     | '/novo-trabalho'
     | '/painel'
     | '/perfil'
@@ -182,6 +217,7 @@ export interface FileRouteTypes {
     | '/partilha/$id'
     | '/amostra/$id'
     | '/trabalho/$id'
+    | '/api/pagar/webhook'
   id:
     | '__root__'
     | '/'
@@ -189,16 +225,19 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/admin'
+    | '/_authenticated/curriculo'
     | '/_authenticated/definicoes'
+    | '/_authenticated/escolher-servico'
+    | '/_authenticated/exames'
+    | '/_authenticated/historico'
     | '/_authenticated/novo-trabalho'
     | '/_authenticated/painel'
     | '/_authenticated/perfil'
     | '/_authenticated/planos'
-    | '/_authenticated/curriculo'
-    | '/_authenticated/escolher-servico'
     | '/partilha/$id'
     | '/_authenticated/amostra/$id'
     | '/_authenticated/trabalho/$id'
+    | '/api/pagar/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -207,6 +246,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   PartilhaIdRoute: typeof PartilhaIdRoute
+  ApiPagarWebhookRoute: typeof ApiPagarWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -246,11 +286,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/curriculo': {
+      id: '/_authenticated/curriculo'
+      path: '/curriculo'
+      fullPath: '/curriculo'
+      preLoaderRoute: typeof AuthenticatedCurriculoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/definicoes': {
       id: '/_authenticated/definicoes'
       path: '/definicoes'
       fullPath: '/definicoes'
       preLoaderRoute: typeof AuthenticatedDefinicoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/escolher-servico': {
+      id: '/_authenticated/escolher-servico'
+      path: '/escolher-servico'
+      fullPath: '/escolher-servico'
+      preLoaderRoute: typeof AuthenticatedEscolherServicoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/exames': {
+      id: '/_authenticated/exames'
+      path: '/exames'
+      fullPath: '/exames'
+      preLoaderRoute: typeof AuthenticatedExamesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/historico': {
+      id: '/_authenticated/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof AuthenticatedHistoricoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/novo-trabalho': {
@@ -281,20 +349,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/curriculo': {
-      id: '/_authenticated/curriculo'
-      path: '/curriculo'
-      fullPath: '/curriculo'
-      preLoaderRoute: typeof AuthenticatedCurriculoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/escolher-servico': {
-      id: '/_authenticated/escolher-servico'
-      path: '/escolher-servico'
-      fullPath: '/escolher-servico'
-      preLoaderRoute: typeof AuthenticatedEscolherServicoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/partilha/$id': {
       id: '/partilha/$id'
       path: '/partilha/$id'
@@ -316,31 +370,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrabalhoIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/pagar/webhook': {
+      id: '/api/pagar/webhook'
+      path: '/api/pagar/webhook'
+      fullPath: '/api/pagar/webhook'
+      preLoaderRoute: typeof ApiPagarWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCurriculoRoute: typeof AuthenticatedCurriculoRoute
   AuthenticatedDefinicoesRoute: typeof AuthenticatedDefinicoesRoute
+  AuthenticatedEscolherServicoRoute: typeof AuthenticatedEscolherServicoRoute
+  AuthenticatedExamesRoute: typeof AuthenticatedExamesRoute
+  AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedNovoTrabalhoRoute: typeof AuthenticatedNovoTrabalhoRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
-  AuthenticatedCurriculoRoute: typeof AuthenticatedCurriculoRoute
-  AuthenticatedEscolherServicoRoute: typeof AuthenticatedEscolherServicoRoute
   AuthenticatedAmostraIdRoute: typeof AuthenticatedAmostraIdRoute
   AuthenticatedTrabalhoIdRoute: typeof AuthenticatedTrabalhoIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedCurriculoRoute: AuthenticatedCurriculoRoute,
   AuthenticatedDefinicoesRoute: AuthenticatedDefinicoesRoute,
+  AuthenticatedEscolherServicoRoute: AuthenticatedEscolherServicoRoute,
+  AuthenticatedExamesRoute: AuthenticatedExamesRoute,
+  AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedNovoTrabalhoRoute: AuthenticatedNovoTrabalhoRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
-  AuthenticatedCurriculoRoute: AuthenticatedCurriculoRoute,
-  AuthenticatedEscolherServicoRoute: AuthenticatedEscolherServicoRoute,
   AuthenticatedAmostraIdRoute: AuthenticatedAmostraIdRoute,
   AuthenticatedTrabalhoIdRoute: AuthenticatedTrabalhoIdRoute,
 }
@@ -354,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   PartilhaIdRoute: PartilhaIdRoute,
+  ApiPagarWebhookRoute: ApiPagarWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
