@@ -45,6 +45,8 @@ function AuthPage() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
+  const [confirmationCode, setConfirmationCode] = useState("");
+  const [verifyingCode, setVerifyingCode] = useState(false);
 
   const authCallbackUrl = () => `${window.location.origin}/auth/callback?next=/painel`;
 
@@ -69,7 +71,7 @@ function AuthPage() {
       if (message.includes("not confirmed") || message.includes("email_not_confirmed")) {
         const email = String(form.get("email")).trim();
         setConfirmationEmail(email);
-        toast.error("O seu e-mail ainda não foi confirmado. Pode reenviar o link agora.");
+        toast.error("O seu e-mail ainda não foi confirmado. Enviaremos um código para confirmar a conta.");
       } else {
         toast.error("E-mail ou palavra-passe incorrectos.");
       }
@@ -106,13 +108,29 @@ function AuthPage() {
   }
 
 
+  async function handleVerifyConfirmationCode(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!confirmationEmail || verifyingCode) return;
+    const token = confirmationCode.replace(/\\D/g, "").slice(0, 6);
+    if (token.length !== 6) { toast.error("Introduza o código de 6 dígitos enviado para o seu e-mail."); return; }
+    setVerifyingCode(true);
+    const { error } = await supabase.auth.verifyOtp({ email: confirmationEmail, token, type: "signup" });
+    setVerifyingCode(false);
+    if (error) { toast.error("Código inválido ou expirado. Verifique os dígitos ou solicite um novo código."); return; }
+    setConfirmationEmail(null);
+    setConfirmationCode("");
+    toast.success("E-mail confirmado. A sua conta está activa!");
+    setShowQuiz(true);
+  }
+
   async function handleResendConfirmation() {
     if (!confirmationEmail || resending) return;
     setResending(true);
-    const { error } = await supabase.auth.resend({ type: "signup", email: confirmationEmail, options: { emailRedirectTo: authCallbackUrl() } });
+    const { error } = await supabase.auth.resend({ type: "signup", email: confirmationEmail });
     setResending(false);
     if (error) { toast.error("Não foi possível reenviar agora. Aguarde um pouco e tente novamente."); return; }
-    toast.success("Novo link de confirmação enviado. Verifique também a pasta de spam.");
+    setConfirmationCode("");
+    toast.success("Novo código enviado. Verifique também a pasta de spam.");
   }
 
   async function handleReset() {
@@ -132,15 +150,19 @@ function AuthPage() {
         <div className="shadow-soft w-full max-w-md rounded-2xl border border-border bg-card p-7 text-center">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary"><span className="text-2xl">✉</span></div>
           <h1 className="mt-5 text-2xl font-extrabold">Confirme o seu e-mail</h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">A conta foi criada para <strong className="text-foreground">{confirmationEmail}</strong>, mas o acesso ao painel só fica disponível depois de confirmar o endereço. Abra o link enviado para a sua caixa de entrada e, depois, entre na RuJe IA.</p>
-          <Button className="mt-6 w-full" onClick={handleResendConfirmation} disabled={resending}>{resending ? "A enviar…" : "Reenviar link de confirmação"}</Button>
-          <Button variant="outline" className="mt-3 w-full" onClick={() => setConfirmationEmail(null)}>Voltar para entrar</Button>
-          <p className="mt-4 text-xs text-muted-foreground">Verifique a Caixa de entrada e Spam. Abra o link no mesmo navegador onde pretende utilizar a RuJe IA. Se o link expirar, solicite outro.</p>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">Enviámos um código de confirmação para <strong className="text-foreground">{confirmationEmail}</strong>. Introduza os 6 dígitos abaixo para activar a sua conta RuJe IA.</p>
+          <form className="mt-6 space-y-3" onSubmit={handleVerifyConfirmationCode}>
+            <Label htmlFor="signup-code" className="sr-only">Código de confirmação</Label>
+            <Input id="signup-code" value={confirmationCode} onChange={(e) => setConfirmationCode(e.target.value.replace(/\\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required placeholder="000000" className="text-center text-2xl tracking-[0.5em] font-bold" />
+            <Button type="submit" className="w-full" disabled={verifyingCode || confirmationCode.length !== 6}>{verifyingCode ? "A confirmar…" : "Confirmar e-mail"}</Button>
+          </form>
+          <Button variant="outline" className="mt-3 w-full" onClick={handleResendConfirmation} disabled={resending}>{resending ? "A enviar…" : "Reenviar código"}</Button>
+          <Button variant="ghost" className="mt-2 w-full" onClick={() => { setConfirmationEmail(null); setConfirmationCode(""); }}>Voltar para entrar</Button>
+          <p className="mt-4 text-xs text-muted-foreground">Verifique a Caixa de entrada e Spam. O código é de utilização única e pode expirar.</p>
         </div>
       </div>
     );
   }
-
   if (showQuiz) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-5 py-10">
