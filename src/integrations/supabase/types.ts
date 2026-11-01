@@ -87,6 +87,10 @@ export type Database = {
         }
         Update: {
           course?: string | null
+          primary_goal?: string | null
+          study_level?: string | null
+          exam_class?: string | null
+          onboarding_completed?: boolean
           created_at?: string
           email?: string | null
           full_name?: string
