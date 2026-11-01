@@ -111,7 +111,7 @@ function AuthPage() {
   async function handleVerifyConfirmationCode(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!confirmationEmail || verifyingCode) return;
-    const token = confirmationCode.replace(/\\D/g, "").slice(0, 6);
+    const token = confirmationCode.replace(/\D/g, "").slice(0, 6);
     if (token.length !== 6) { toast.error("Introduza o código de 6 dígitos enviado para o seu e-mail."); return; }
     setVerifyingCode(true);
     const { error } = await supabase.auth.verifyOtp({ email: confirmationEmail, token, type: "signup" });
@@ -153,7 +153,7 @@ function AuthPage() {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">Enviámos um código de confirmação para <strong className="text-foreground">{confirmationEmail}</strong>. Introduza os 6 dígitos abaixo para activar a sua conta RuJe IA.</p>
           <form className="mt-6 space-y-3" onSubmit={handleVerifyConfirmationCode}>
             <Label htmlFor="signup-code" className="sr-only">Código de confirmação</Label>
-            <Input id="signup-code" value={confirmationCode} onChange={(e) => setConfirmationCode(e.target.value.replace(/\\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required placeholder="000000" className="text-center text-2xl tracking-[0.5em] font-bold" />
+            <Input id="signup-code" value={confirmationCode} onChange={(e) => setConfirmationCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required placeholder="000000" className="text-center text-2xl tracking-[0.5em] font-bold" />
             <Button type="submit" className="w-full" disabled={verifyingCode || confirmationCode.length !== 6}>{verifyingCode ? "A confirmar…" : "Confirmar e-mail"}</Button>
           </form>
           <Button variant="outline" className="mt-3 w-full" onClick={handleResendConfirmation} disabled={resending}>{resending ? "A enviar…" : "Reenviar código"}</Button>
