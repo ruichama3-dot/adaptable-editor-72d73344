@@ -69,12 +69,14 @@ function Painel() {
     const timer = window.setInterval(() => {
       const element = carouselRef.current;
       if (!element || element.children.length < 2) return;
-      const atEnd = element.scrollLeft + element.clientWidth >= element.scrollWidth - 8;
-      element.scrollTo({
-        left: atEnd ? 0 : element.scrollLeft + element.clientWidth + 16,
-        behavior: "smooth",
-      });
-    }, 6500);
+      const slides = Array.from(element.children) as HTMLElement[];
+      const currentIndex = slides.reduce((best, slide, index) => {
+        const distance = Math.abs(slide.offsetLeft - element.scrollLeft);
+        return distance < Math.abs(slides[best].offsetLeft - element.scrollLeft) ? index : best;
+      }, 0);
+      const nextIndex = (currentIndex + 1) % slides.length;
+      element.scrollTo({ left: slides[nextIndex].offsetLeft, behavior: "smooth" });
+    }, 5000);
     return () => window.clearInterval(timer);
   }, [carouselPlaying]);
 
@@ -172,7 +174,6 @@ function Painel() {
             aria-label="Destaques e ferramentas da RuJe IA"
             onMouseEnter={() => setCarouselPlaying(false)}
             onFocusCapture={() => setCarouselPlaying(false)}
-            onPointerDown={() => setCarouselPlaying(false)}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:thin] [scroll-behavior:smooth]"
           >
             <div className="relative isolate flex min-h-[270px] min-w-full snap-center flex-col justify-center overflow-hidden rounded-3xl border border-[#087342] bg-gradient-to-br from-[#087a43] via-[#056536] to-[#064b32] p-6 text-white shadow-[0_16px_42px_rgba(5,91,51,0.24)] sm:min-h-[320px] sm:p-8">
@@ -198,7 +199,7 @@ function Painel() {
               <img
                 src="/imagens/curriculo-banner.webp"
                 alt="Agora é possível criar o seu currículo online na RuJe IA. Crie um currículo profissional, moderno e acessível."
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                className="absolute inset-0 h-full w-full object-contain object-center bg-white"
                 loading="eager"
                 decoding="async"
               />
