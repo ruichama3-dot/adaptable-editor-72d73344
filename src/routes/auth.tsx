@@ -54,17 +54,6 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  async function handleGoogleLogin() {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: authCallbackUrl(), queryParams: { prompt: "select_account" } },
-    });
-    if (error) {
-      setLoading(false);
-      toast.error("Não foi possível iniciar a entrada com Google. Tente novamente ou use o e-mail.");
-    }
-  }
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -169,13 +158,6 @@ function AuthPage() {
         <Logo size="lg" />
       </Link>
       <div className="shadow-soft w-full max-w-md rounded-2xl border border-border bg-card p-6">
-        <div className="mb-5 space-y-3">
-          <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={loading}>
-            <span className="mr-2 grid h-5 w-5 place-items-center rounded-full border text-sm font-bold">G</span>
-            Continuar com Google
-          </Button>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>ou use o seu e-mail</span><span className="h-px flex-1 bg-border" /></div>
-        </div>
         <Tabs defaultValue={modo === "registo" ? "registo" : "entrar"}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="entrar">Entrar</TabsTrigger>
