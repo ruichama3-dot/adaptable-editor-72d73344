@@ -46,11 +46,25 @@ function AuthPage() {
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
 
+  const authCallbackUrl = () => `${window.location.origin}/auth/callback?next=/painel`;
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/painel", replace: true });
     });
   }, [navigate]);
+
+  async function handleGoogleLogin() {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: authCallbackUrl(), queryParams: { prompt: "select_account" } },
+    });
+    if (error) {
+      setLoading(false);
+      toast.error("Não foi possível iniciar a entrada com Google. Tente novamente ou use o e-mail.");
+    }
+  }
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -87,7 +101,7 @@ function AuthPage() {
       email: String(form.get("email")).trim(),
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: authCallbackUrl(),
         data: { full_name: String(form.get("full_name")), phone: String(form.get("phone")) },
       },
     });
@@ -106,7 +120,7 @@ function AuthPage() {
   async function handleResendConfirmation() {
     if (!confirmationEmail || resending) return;
     setResending(true);
-    const { error } = await supabase.auth.resend({ type: "signup", email: confirmationEmail, options: { emailRedirectTo: window.location.origin } });
+    const { error } = await supabase.auth.resend({ type: "signup", email: confirmationEmail, options: { emailRedirectTo: authCallbackUrl() } });
     setResending(false);
     if (error) { toast.error("Não foi possível reenviar agora. Aguarde um pouco e tente novamente."); return; }
     toast.success("Novo link de confirmação enviado. Verifique também a pasta de spam.");
@@ -132,7 +146,7 @@ function AuthPage() {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">A conta foi criada para <strong className="text-foreground">{confirmationEmail}</strong>, mas o acesso ao painel só fica disponível depois de confirmar o endereço. Abra o link enviado para a sua caixa de entrada e, depois, entre na RuJe IA.</p>
           <Button className="mt-6 w-full" onClick={handleResendConfirmation} disabled={resending}>{resending ? "A enviar…" : "Reenviar link de confirmação"}</Button>
           <Button variant="outline" className="mt-3 w-full" onClick={() => setConfirmationEmail(null)}>Voltar para entrar</Button>
-          <p className="mt-4 text-xs text-muted-foreground">Verifique também Spam / Lixo electrónico. O link deve abrir em rujeia.online.</p>
+          <p className="mt-4 text-xs text-muted-foreground">Verifique a Caixa de entrada e Spam. Abra o link no mesmo navegador onde pretende utilizar a RuJe IA. Se o link expirar, solicite outro.</p>
         </div>
       </div>
     );
@@ -155,6 +169,13 @@ function AuthPage() {
         <Logo size="lg" />
       </Link>
       <div className="shadow-soft w-full max-w-md rounded-2xl border border-border bg-card p-6">
+        <div className="mb-5 space-y-3">
+          <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={loading}>
+            <span className="mr-2 grid h-5 w-5 place-items-center rounded-full border text-sm font-bold">G</span>
+            Continuar com Google
+          </Button>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>ou use o seu e-mail</span><span className="h-px flex-1 bg-border" /></div>
+        </div>
         <Tabs defaultValue={modo === "registo" ? "registo" : "entrar"}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="entrar">Entrar</TabsTrigger>
@@ -165,7 +186,7 @@ function AuthPage() {
             <form onSubmit={handleLogin} className="mt-5 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="l-email">E-mail</Label>
-                <Input id="l-email" name="email" type="email" required placeholder="voce@email.com" />
+                <Input id="l-email" name="email" type="email" autoComplete="email" required placeholder="voce@email.com" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="l-pass">Palavra-passe</Label>
@@ -188,7 +209,7 @@ function AuthPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="s-email">E-mail</Label>
-                <Input id="s-email" name="email" type="email" required />
+                <Input id="s-email" name="email" type="email" autoComplete="email" required placeholder="exemplo@gmail.com" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="s-phone">Número de telefone</Label>
