@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { PLANS } from "@/lib/plans";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function Admin() {
   const { isAdmin, isLoading } = useIsAdmin();
+  const [audienceFilter, setAudienceFilter] = useState("todos");
   const queryClient = useQueryClient();
 
   const { data: users = [] } = useQuery({
@@ -190,6 +192,29 @@ function Admin() {
     { icon: Wallet, label: "Total arrecadado", value: `${totalAprovado.toLocaleString("pt-PT")} MT` },
   ];
 
+  const audienceOf = (u: (typeof users)[number]) => {
+    if (u.primary_goal === "trabalho_academico") return "trabalho_academico";
+    if (u.primary_goal === "comprar_exames") return "comprar_exames";
+    if (u.primary_goal === "criar_curriculo") return "criar_curriculo";
+    return "sem_preferencia";
+  };
+  const audienceCounts = {
+    todos: users.length,
+    trabalho_academico: users.filter((u) => audienceOf(u) === "trabalho_academico").length,
+    comprar_exames: users.filter((u) => audienceOf(u) === "comprar_exames").length,
+    criar_curriculo: users.filter((u) => audienceOf(u) === "criar_curriculo").length,
+    sem_preferencia: users.filter((u) => audienceOf(u) === "sem_preferencia").length,
+  };
+  const filteredUsers = audienceFilter === "todos"
+    ? users
+    : users.filter((u) => audienceOf(u) === audienceFilter);
+  const audienceLabels: Record<string, string> = {
+    trabalho_academico: "Trabalho académico",
+    comprar_exames: "Compra de exames",
+    criar_curriculo: "Criação de currículo",
+    sem_preferencia: "Sem preferência",
+  };
+
   const cell = "px-3 py-2.5 align-top";
 
   return (
@@ -274,6 +299,27 @@ function Admin() {
         </TabsContent>
 
         <TabsContent value="utilizadores">
+          <section className="mt-4 space-y-4">
+            <div>
+              <h2 className="text-lg font-bold">Segmentação do público</h2>
+              <p className="text-sm text-muted-foreground">Veja e filtre os utilizadores de acordo com o objectivo escolhido no quiz de criação de conta.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {[
+                { id: "todos", label: "Todos", count: audienceCounts.todos },
+                { id: "trabalho_academico", label: "Trabalhos académicos", count: audienceCounts.trabalho_academico },
+                { id: "comprar_exames", label: "Compra de exames", count: audienceCounts.comprar_exames },
+                { id: "criar_curriculo", label: "Criar currículo", count: audienceCounts.criar_curriculo },
+                { id: "sem_preferencia", label: "Sem preferência", count: audienceCounts.sem_preferencia },
+              ].map((item) => (
+                <button key={item.id} type="button" onClick={() => setAudienceFilter(item.id)}
+                  className={`rounded-xl border p-3 text-left transition-colors ${audienceFilter === item.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:border-primary/50"}`}>
+                  <span className="block text-xs text-muted-foreground">{item.label}</span>
+                  <span className="mt-1 block text-2xl font-bold">{item.count}</span>
+                </button>
+              ))}
+            </div>
+          </section>
           <div className="shadow-soft mt-4 overflow-x-auto rounded-2xl border border-border bg-card">
             <table className="min-w-[760px] w-full text-sm">
               <thead className="bg-secondary/60 text-left">
@@ -282,6 +328,8 @@ function Admin() {
                   <th className={cell}>E-mail</th>
                   <th className={cell}>Telefone</th>
                   <th className={cell}>Instituição</th>
+                  <th className={cell}>Público</th>
+                  <th className={cell}>Área / classe</th>
                   <th className={cell}>Trabalhos</th>
                   <th className={cell}>Plano</th>
                   <th className={cell}>Registo</th>
@@ -290,7 +338,7 @@ function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => {
+                {filteredUsers.map((u) => {
                   const sub = subs.find((s) => s.user_id === u.id && new Date(s.expires_at) > new Date());
                   return (
                     <tr key={u.id} className="border-t border-border">
@@ -305,6 +353,8 @@ function Admin() {
                       <td className={cell}>{u.email ?? "—"}</td>
                       <td className={cell}>{u.phone ?? "—"}</td>
                       <td className={cell}>{u.institution ?? "—"}</td>
+                      <td className={cell}>{audienceLabels[audienceOf(u)]}</td>
+                      <td className={cell}>{u.primary_goal === "trabalho_academico" ? [u.study_level, u.course].filter(Boolean).join(" · ") || "—" : u.primary_goal === "comprar_exames" ? (u.exam_class ?? "—") : "—"}</td>
                       <td className={cell}>{works.filter((w) => w.user_id === u.id).length}</td>
                       <td className={cell}>{adminIds.has(u.id) ? "Ilimitado" : (sub?.plan ?? "Grátis")}</td>
                       <td className={cell}>{new Date(u.created_at).toLocaleDateString("pt-PT")}</td>
