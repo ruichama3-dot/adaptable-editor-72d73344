@@ -94,12 +94,22 @@ function AuthPage() {
   async function chooseCurriculum() {
     setPurpose("criar_curriculo");
     setLoading(true);
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    const { error: profileError } = await supabase.from("profiles").update({
+      onboarding_completed: true,
+      primary_goal: "criar_curriculo",
+    }).eq("id", userId ?? "");
+    if (profileError) {
+      setLoading(false);
+      toast.error("Não foi possível guardar a sua preferência. Tente novamente.");
+      return;
+    }
     const { error } = await supabase.auth.updateUser({
       data: { onboarding_completed: true, primary_goal: "criar_curriculo" },
     });
     setLoading(false);
     if (error) {
-      toast.error("Não foi possível guardar a sua preferência. Tente novamente.");
+      toast.error("A preferência foi guardada no perfil, mas não foi possível actualizar os metadados.");
       return;
     }
     navigate({ to: "/painel", replace: true });
