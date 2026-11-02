@@ -80,28 +80,68 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           const { data: savedProduct } = await (supabaseAdmin.from("ratixpay_products") as any)
             .select("product_id").eq("plan_id", productKey).eq("amount", amount).maybeSingle();
           let productId = savedProduct?.product_id as string | undefined;
+          const expectedProductName = `RuJe IA - ${productName}`;
+          const persistProduct = async (id: string) => {
+            const { error: saveError } = await (supabaseAdmin.from("ratixpay_products") as any)
+              .upsert({ plan_id: productKey, product_id: id, amount }, { onConflict: "plan_id" });
+            if (saveError) throw new Error(`RatixPay product mapping save failed: ${saveError.message}`);
+          };
+
+          // Reuse an existing merchant-catalogue product before attempting catalogue creation.
+          if (!productId) {
+            const listRes = await fetch(`${base}/products`, { method: "GET", headers });
+            const listText = await listRes.text();
+            let listData: any = {};
+            try { listData = listText ? JSON.parse(listText) : {}; } catch { /* non-JSON provider response */ }
+            if (listRes.ok) {
+              const candidates = Array.isArray(listData) ? listData :
+                Array.isArray(listData?.data) ? listData.data :
+                Array.isArray(listData?.products) ? listData.products :
+                Array.isArray(listData?.data?.products) ? listData.data.products : [];
+              const existing = candidates.find((item: any) =>
+                String(item?.name || "").trim().toLowerCase() === expectedProductName.toLowerCase() &&
+                Number(item?.price ?? item?.amount) === amount &&
+                String(item?.currency || "MZN").toUpperCase() === "MZN" &&
+                (item?.product_id || item?.id)
+              );
+              productId = existing?.product_id || existing?.id;
+              if (productId) {
+                try { await persistProduct(productId); } catch (saveError) {
+                  console.error("[RatixPay] existing product mapping save failed", saveError);
+                  await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
+                  return reply({ error: "Encontrámos o produto na RatixPay, mas não foi possível associá-lo à tua conta." }, 500);
+                }
+              }
+            } else {
+              console.warn("[RatixPay] product list unavailable", listRes.status, listText.slice(0, 300));
+            }
+          }
+
           if (!productId) {
             const productRes = await fetch(`${base}/products`, {
               method: "POST", headers,
               body: JSON.stringify({
-                name: `RuJe IA - ${productName}`, price: amount, currency: "MZN",
+                name: expectedProductName, price: amount, currency: "MZN",
                 callback_url: "https://www.rujeia.online/api/ratixpay/webhook",
                 custom_metadata: { service: "ruje-ia", product_key: productKey },
               }),
             });
-            const productData = await productRes.json().catch(() => ({})) as any;
+            const productText = await productRes.text();
+            let productData: any = {};
+            try { productData = productText ? JSON.parse(productText) : {}; } catch { /* non-JSON provider response */ }
             productId = productData?.product_id || productData?.data?.product_id;
             if (!productRes.ok || !productId) {
-              console.error("[RatixPay] product create failed", productRes.status, productData);
+              console.error("[RatixPay] product create failed", productRes.status, productText.slice(0, 500));
               await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
-              return reply({ error: "A RatixPay não conseguiu criar o produto de pagamento." }, 502);
+              const message = productRes.status === 403
+                ? "A RatixPay recusou a criação do produto (403). Não foi encontrado um produto correspondente no catálogo. Pede ao suporte RatixPay para disponibilizar a criação de produtos via API ou cria o produto no painel e volta a tentar."
+                : "A RatixPay não conseguiu disponibilizar o produto de pagamento. Verifica o catálogo e tenta novamente.";
+              return reply({ error: message, provider_status: productRes.status }, 502);
             }
-            const { error: saveError } = await (supabaseAdmin.from("ratixpay_products") as any)
-              .upsert({ plan_id: productKey, product_id: productId, amount }, { onConflict: "plan_id" });
-            if (saveError) {
-              console.error("[RatixPay] product save failed", saveError.message);
+            try { await persistProduct(productId); } catch (saveError) {
+              console.error("[RatixPay] product save failed", saveError);
               await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
-              return reply({ error: "Não foi possível guardar o produto RatixPay." }, 500);
+              return reply({ error: "O produto foi criado na RatixPay, mas não foi possível guardar a associação." }, 500);
             }
           }
 
