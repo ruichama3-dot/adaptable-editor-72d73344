@@ -7,7 +7,7 @@ const reply = (body: Record<string, unknown>, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
 const PRODUCTS = {
-  exams: { key: "service:exams", name: "Pacote de exames 12.ª classe", amount: 125, redirect: "https://rujeia.online/exames" },
+  exams: { key: "service:exams", name: "Pacote de exames", amount: 125, redirect: "https://rujeia.online/exames" },
   cv: { key: "service:cv", name: "Currículo profissional", amount: 125, redirect: "https://rujeia.online/curriculo" },
 } as const;
 
