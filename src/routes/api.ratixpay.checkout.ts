@@ -4,49 +4,71 @@ import { PLANS } from "@/lib/plans";
 const reply = (body: Record<string, unknown>, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
+const PRODUCTS = {
+  exams: { key: "service:exams", name: "Pacote de exames 12.ª classe", amount: 125, redirect: "https://rujeia.online/exames" },
+  cv: { key: "service:cv", name: "Currículo profissional", amount: 125, redirect: "https://rujeia.online/curriculo" },
+} as const;
+
+function normalizeMozPhone(value: unknown) {
+  const digits = String(value ?? "").replace(/[^0-9]/g, "");
+  const local = digits.startsWith("258") ? digits.slice(3) : digits;
+  return /^(82|83|84|85|86|87)\d{7}$/.test(local) ? local : null;
+}
+
 export const Route = createFileRoute("/api/ratixpay/checkout")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        let orderId: string | undefined;
         try {
-          const bearer = request.headers.get("authorization") || "";
-          const accessToken = bearer.replace(/^Bearer\s+/i, "").trim();
-          if (!accessToken) return reply({ error: "Sessão inválida. Entre novamente." }, 401);
+          const accessToken = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+          if (!accessToken) return reply({ error: "Sessão inválida. Atualiza a página e entra novamente." }, 401);
+          const body = await request.json() as { productType?: string; planId?: string; phone?: string };
+          const phone = normalizeMozPhone(body.phone);
+          if (!phone) return reply({ error: "Indica um número moçambicano válido (82–87 e 7 dígitos)." }, 400);
+
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { data: auth, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
-          if (authError || !auth.user) return reply({ error: "Sessão inválida. Entre novamente." }, 401);
+          if (authError || !auth.user) return reply({ error: "Sessão inválida. Atualiza a página e entra novamente." }, 401);
 
-          const body = await request.json() as { planId?: string; phone?: string };
-          const plan = PLANS.find((item) => item.id === body.planId);
-          if (!plan) return reply({ error: "Plano inválido." }, 400);
+          const plan = body.productType === "plan" ? PLANS.find((item) => item.id === body.planId) : undefined;
+          const service = body.productType === "exams" ? PRODUCTS.exams : body.productType === "cv" ? PRODUCTS.cv : undefined;
+          if (body.productType === "plan" && !plan) return reply({ error: "Plano inválido." }, 400);
+          if (!plan && !service) return reply({ error: "Produto inválido." }, 400);
+
           const token = process.env.RATIXPAY_API_TOKEN;
           const merchant = process.env.RATIXPAY_MERCHANT_ID;
           const base = (process.env.RATIXPAY_API_BASE_URL || "https://ratixpay.co.mz/v2").replace(/\/$/, "");
-          if (!token || !merchant) return reply({ error: "RatixPay não configurada no servidor." }, 503);
+          if (!token || !merchant) return reply({ error: "RatixPay não está configurada no servidor." }, 503);
 
           const { data: profile } = await supabaseAdmin.from("profiles").select("full_name,phone").eq("id", auth.user.id).maybeSingle();
           const fullName = profile?.full_name || auth.user.email || "Cliente RuJe IA";
-          const phone = String(body.phone || profile?.phone || "").trim();
+          const amount = plan?.price ?? service!.amount;
+          const productName = plan?.name ?? service!.name;
+          const productKey = plan?.id ?? service!.key;
+          const redirect = plan ? "https://rujeia.online/planos" : service!.redirect;
+
           const { data: order, error: orderError } = await supabaseAdmin.from("payment_requests").insert({
-            user_id: auth.user.id, plan: plan.name, amount: plan.price, method: "RatixPay",
-            full_name: fullName, phone: phone || "Não informado", proof: "", status: "pendente",
+            user_id: auth.user.id, plan: productName, amount, method: "RatixPay",
+            full_name: fullName, phone, proof: "", status: "pendente",
           }).select("id").single();
           if (orderError || !order) {
             console.error("[RatixPay] order insert failed", orderError?.message);
-            return reply({ error: "Não foi possível iniciar o pedido de pagamento." }, 500);
+            return reply({ error: "Não foi possível criar o pedido de pagamento." }, 500);
           }
+          orderId = order.id;
 
           const headers = { Authorization: `Bearer ${token}`, "X-Merchant-Id": merchant, "Content-Type": "application/json" };
           const { data: savedProduct } = await (supabaseAdmin.from("ratixpay_products") as any)
-            .select("product_id").eq("plan_id", plan.id).eq("amount", plan.price).maybeSingle();
+            .select("product_id").eq("plan_id", productKey).eq("amount", amount).maybeSingle();
           let productId = savedProduct?.product_id as string | undefined;
           if (!productId) {
             const productRes = await fetch(`${base}/products`, {
               method: "POST", headers,
               body: JSON.stringify({
-                name: `RuJe IA - ${plan.name}`, price: plan.price, currency: "MZN",
+                name: `RuJe IA - ${productName}`, price: amount, currency: "MZN",
                 callback_url: "https://www.rujeia.online/api/ratixpay/webhook",
-                custom_metadata: { service: "ruje-ia", plan_id: plan.id },
+                custom_metadata: { service: "ruje-ia", product_key: productKey },
               }),
             });
             const productData = await productRes.json().catch(() => ({})) as any;
@@ -56,11 +78,12 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
               await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
               return reply({ error: "A RatixPay não conseguiu criar o produto de pagamento." }, 502);
             }
-            const { error: saveProductError } = await (supabaseAdmin.from("ratixpay_products") as any)
-              .upsert({ plan_id: plan.id, product_id: productId, amount: plan.price }, { onConflict: "plan_id" });
-            if (saveProductError) {
-              console.error("[RatixPay] product id save failed", saveProductError.message);
-              return reply({ error: "Não foi possível guardar a configuração do produto." }, 500);
+            const { error: saveError } = await (supabaseAdmin.from("ratixpay_products") as any)
+              .upsert({ plan_id: productKey, product_id: productId, amount }, { onConflict: "plan_id" });
+            if (saveError) {
+              console.error("[RatixPay] product save failed", saveError.message);
+              await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
+              return reply({ error: "Não foi possível guardar o produto RatixPay." }, 500);
             }
           }
 
@@ -71,10 +94,10 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
             method: "POST", headers,
             body: JSON.stringify({
               product_id: productId,
-              customer: { nome: fullName, email: auth.user.email || undefined, telefone: phone || undefined },
-              redirect_url: "https://rujeia.online/planos",
-              cancel_url: "https://rujeia.online/planos",
-              custom_metadata: { order_id: order.id, plan_id: plan.id },
+              customer: { nome: fullName, email: auth.user.email || undefined, telefone: phone },
+              redirect_url: redirect,
+              cancel_url: redirect,
+              custom_metadata: { order_id: order.id, product_key: productKey, user_id: auth.user.id },
             }),
           });
           const checkoutData = await checkoutRes.json().catch(() => ({})) as any;
@@ -83,15 +106,15 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           if (!checkoutRes.ok || !paymentId || !checkoutUrl) {
             console.error("[RatixPay] checkout create failed", checkoutRes.status, checkoutData);
             await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
-            return reply({ error: "Não foi possível criar a página de pagamento." }, 502);
+            return reply({ error: "Não foi possível criar a página de pagamento RatixPay." }, 502);
           }
           const { error: updateError } = await (supabaseAdmin.from("payment_requests") as any)
             .update({ ratixpay_payment_id: paymentId }).eq("id", order.id);
           if (updateError) {
             console.error("[RatixPay] payment id save failed", updateError.message);
-            return reply({ error: "A cobrança foi criada, mas não foi possível guardar a referência." }, 500);
+            return reply({ error: "A cobrança foi criada, mas a referência não foi guardada. Contacta o apoio." }, 500);
           }
-          return reply({ checkout_url: checkoutUrl });
+          return reply({ checkout_url: checkoutUrl, order_id: order.id });
         } catch (error) {
           console.error("[RatixPay] checkout error", error);
           return reply({ error: "Erro inesperado ao iniciar o pagamento." }, 500);
