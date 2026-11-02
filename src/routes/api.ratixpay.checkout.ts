@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PLANS } from "@/lib/plans";
+import { createClient } from "@supabase/supabase-js";
+import { DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/config";
 
 const reply = (body: Record<string, unknown>, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -28,8 +30,24 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           if (!phone) return reply({ error: "Indica um número moçambicano válido (82–87 e 7 dígitos)." }, 400);
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data: auth, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
-          if (authError || !auth.user) return reply({ error: "Sessão inválida. Atualiza a página e entra novamente." }, 401);
+          // Verify the user's JWT against the same public Supabase project used by
+          // the browser. Do not use the service-role client's auth storage/session.
+          const supabaseUrl = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"] || DEFAULT_SUPABASE_URL;
+          const publishableKey = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+            process.env["SUPABASE_PUBLISHABLE_KEY"] || DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+          const authClient = createClient(supabaseUrl, publishableKey, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+          });
+          const { data: auth, error: authError } = await authClient.auth.getUser(accessToken);
+          if (authError || !auth.user) {
+            console.error("[RatixPay] Supabase user-token verification failed", {
+              code: authError?.code || "NO_USER",
+              status: authError?.status || 0,
+              message: authError?.message || "No authenticated user returned",
+              supabaseHost: new URL(supabaseUrl).host,
+            });
+            return reply({ error: "Não foi possível validar a tua sessão nesta plataforma. Sai da conta, entra novamente e tenta outra vez." }, 401);
+          }
 
           const plan = body.productType === "plan" ? PLANS.find((item) => item.id === body.planId) : undefined;
           const service = body.productType === "exams" ? PRODUCTS.exams : body.productType === "cv" ? PRODUCTS.cv : undefined;
