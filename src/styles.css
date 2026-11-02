@@ -168,9 +168,9 @@
   font-size: 12pt;
   line-height: 1.5;
   color: #111;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   word-break: normal;
-  overflow-x: auto;
+  overflow-x: visible;
 }
 .doc-sheet .sample-cover { text-align: center; }
 .doc-sheet .sample-cover p { text-align: center; }
@@ -253,11 +253,15 @@
 }
 
 @media (max-width: 640px) {
+  .doc-pages { gap: 1rem; padding-inline: 2px; }
+  .doc-pages > div { width: 100%; }
   .doc-sheet {
-    min-height: max(460px, 115vw);
+    width: 100%;
+    min-height: max(520px, 141.4vw);
     padding: 7% 6%;
-    font-size: 12pt;
+    font-size: 11.5pt;
     line-height: 1.55;
+    overflow-wrap: anywhere;
   }
   .doc-sheet td,
   .doc-sheet th {
