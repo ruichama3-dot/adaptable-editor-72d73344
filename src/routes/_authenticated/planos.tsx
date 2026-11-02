@@ -146,19 +146,19 @@ function Planos() {
         </div>
       )}
 
-      {pending ? (
+      {pending && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-primary bg-card p-6">
           <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div>
             <p className="text-lg font-bold">Pedido enviado · a aguardar aprovação</p>
             <p className="text-muted-foreground mt-1 text-sm">
               {pending.plan} · {pending.amount} MT · pedido criado em{" "}
-              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela RatixPay. Poderá iniciar outro pedido depois de este ser aprovado ou recusado.
+              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela RatixPay. Pode continuar a consultar os planos e iniciar outro pedido, se necessário.
             </p>
           </div>
         </div>
-      ) : (
-        <>
+      )}
+      <>
           <section id="planos-trabalhos" className="mt-8 scroll-mt-6">
             <h2 className="text-2xl font-extrabold">Planos para criar trabalhos</h2>
             <p className="text-muted-foreground mt-1 text-sm">Escolha a duração do acesso que melhor se adapta a si.</p>
@@ -227,7 +227,6 @@ function Planos() {
             </section>
           )}
         </>
-      )}
 
       {pedidos.length > 0 && (
         <section className="mt-10">
