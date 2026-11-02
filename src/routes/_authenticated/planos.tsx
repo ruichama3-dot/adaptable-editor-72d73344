@@ -2,12 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PLANS, PAYMENT_METHODS, planById } from "@/lib/plans";
+import { PLANS, planById } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { BookOpenCheck, Check, CheckCircle2, Clock, Copy, Crown, GraduationCap, Loader2 } from "lucide-react";
+import { BookOpenCheck, Check, Clock, Crown, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/planos")({
@@ -36,8 +33,7 @@ function Planos() {
   const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [method, setMethod] = useState(PAYMENT_METHODS[0]!.id);
+
   const [busy, setBusy] = useState(false);
 
   const { data: sub } = useQuery({
@@ -67,16 +63,9 @@ function Planos() {
 
   const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend"));
   const plan = selected ? planById(selected) : undefined;
-  const pay = PAYMENT_METHODS.find((m) => m.id === method)!;
-
-  async function copy(text: string) {
-    await navigator.clipboard.writeText(text).catch(() => undefined);
-    toast.success(`Número ${text} copiado!`);
-  }
 
   function choose(id: string) {
     setSelected(id);
-    setStep(2);
     setTimeout(() => document.getElementById("pagamento")?.scrollIntoView({ behavior: "smooth" }), 50);
   }
 
@@ -84,15 +73,31 @@ function Planos() {
     if (!plan || busy) return;
     setBusy(true);
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (sessionError || !accessToken) throw new Error("A sessão expirou. Entre novamente.");
+      let { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      let accessToken = sessionData.session?.access_token;
+      if (sessionError || !accessToken) {
+        const refreshed = await supabase.auth.refreshSession();
+        sessionData = refreshed.data;
+        sessionError = refreshed.error;
+        accessToken = sessionData.session?.access_token;
+      }
+      if (sessionError || !accessToken) throw new Error("A sua sessão expirou. Termine a sessão, entre novamente e tente pagar.");
       const response = await fetch("/api/ratixpay/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ planId: plan.id }),
       });
       const result = await response.json();
+      if (response.status === 401) {
+        const refreshed = await supabase.auth.refreshSession();
+        const freshToken = refreshed.data.session?.access_token;
+        if (freshToken) {
+          const retry = await fetch("/api/ratixpay/checkout", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${freshToken}` }, body: JSON.stringify({ planId: plan.id }) });
+          const retryResult = await retry.json();
+          if (retry.ok && retryResult.checkout_url) { window.location.assign(retryResult.checkout_url); return; }
+          throw new Error(retryResult.error || "A sessão não foi aceite. Entre novamente.");
+        }
+      }
       if (!response.ok || !result.checkout_url) throw new Error(result.error || "Não foi possível iniciar o pagamento.");
       window.location.assign(result.checkout_url);
     } catch (error) {
@@ -101,33 +106,6 @@ function Planos() {
     }
   }
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!plan || busy || pending) return;
-    const form = e.currentTarget;
-    const f = new FormData(form);
-    setBusy(true);
-    const { error } = await supabase.from("payment_requests").insert({
-      user_id: user.id,
-      plan: plan.name,
-      amount: plan.price,
-      method: pay.name,
-      full_name: String(f.get("full_name") ?? "").trim(),
-      phone: String(f.get("phone") ?? "").trim(),
-      proof: String(f.get("proof") ?? "").trim(),
-    });
-    setBusy(false);
-    if (error) {
-      toast.error("Não foi possível enviar o comprovativo. Tente novamente.");
-      return;
-    }
-    form.reset();
-    setStep(1);
-    setSelected(null);
-    void queryClient.invalidateQueries({ queryKey: ["my-payments"] });
-    void queryClient.invalidateQueries({ queryKey: ["my-pending-payment"] });
-    toast.success("Comprovativo enviado! Aguarde a aprovação do administrador.");
-  }
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-5 sm:py-8">
@@ -174,9 +152,8 @@ function Planos() {
           <div>
             <p className="text-lg font-bold">Pedido enviado · a aguardar aprovação</p>
             <p className="text-muted-foreground mt-1 text-sm">
-              {pending.plan} · {pending.amount} MT via {pending.method}, enviado em{" "}
-              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O administrador está a verificar o seu
-              comprovativo. Poderá fazer um novo pedido depois de este ser aprovado ou recusado.
+              {pending.plan} · {pending.amount} MT · pedido criado em{" "}
+              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela RatixPay. Poderá iniciar outro pedido depois de este ser aprovado ou recusado.
             </p>
           </div>
         </div>
@@ -237,75 +214,11 @@ function Planos() {
                 {plan.name} · {plan.price} MT
               </h2>
 
-              {step === 2 && (
-                <>
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    Escolha o método, envie {plan.price} MT para o número indicado e depois confirme.
-                  </p>
-                  <Button size="lg" className="mt-5 w-full" disabled={busy} onClick={payWithRatixPay}>
-                    {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar automaticamente com RatixPay · {plan.price} MT
-                  </Button>
-                  <p className="text-muted-foreground mt-2 text-xs">Pagamento seguro por M-Pesa, E-Mola ou outro método disponível na RatixPay.</p>
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    {PAYMENT_METHODS.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setMethod(m.id)}
-                        className={`min-w-0 rounded-2xl border-2 p-4 text-left sm:p-5 ${
-                          method === m.id ? "border-primary bg-secondary/50" : "border-border"
-                        }`}
-                      >
-                        <p className="text-lg font-bold">{m.name}</p>
-                        <p className="mt-1 text-2xl font-extrabold break-words">{m.number}</p>
-                        {m.holder && <p className="text-muted-foreground mt-1 text-sm">Nome: {m.holder}</p>}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <Button variant="outline" className="flex-1" onClick={() => copy(pay.number)}>
-                      <Copy className="h-4 w-4" /> Copiar número {pay.name}
-                    </Button>
-                    <Button size="lg" className="shadow-brand flex-1" onClick={() => setStep(3)}>
-                      <CheckCircle2 className="h-4 w-4" /> Já fiz o pagamento
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {step === 3 && (
-                <form onSubmit={onSubmit} className="mt-4 space-y-4">
-                  <p className="text-muted-foreground text-sm">
-                    Pagamento via <strong>{pay.name}</strong> ({pay.number}). Preencha os dados e cole o comprovativo.
-                  </p>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="full_name">Nome de quem pagou</Label>
-                    <Input id="full_name" name="full_name" required placeholder="Nome completo" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="phone">Número usado no pagamento</Label>
-                    <Input id="phone" name="phone" required placeholder="84 000 0000" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="proof">Comprovativo da transacção</Label>
-                    <Textarea
-                      id="proof"
-                      name="proof"
-                      required
-                      rows={3}
-                      placeholder="Cole aqui a mensagem de confirmação ou o código da transacção"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button type="button" variant="outline" onClick={() => setStep(2)} disabled={busy}>
-                      Voltar
-                    </Button>
-                    <Button type="submit" size="lg" className="shadow-brand flex-1" disabled={busy}>
-                      {busy && <Loader2 className="h-4 w-4 animate-spin" />} Enviar comprovativo
-                    </Button>
-                  </div>
-                </form>
-              )}
+              <p className="text-muted-foreground mt-2 text-sm">Será encaminhado para a página segura da RatixPay para pagar com os métodos disponíveis.</p>
+              <Button size="lg" className="mt-5 w-full" disabled={busy} onClick={payWithRatixPay}>
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar automaticamente com RatixPay · {plan.price} MT
+              </Button>
+              <p className="text-muted-foreground mt-2 text-xs">A activação do plano acontece automaticamente após a confirmação do pagamento.</p>
             </section>
           )}
         </>
