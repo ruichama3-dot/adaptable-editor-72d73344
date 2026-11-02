@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Logo } from "@/components/Logo";
 import { NotificationBell } from "@/components/NotificationBell";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { Button } from "@/components/ui/button";
 import { applyTheme, readTheme, t, usePreferences } from "@/lib/preferences";
 import { LogOut, Settings, CreditCard, ShieldCheck, LayoutDashboard, BookOpenCheck } from "lucide-react";
@@ -115,6 +116,7 @@ function AuthedLayout() {
         </div>
       )}
       <Outlet />
+      <MobileBottomNav />
     </div>
   );
 }
