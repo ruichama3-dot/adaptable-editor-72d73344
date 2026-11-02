@@ -80,6 +80,27 @@ function Planos() {
     setTimeout(() => document.getElementById("pagamento")?.scrollIntoView({ behavior: "smooth" }), 50);
   }
 
+  async function payWithRatixPay() {
+    if (!plan || busy) return;
+    setBusy(true);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (sessionError || !accessToken) throw new Error("A sessão expirou. Entre novamente.");
+      const response = await fetch("/api/ratixpay/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ planId: plan.id }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.checkout_url) throw new Error(result.error || "Não foi possível iniciar o pagamento.");
+      window.location.assign(result.checkout_url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao iniciar pagamento RatixPay.");
+      setBusy(false);
+    }
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!plan || busy || pending) return;
@@ -221,6 +242,10 @@ function Planos() {
                   <p className="text-muted-foreground mt-2 text-sm">
                     Escolha o método, envie {plan.price} MT para o número indicado e depois confirme.
                   </p>
+                  <Button size="lg" className="mt-5 w-full" disabled={busy} onClick={payWithRatixPay}>
+                    {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar automaticamente com RatixPay · {plan.price} MT
+                  </Button>
+                  <p className="text-muted-foreground mt-2 text-xs">Pagamento seguro por M-Pesa, E-Mola ou outro método disponível na RatixPay.</p>
                   <div className="mt-5 grid gap-4 sm:grid-cols-2">
                     {PAYMENT_METHODS.map((m) => (
                       <button
