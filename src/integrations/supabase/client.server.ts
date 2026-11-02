@@ -31,7 +31,11 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
+  // Keep server auth pointed at the same Supabase project selected by the browser build.
+  // VITE_SUPABASE_URL is the frontend's highest-priority setting; preferring SUPABASE_URL
+  // here can make getUser(accessToken) reject valid tokens when the two values differ.
   const SUPABASE_URL =
+    process.env['VITE_SUPABASE_URL'] ||
     process.env['SUPABASE_URL'] ||
     DEFAULT_SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'];
