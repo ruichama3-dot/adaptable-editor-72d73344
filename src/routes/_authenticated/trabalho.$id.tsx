@@ -49,6 +49,7 @@ const SIZES = ["1", "2", "3", "4", "5", "6", "7"];
 function Editor() {
   const { id } = Route.useParams();
   const docRef = useRef<DocPagesHandle>(null);
+  const selectionRef = useRef<Range | null>(null);
   const [saving, setSaving] = useState(false);
   const [html, setHtml] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
@@ -68,6 +69,15 @@ function Editor() {
 
   const cmd = (command: string, value?: string) => {
     docRef.current?.focusedPage()?.focus();
+    const selection = window.getSelection();
+    if (selection && selectionRef.current) {
+      try {
+        selection.removeAllRanges();
+        selection.addRange(selectionRef.current);
+      } catch {
+        selectionRef.current = null;
+      }
+    }
     document.execCommand(command, false, value);
   };
 
@@ -181,14 +191,16 @@ function Editor() {
 
       <div
         onMouseDown={(e) => {
-          // Mantém a selecção do texto ao carregar nos botões de formatação.
+          // Guarda a selecção antes de a barra flutuante receber o foco.
+          const selection = window.getSelection();
+          if (selection?.rangeCount) selectionRef.current = selection.getRangeAt(0).cloneRange();
           if ((e.target as HTMLElement).closest("button")) e.preventDefault();
         }}
-        className="shadow-soft sticky top-24 z-20 mt-5 flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-2 print:hidden sm:top-16 sm:flex-wrap sm:overflow-visible"
+        className="shadow-soft sticky top-24 z-30 mt-5 flex items-center gap-1 overflow-x-auto rounded-2xl border border-emerald-200/30 bg-[rgba(7,117,62,0.92)] p-2 text-white backdrop-blur-2xl print:hidden sm:top-16 sm:flex-wrap sm:overflow-visible"
       >
         <select
           onChange={(e) => cmd("fontName", e.target.value)}
-          className="h-9 shrink-0 rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-9 shrink-0 rounded-md border border-white/25 bg-white/10 px-2 text-sm text-white"
           defaultValue="Times New Roman"
         >
           {FONTS.map((f) => (
@@ -197,7 +209,7 @@ function Editor() {
         </select>
         <select
           onChange={(e) => cmd("fontSize", e.target.value)}
-          className="h-9 shrink-0 rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-9 shrink-0 rounded-md border border-white/25 bg-white/10 px-2 text-sm text-white"
           defaultValue="3"
         >
           {SIZES.map((s) => (
