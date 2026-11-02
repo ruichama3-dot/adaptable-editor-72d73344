@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PLANS, planById } from "@/lib/plans";
+import { PLANS, planById, createRatixPayCheckout } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { BookOpenCheck, Check, Clock, Crown, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +35,7 @@ function Planos() {
   const [selected, setSelected] = useState<string | null>(null);
 
   const [busy, setBusy] = useState(false);
+  const [phone, setPhone] = useState("");
 
   const { data: sub } = useQuery({
     queryKey: ["subscription"],
@@ -73,33 +74,8 @@ function Planos() {
     if (!plan || busy) return;
     setBusy(true);
     try {
-      let { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      let accessToken = sessionData.session?.access_token;
-      if (sessionError || !accessToken) {
-        const refreshed = await supabase.auth.refreshSession();
-        sessionData = refreshed.data;
-        sessionError = refreshed.error;
-        accessToken = sessionData.session?.access_token;
-      }
-      if (sessionError || !accessToken) throw new Error("A sua sessão expirou. Termine a sessão, entre novamente e tente pagar.");
-      const response = await fetch("/api/ratixpay/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ planId: plan.id }),
-      });
-      const result = await response.json();
-      if (response.status === 401) {
-        const refreshed = await supabase.auth.refreshSession();
-        const freshToken = refreshed.data.session?.access_token;
-        if (freshToken) {
-          const retry = await fetch("/api/ratixpay/checkout", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${freshToken}` }, body: JSON.stringify({ planId: plan.id }) });
-          const retryResult = await retry.json();
-          if (retry.ok && retryResult.checkout_url) { window.location.assign(retryResult.checkout_url); return; }
-          throw new Error(retryResult.error || "A sessão não foi aceite. Entre novamente.");
-        }
-      }
-      if (!response.ok || !result.checkout_url) throw new Error(result.error || "Não foi possível iniciar o pagamento.");
-      window.location.assign(result.checkout_url);
+      const checkoutUrl = await createRatixPayCheckout({ productType: "plan", planId: plan.id, phone });
+      window.location.assign(checkoutUrl);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao iniciar pagamento RatixPay.");
       setBusy(false);
@@ -219,8 +195,8 @@ function Planos() {
                 {plan.name} · {plan.price} MT
               </h2>
 
-              <p className="text-muted-foreground mt-2 text-sm">Será encaminhado para a página segura da RatixPay para pagar com os métodos disponíveis.</p>
-              <Button size="lg" className="mt-5 w-full" disabled={busy} onClick={payWithRatixPay}>
+              <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><p className="text-muted-foreground text-xs">Na página segura da RatixPay, confirma o método disponível: M-Pesa ou e-Mola.</p></div>
+              <Button size="lg" className="mt-5 w-full" disabled={busy || !phone.trim()} onClick={payWithRatixPay}>
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar automaticamente com RatixPay · {plan.price} MT
               </Button>
               <p className="text-muted-foreground mt-2 text-xs">A activação do plano acontece automaticamente após a confirmação do pagamento.</p>
