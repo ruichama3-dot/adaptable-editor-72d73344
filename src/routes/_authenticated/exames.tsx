@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { prepareExamLesson } from "@/lib/prepared-exam-lessons";
+import { createRatixPayCheckout } from "@/lib/plans";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,23 +18,17 @@ export const Route = createFileRoute("/_authenticated/exames")({
   component: ExamesPage,
 });
 
-const METHODS = [
-  { id: "emola", name: "Emola", number: "872954503", holder: "Laura Ermelindo" },
-  { id: "mpesa", name: "M-Pesa", number: "851589567", holder: "JEREMIAS NIUONENO ROMAO" },
-];
-
 function ExamesPage() {
   const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const listExams = useServerFn(listApprovedExams);
   const getExamPdf = useServerFn(getApprovedExamPdf);
-  const [method, setMethod] = useState("emola");
+  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [lesson, setLesson] = useState("");
   const [studying, setStudying] = useState(false);
   const [activeExam, setActiveExam] = useState("");
   const [activeLesson, setActiveLesson] = useState("");
-  const pay = METHODS.find(m => m.id === method)!;
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["exam-purchase-status", user.id],
@@ -53,42 +48,17 @@ function ExamesPage() {
     staleTime: 60_000,
   });
 
-  async function copyNumber() {
-    await navigator.clipboard.writeText(pay.number).catch(() => undefined);
-    toast.success("Número copiado.");
-  }
-
   async function buyExams(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy || isPending || isApproved) return;
-    const form = e.currentTarget;
-    const fields = new FormData(form);
-    const fullName = String(fields.get("full_name") ?? "").trim();
-    const phone = String(fields.get("phone") ?? "").trim();
-    const proof = String(fields.get("proof") ?? "").trim();
-    if (!fullName || !phone || !proof) {
-      toast.error("Faltam alguns dados. Preenche o nome, o telefone e a referência do pagamento.");
-      return;
-    }
     setBusy(true);
-    const { error } = await supabase.from("payment_requests").insert({
-      user_id: user.id,
-      plan: "Pacote de exames",
-      amount: 125,
-      method: pay.name,
-      full_name: fullName,
-      phone,
-      proof,
-    });
-    setBusy(false);
-    if (error) {
-      toast.error("O pedido não foi enviado. Verifica a ligação e tenta novamente.");
-      return;
+    try {
+      const checkoutUrl = await createRatixPayCheckout({ productType: "exams", phone });
+      window.location.assign(checkoutUrl);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
+      setBusy(false);
     }
-    form.reset();
-    await queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] });
-    await queryClient.invalidateQueries({ queryKey: ["my-payments"] });
-    toast.success("Pedido enviado. O acesso será liberado depois da aprovação do pagamento.");
   }
 
   function downloadLesson() {
@@ -115,11 +85,9 @@ function ExamesPage() {
           <div className="rounded-2xl bg-primary/10 p-4 text-center"><p className="text-3xl font-extrabold">125 MT</p><p className="text-xs text-muted-foreground">pagamento único</p></div>
         </div>
         {isLoading ? <p className="mt-5 text-sm text-muted-foreground">A verificar o teu acesso...</p> : isApproved ? <div className="mt-5 rounded-xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="h-5 w-5" /> Pagamento aprovado</p><p className="mt-1">O teu acesso ao pacote de exames está confirmado.</p></div> : isPending ? <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4"><p className="font-bold">Pagamento em verificação</p><p className="mt-1 text-sm text-muted-foreground">O pedido foi enviado. Assim que o administrador aprovar o pagamento, esta área será desbloqueada.</p><Button className="mt-3" variant="glass" onClick={() => queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] })}>Atualizar estado</Button></div> : <form className="mt-6 space-y-4" onSubmit={buyExams}>
-          <div className="space-y-2"><Label>Método de pagamento</Label><div className="grid grid-cols-2 gap-2">{METHODS.map(m => <Button key={m.id} type="button" variant={method === m.id ? "brand" : "glass"} onClick={() => setMethod(m.id)}>{m.name}</Button>)}</div></div>
-          <div className="rounded-xl bg-muted p-4"><p className="text-sm">Envia <strong>125 MT</strong> para:</p><p className="mt-2 text-lg font-extrabold">{pay.number}</p><p className="text-sm text-muted-foreground">{pay.holder}</p><Button className="mt-3" type="button" variant="glass" size="sm" onClick={copyNumber}><Copy className="h-4 w-4" /> Copiar número</Button></div>
-          <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="exam-buyer-name">Nome completo</Label><Input id="exam-buyer-name" name="full_name" required placeholder="O teu nome" /></div><div className="space-y-2"><Label htmlFor="exam-buyer-phone">Telefone usado no pagamento</Label><Input id="exam-buyer-phone" name="phone" required placeholder="84... / 85... / 86... / 87..." /></div></div>
-          <div className="space-y-2"><Label htmlFor="exam-proof">Comprovativo ou referência da transação</Label><Textarea id="exam-proof" name="proof" required placeholder="Indica o código da transação ou informação do comprovativo." /></div>
-          <Button type="submit" variant="brand" className="w-full" disabled={busy}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A enviar pedido...</> : <><ShoppingCart className="h-4 w-4" /> Comprar exames por 125 MT</>}</Button>
+          <div className="space-y-2"><Label htmlFor="exam-buyer-phone">Número de telefone para a cobrança</Label><Input id="exam-buyer-phone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
+          <p className="text-sm text-muted-foreground">A seguir, a RatixPay abrirá o checkout seguro. Escolhe M-Pesa ou e-Mola e confirma a cobrança no teu telemóvel.</p>
+          <Button type="submit" variant="brand" className="w-full" disabled={busy || !phone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A preparar pagamento...</> : <><ShoppingCart className="h-4 w-4" /> Pagar exames · 125 MT</>}</Button>
         </form>}
       </section>
 
