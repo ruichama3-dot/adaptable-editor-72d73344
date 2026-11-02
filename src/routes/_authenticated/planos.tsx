@@ -159,7 +159,10 @@ function Planos() {
         </div>
       ) : (
         <>
-          <section id="planos-trabalhos" className="mt-8 scroll-mt-6">\n            <h2 className="text-2xl font-extrabold">Planos para criar trabalhos</h2>\n            <p className="text-muted-foreground mt-1 text-sm">Escolha a duração do acesso que melhor se adapta a si.</p>\n          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section id="planos-trabalhos" className="mt-8 scroll-mt-6">
+            <h2 className="text-2xl font-extrabold">Planos para criar trabalhos</h2>
+            <p className="text-muted-foreground mt-1 text-sm">Escolha a duração do acesso que melhor se adapta a si.</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p) => (
               <div
                 key={p.id}
@@ -205,7 +208,9 @@ function Planos() {
             ))}
           </div>
 
-          </section>\n\n          {plan && (
+          </section>
+
+          {plan && (
             <section id="pagamento" className="shadow-soft mt-8 rounded-2xl border border-border bg-card p-6">
               <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
                 Pagamento seguro
