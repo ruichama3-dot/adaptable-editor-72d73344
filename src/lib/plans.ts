@@ -8,26 +8,26 @@ export async function createRatixPayCheckout(input: { productType: "plan" | "exa
     cache: "no-store",
   });
 
-  // Validate the cached access token first. If it is expired/revoked, refresh
-  // the Supabase session and retry the checkout once with the new token.
-  const current = await supabase.auth.getSession();
-  let token = current.data.session?.access_token;
-  if (current.error || !token) {
-    const refreshed = await supabase.auth.refreshSession();
-    token = refreshed.data.session?.access_token;
-    if (refreshed.error || !token) {
-      throw new Error("A tua sessão expirou. Inicia sessão novamente para continuar.");
-    }
+  // Refresh proactively so a stale access token is never sent to the server.
+  const refreshed = await supabase.auth.refreshSession();
+  let token = refreshed.data.session?.access_token;
+  if (refreshed.error || !token) {
+    const current = await supabase.auth.getSession();
+    token = current.data.session?.access_token;
+  }
+  if (!token) {
+    throw new Error("Não foi possível validar a tua conta. Termina a sessão, entra novamente e tenta pagar.");
   }
 
   let response = await sendCheckout(token);
   if (response.status === 401) {
-    const refreshed = await supabase.auth.refreshSession();
-    const freshToken = refreshed.data.session?.access_token;
-    if (refreshed.error || !freshToken) {
-      throw new Error("A tua sessão expirou. Sai da conta e inicia sessão novamente.");
+    // A refresh token may have rotated while another tab was active. Refresh once more.
+    const retryRefresh = await supabase.auth.refreshSession();
+    const retryToken = retryRefresh.data.session?.access_token;
+    if (retryRefresh.error || !retryToken) {
+      throw new Error("A sessão da tua conta expirou. Entra novamente para continuar o pagamento.");
     }
-    response = await sendCheckout(freshToken);
+    response = await sendCheckout(retryToken);
   }
 
   const result = await response.json().catch(() => ({}));
