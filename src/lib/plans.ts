@@ -1,3 +1,24 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export async function createRatixPayCheckout(input: { productType: "plan" | "exams" | "cv"; phone: string; planId?: string }) {
+  let { data, error } = await supabase.auth.getSession();
+  let token = data.session?.access_token;
+  if (error || !token) {
+    const refreshed = await supabase.auth.refreshSession();
+    token = refreshed.data.session?.access_token;
+    error = refreshed.error;
+  }
+  if (error || !token) throw new Error("A sessão expirou. Atualiza a página e entra novamente.");
+  const response = await fetch("/api/ratixpay/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.checkout_url) throw new Error(result.error || "Não foi possível iniciar o pagamento.");
+  return String(result.checkout_url);
+}
+
 export type Plan = {
   id: string;
   name: string;
