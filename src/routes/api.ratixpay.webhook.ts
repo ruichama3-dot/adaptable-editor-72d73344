@@ -68,7 +68,7 @@ export const Route = createFileRoute("/api/ratixpay/webhook")({
             return reply({ ok: true, activated: true, already_processed: Boolean((result as any).already_processed) });
           }
 
-          const validService = (order.plan === "Pacote de exames" || order.plan === "Currículo profissional") && Number(order.amount) === 125;
+          const validService = (["Pacote de exames", "Pacote de exames 12.ª classe", "Currículo profissional"].includes(order.plan)) && Number(order.amount) === 125;
           if (!validService) return reply({ error: "unknown_order_product" }, 409);
           const { error: updateError } = await supabaseAdmin.from("payment_requests")
             .update({ status: "aprovado" }).eq("id", order.id).eq("status", "pendente");
