@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/planos")({
   head: () => ({
     meta: [
       { title: "Planos e pagamento | RuJe IA" },
-      { name: "description", content: "Escolha o seu plano RuJe IA e pague por Emola ou M-Pesa." },
+      { name: "description", content: "Escolha o seu plano RuJe IA e pague com segurança pela RatixPay." },
       { property: "og:title", content: "Planos e pagamento | RuJe IA" },
       { property: "og:description", content: "Planos semanais, de 14 e de 30 dias para criar trabalhos com IA." },
       { property: "og:type", content: "website" },
@@ -61,7 +61,7 @@ function Planos() {
     },
   });
 
-  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend"));
+  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "ratixpay");
   const plan = selected ? planById(selected) : undefined;
 
   function choose(id: string) {
@@ -208,7 +208,7 @@ function Planos() {
           </section>\n\n          {plan && (
             <section id="pagamento" className="shadow-soft mt-8 rounded-2xl border border-border bg-card p-6">
               <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-                Passo {step === 2 ? "1" : "2"} de 2
+                Pagamento seguro
               </p>
               <h2 className="mt-1 text-xl font-bold">
                 {plan.name} · {plan.price} MT
