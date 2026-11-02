@@ -100,7 +100,7 @@ function readKeys() {
 }
 
 
-async function callGemini(prompt: string, apiKey: string): Promise<string> {
+async function callGemini(prompt: string, apiKey: string, maxOutputTokens = 16384): Promise<string> {
   const errors: string[] = [];
 
   for (const model of GEMINI_MODELS) {
@@ -112,7 +112,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
-             generationConfig: { maxOutputTokens: 16384 },
+             generationConfig: { maxOutputTokens },
           }),
         },
       );
@@ -159,13 +159,14 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
   return "";
 }
 
-async function callLovableGateway(prompt: string, apiKey: string): Promise<string> {
+async function callLovableGateway(prompt: string, apiKey: string, maxOutputTokens = 16384): Promise<string> {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
     body: JSON.stringify({
       model: "google/gemini-3.8-flash",
       messages: [{ role: "user", content: prompt }],
+      max_tokens: maxOutputTokens,
     }),
   });
 
@@ -182,7 +183,7 @@ async function callLovableGateway(prompt: string, apiKey: string): Promise<strin
 const BUSY_MSG =
   "O nosso sistema está com muita procura neste momento. O seu trabalho não foi descontado — tente novamente dentro de alguns minutos.";
 
-async function callAI(prompt: string): Promise<string> {
+async function callAI(prompt: string, maxOutputTokens = 16384): Promise<string> {
   const { geminiKey, gatewayKey } = readKeys();
 
   if (!geminiKey && !gatewayKey) {
@@ -194,11 +195,11 @@ async function callAI(prompt: string): Promise<string> {
 
   // Uma passagem por fornecedor evita multiplicar pedidos quando a API limita a taxa.
   if (geminiKey) {
-    const text = await callGemini(prompt, geminiKey);
+    const text = await callGemini(prompt, geminiKey, maxOutputTokens);
     if (text.trim()) return text;
   }
   if (gatewayKey) {
-    const text = await callLovableGateway(prompt, gatewayKey).catch(() => "");
+    const text = await callLovableGateway(prompt, gatewayKey, maxOutputTokens).catch(() => "");
     if (text.trim()) return text;
   }
 
@@ -275,35 +276,25 @@ function buildAutomaticIndex(html: string): string {
 
 async function insertRelevantImages(html: string, theme: string): Promise<{ html: string; count: number }> {
   const chunks = html.split(/(?=<h[1-3]\b)/i);
-  const output: string[] = [];
-  let count = 0;
-  for (const chunk of chunks) {
+  let imageLookups = 0;
+  const output = await Promise.all(chunks.map(async (chunk) => {
     const heading = chunk.match(/^<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/i);
-    if (!heading || count >= 3) {
-      output.push(chunk);
-      continue;
-    }
+    if (!heading) return chunk;
     const title = heading[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-    if (/^(índice|indice|introdução|introducao|conclusão|conclusao|bibliografia|referências|referencias|resumo|abstract|palavras-chave)/i.test(title)) {
-      output.push(chunk);
-      continue;
-    }
+    if (/^(índice|indice|introdução|introducao|conclusão|conclusao|bibliografia|referências|referencias|resumo|abstract|palavras-chave)/i.test(title)) return chunk;
     const pageBreakAt = chunk.indexOf('<hr class="page-break">');
     const section = pageBreakAt >= 0 ? chunk.slice(0, pageBreakAt) : chunk;
     const firstParagraph = /<p\b[^>]*>[\s\S]*?<\/p>/i.exec(section);
-    if (!firstParagraph || section.length < heading[0].length + 40) {
-      output.push(chunk);
-      continue;
-    }
+    if (!firstParagraph || section.length < heading[0].length + 40) return chunk;
+    // Reserve at most two relevant illustrations; all other sections avoid extra external requests.
+    if (imageLookups >= 2) return chunk;
+    imageLookups += 1;
     const images = await findAcademicImages(theme + " " + title, 1);
-    if (!images) {
-      output.push(chunk);
-      continue;
-    }
+    if (!images) return chunk;
     const insertAt = firstParagraph.index + firstParagraph[0].length;
-    output.push(chunk.slice(0, insertAt) + "\n" + images + "\n" + chunk.slice(insertAt));
-    count++;
-  }
+    return chunk.slice(0, insertAt) + "\n" + images + "\n" + chunk.slice(insertAt);
+  }));
+  const count = output.reduce((total, chunk, index) => total + (chunk !== chunks[index] ? 1 : 0), 0);
   return { html: output.join(""), count };
 }
 
@@ -350,7 +341,9 @@ export const generateWork = createServerFn({ method: "POST" })
     if (!canUsePremiumFeatures(access) && (includeImages || outputFormat === "powerpoint")) {
       throw new Error("A criação de imagens e apresentações PowerPoint está disponível apenas nos planos de 250 MT e 400 MT. Actualize o seu plano para utilizar estas funcionalidades.");
     }
-    const rawContent = await callAI(buildPrompt(work as Record<string, unknown>));
+    const requestedPages = Math.max(2, Math.min(40, Number(work.pages) || 10));
+    const outputBudget = outputFormat === "powerpoint" ? 8192 : Math.min(16384, Math.max(4096, requestedPages * 850));
+    const rawContent = await callAI(buildPrompt(work as Record<string, unknown>), outputBudget);
 
     let html = rawContent
       .replace(/^\`\`\`(?:html)?/i, "")
