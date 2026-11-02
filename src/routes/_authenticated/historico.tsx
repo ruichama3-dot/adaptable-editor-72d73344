@@ -131,16 +131,6 @@ function Historico() {
           )}
         </section>
       </main>
-
-      <nav aria-label="Navegação principal" className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-[rgba(255,255,255,0.76)] px-3 pb-[max(env(safe-area-inset-bottom),10px)] pt-2 shadow-[0_-10px_36px_rgba(20,60,35,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/65">
-        <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
-          <Link to="/painel" className="flex flex-col items-center gap-1 rounded-2xl py-2 text-[#64746a] transition hover:bg-white/70 hover:text-[#16834a]"><span className="grid h-6 place-items-center"><BookOpen className="h-5 w-5" /></span><span className="text-[10px] font-medium">Início</span></Link>
-          <Link to="/novo-trabalho" className="flex flex-col items-center gap-1 rounded-2xl py-2 text-[#64746a] transition hover:bg-white/70 hover:text-[#16834a]"><span className="grid h-6 place-items-center"><Plus className="h-5 w-5" /></span><span className="text-[10px] font-medium">Criar</span></Link>
-          <Link to="/exames" className="flex flex-col items-center gap-1 rounded-2xl py-2 text-[#64746a] transition hover:bg-white/70 hover:text-[#16834a]"><span className="grid h-6 place-items-center"><GraduationCap className="h-5 w-5" /></span><span className="text-[10px] font-medium">Exames</span></Link>
-          <Link to="/historico" className="flex flex-col items-center gap-1 rounded-2xl bg-[#eaf7ee]/90 py-2 text-[#16834a] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"><span className="grid h-6 place-items-center"><Clock3 className="h-5 w-5" /></span><span className="text-[10px] font-semibold">Histórico</span></Link>
-          <Link to="/planos" className="flex flex-col items-center gap-1 rounded-2xl py-2 text-[#64746a] transition hover:bg-white/70 hover:text-[#16834a]"><span className="grid h-6 place-items-center"><CreditCard className="h-5 w-5" /></span><span className="text-[10px] font-medium">Planos</span></Link>
-        </div>
-      </nav>
     </div>
   );
 }
