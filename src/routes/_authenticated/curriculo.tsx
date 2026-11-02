@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { jsPDF } from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
-import { PAYMENT_METHODS } from "@/lib/plans";
+import { createRatixPayCheckout } from "@/lib/plans";
 import { improveCurriculumWithAI } from "@/lib/curriculum-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,7 @@ function cleanFileName(value: string) {
 function CurriculoPage() {
   const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
-  const [method, setMethod] = useState(PAYMENT_METHODS[0]!.id);
+  const [paymentPhone, setPaymentPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -54,7 +54,6 @@ function CurriculoPage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoFormat, setPhotoFormat] = useState<"JPEG" | "PNG">("JPEG");
   const [photoName, setPhotoName] = useState("");
-  const pay = PAYMENT_METHODS.find((item) => item.id === method)!;
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ["curriculum-payment", user.id],
@@ -74,46 +73,17 @@ function CurriculoPage() {
   const pending = useMemo(() => payments.some((payment) => Number(payment.amount) === PRICE && isPending(payment.status)), [payments]);
   const latestRequest = payments[0];
 
-  async function copyNumber() {
-    try {
-      await navigator.clipboard.writeText(pay.number);
-      toast.success("Número de pagamento copiado.");
-    } catch {
-      toast.error("Não foi possível copiar. Selecciona o número manualmente.");
-    }
-  }
-
   async function submitPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || pending || approved) return;
-    const form = event.currentTarget;
-    const fields = new FormData(form);
-    const fullName = String(fields.get("full_name") ?? "").trim();
-    const phone = String(fields.get("phone") ?? "").trim();
-    const proof = String(fields.get("proof") ?? "").trim();
-    if (!fullName || !phone || !proof) {
-      toast.error("Preenche o nome, telefone e referência do pagamento.");
-      return;
-    }
     setBusy(true);
-    const { error } = await supabase.from("payment_requests").insert({
-      user_id: user.id,
-      plan: PRODUCT_NAME,
-      amount: PRICE,
-      method: pay.name,
-      full_name: fullName,
-      phone,
-      proof,
-    });
-    setBusy(false);
-    if (error) {
-      toast.error("Não foi possível enviar o pedido. Verifica os dados e tenta novamente.");
-      return;
+    try {
+      const checkoutUrl = await createRatixPayCheckout({ productType: "cv", phone: paymentPhone });
+      window.location.assign(checkoutUrl);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
+      setBusy(false);
     }
-    form.reset();
-    await queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] });
-    await queryClient.invalidateQueries({ queryKey: ["my-payments"] });
-    toast.success("Comprovativo enviado. O currículo ficará disponível após a aprovação.");
   }
 
   async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -349,11 +319,9 @@ function CurriculoPage() {
               <p className="mt-2 text-sm text-[#66766c]">Faz um pagamento único de <strong>125 MT</strong>. Depois da aprovação, poderás preencher o questionário e gerar o teu PDF.</p>
               <div className="mt-5 rounded-xl bg-[#f2f8f3] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#718078]">Preço do serviço</p><p className="mt-1 text-3xl font-extrabold text-[#16834a]">125 MT</p><p className="text-xs text-[#718078]">Pagamento único · um currículo em PDF</p></div>
               <form className="mt-5 space-y-4" onSubmit={submitPayment}>
-                <div className="space-y-2"><Label>Método de pagamento</Label><div className="grid grid-cols-2 gap-2">{PAYMENT_METHODS.map((item) => <Button key={item.id} type="button" variant={method === item.id ? "brand" : "glass"} onClick={() => setMethod(item.id)}>{item.name}</Button>)}</div></div>
-                <div className="rounded-xl border border-border bg-muted/40 p-4"><p className="text-sm">Envia <strong>125 MT</strong> para:</p><p className="mt-2 text-xl font-extrabold">{pay.number}</p><p className="text-sm text-muted-foreground">{pay.holder}</p><Button type="button" variant="glass" size="sm" className="mt-3" onClick={copyNumber}><Copy className="h-4 w-4" /> Copiar número</Button></div>
-                <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="cv-pay-name">Nome completo</Label><Input id="cv-pay-name" name="full_name" required placeholder="Nome de quem pagou" /></div><div className="space-y-2"><Label htmlFor="cv-pay-phone">Telefone usado no pagamento</Label><Input id="cv-pay-phone" name="phone" required placeholder="84... / 85... / 86... / 87..." /></div></div>
-                <div className="space-y-2"><Label htmlFor="cv-pay-proof">Comprovativo ou referência da transacção</Label><Textarea id="cv-pay-proof" name="proof" required placeholder="Código ou mensagem de confirmação do pagamento." /></div>
-                <Button type="submit" variant="brand" className="w-full" disabled={busy}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A enviar pedido...</> : <><BadgeCheck className="h-4 w-4" /> Pagar 125 MT e desbloquear</>}</Button>
+                <div className="space-y-2"><Label htmlFor="cv-pay-phone">Número de telefone para a cobrança</Label><Input id="cv-pay-phone" value={paymentPhone} onChange={(event) => setPaymentPhone(event.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
+                <p className="text-sm text-muted-foreground">A seguir, a RatixPay abrirá o checkout seguro. Escolhe M-Pesa ou e-Mola e confirma a cobrança no teu telemóvel.</p>
+                <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A preparar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> Pagar 125 MT e desbloquear</>}</Button>
               </form>
             </>
           )}
