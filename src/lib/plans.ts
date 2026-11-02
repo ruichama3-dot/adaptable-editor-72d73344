@@ -1,21 +1,39 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export async function createRatixPayCheckout(input: { productType: "plan" | "exams" | "cv"; phone: string; planId?: string }) {
-  let { data, error } = await supabase.auth.getSession();
-  let token = data.session?.access_token;
-  if (error || !token) {
+  const sendCheckout = async (accessToken: string) => fetch("/api/ratixpay/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(input),
+    cache: "no-store",
+  });
+
+  // Validate the cached access token first. If it is expired/revoked, refresh
+  // the Supabase session and retry the checkout once with the new token.
+  const current = await supabase.auth.getSession();
+  let token = current.data.session?.access_token;
+  if (current.error || !token) {
     const refreshed = await supabase.auth.refreshSession();
     token = refreshed.data.session?.access_token;
-    error = refreshed.error;
+    if (refreshed.error || !token) {
+      throw new Error("A tua sessão expirou. Inicia sessão novamente para continuar.");
+    }
   }
-  if (error || !token) throw new Error("A sessão expirou. Atualiza a página e entra novamente.");
-  const response = await fetch("/api/ratixpay/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(input),
-  });
+
+  let response = await sendCheckout(token);
+  if (response.status === 401) {
+    const refreshed = await supabase.auth.refreshSession();
+    const freshToken = refreshed.data.session?.access_token;
+    if (refreshed.error || !freshToken) {
+      throw new Error("A tua sessão expirou. Sai da conta e inicia sessão novamente.");
+    }
+    response = await sendCheckout(freshToken);
+  }
+
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.checkout_url) throw new Error(result.error || "Não foi possível iniciar o pagamento.");
+  if (!response.ok || !result.checkout_url) {
+    throw new Error(result.error || "Não foi possível iniciar o pagamento.");
+  }
   return String(result.checkout_url);
 }
 
