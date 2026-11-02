@@ -321,7 +321,7 @@ function CurriculoPage() {
               <form className="mt-5 space-y-4" onSubmit={submitPayment}>
                 <div className="space-y-2"><Label htmlFor="cv-pay-phone">Número de telefone para a cobrança</Label><Input id="cv-pay-phone" value={paymentPhone} onChange={(event) => setPaymentPhone(event.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
                 <p className="text-sm text-muted-foreground">A seguir, a RatixPay abrirá o checkout seguro. Escolhe M-Pesa ou e-Mola e confirma a cobrança no teu telemóvel.</p>
-                <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A preparar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> Pagar 125 MT e desbloquear</>}</Button>
+                <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A preparar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
               </form>
             </>
           )}
