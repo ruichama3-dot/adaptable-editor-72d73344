@@ -197,7 +197,7 @@ function Planos() {
 
               <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><p className="text-muted-foreground text-xs">Na página segura da RatixPay, confirma o método disponível: M-Pesa ou e-Mola.</p></div>
               <Button size="lg" className="mt-5 w-full" disabled={busy || !phone.trim()} onClick={payWithRatixPay}>
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar automaticamente com RatixPay · {plan.price} MT
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar agora · {plan.price} MT
               </Button>
               <p className="text-muted-foreground mt-2 text-xs">A activação do plano acontece automaticamente após a confirmação do pagamento.</p>
             </section>
