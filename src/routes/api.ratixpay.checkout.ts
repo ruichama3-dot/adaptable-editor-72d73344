@@ -122,7 +122,7 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
               method: "POST", headers,
               body: JSON.stringify({
                 name: expectedProductName, price: amount, currency: "MZN",
-                callback_url: "https://rujeia.online/api/ratixpay-webhook",
+                callback_url: "https://www.rujeia.online/api/ratixpay-webhook",
                 custom_metadata: { service: "ruje-ia", product_key: productKey },
               }),
             });
