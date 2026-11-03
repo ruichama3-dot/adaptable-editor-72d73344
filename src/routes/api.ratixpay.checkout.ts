@@ -79,13 +79,27 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           const headers = { Authorization: `Bearer ${token}`, "X-Merchant-Id": merchant, "Content-Type": "application/json" };
           const { data: savedProduct } = await (supabaseAdmin.from("ratixpay_products") as any)
             .select("product_id").eq("plan_id", productKey).eq("amount", amount).maybeSingle();
-          let productId = savedProduct?.product_id as string | undefined;
+          const configuredProductId = plan?.id === "teste"
+            ? "3b1f17b0-3e7a-4e64-aabe-4bb38f9238e0"
+            : undefined;
+          let productId = configuredProductId || (savedProduct?.product_id as string | undefined);
           const expectedProductName = `RuJe IA - ${productName}`;
           const persistProduct = async (id: string) => {
             const { error: saveError } = await (supabaseAdmin.from("ratixpay_products") as any)
               .upsert({ plan_id: productKey, product_id: id, amount }, { onConflict: "plan_id" });
             if (saveError) throw new Error(`RatixPay product mapping save failed: ${saveError.message}`);
           };
+
+          // The Diário 30 MT product was created in RatixPay manually.
+          // Reuse its confirmed ID directly and persist the local mapping; do not call
+          // the provider catalogue endpoints for this plan.
+          if (configuredProductId) {
+            try { await persistProduct(configuredProductId); } catch (saveError) {
+              console.error("[RatixPay] configured product mapping save failed", saveError);
+              await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
+              return reply({ error: "O produto Diário foi identificado, mas não foi possível guardar a associação na plataforma." }, 500);
+            }
+          }
 
           // Reuse an existing merchant-catalogue product before attempting catalogue creation.
           if (!productId) {
