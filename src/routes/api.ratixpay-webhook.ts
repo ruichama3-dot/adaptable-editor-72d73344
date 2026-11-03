@@ -70,11 +70,27 @@ export const Route = createFileRoute("/api/ratixpay-webhook")({
 
           const validService = (["Pacote de exames", "Pacote de exames 12.ª classe", "Currículo profissional"].includes(order.plan)) && Number(order.amount) === 125;
           if (!validService) return reply({ error: "unknown_order_product" }, 409);
-          const { error: updateError } = await supabaseAdmin.from("payment_requests")
-            .update({ status: "aprovado" }).eq("id", order.id).eq("status", "pendente");
+          const { data: updatedOrder, error: updateError } = await supabaseAdmin.from("payment_requests")
+            .update({ status: "aprovado" })
+            .eq("id", order.id)
+            .eq("status", "pendente")
+            .select("id")
+            .maybeSingle();
           if (updateError) {
             console.error("[RatixPay] Service entitlement update failed", updateError.message);
             return reply({ error: "entitlement_update_failed" }, 500);
+          }
+          if (!updatedOrder) {
+            // A concurrent/retried webhook may already have fulfilled this same order.
+            const { data: latestOrder, error: latestError } = await supabaseAdmin
+              .from("payment_requests")
+              .select("status")
+              .eq("id", order.id)
+              .maybeSingle();
+            if (!latestError && /^(aprovado|approved|pago|paid)$/i.test(String(latestOrder?.status || ""))) {
+              return reply({ ok: true, unlocked: order.plan, already_processed: true });
+            }
+            return reply({ error: "order_not_pending" }, 409);
           }
           return reply({ ok: true, unlocked: order.plan, already_processed: false });
         } catch (error) {
