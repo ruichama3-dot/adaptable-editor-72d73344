@@ -122,7 +122,7 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
               method: "POST", headers,
               body: JSON.stringify({
                 name: expectedProductName, price: amount, currency: "MZN",
-                callback_url: "https://www.rujeia.online/api/ratixpay/webhook",
+                callback_url: "https://rujeia.online/api/ratixpay-webhook",
                 custom_metadata: { service: "ruje-ia", product_key: productKey },
               }),
             });
@@ -161,10 +161,20 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           const checkoutData = await checkoutRes.json().catch(() => ({})) as any;
           const paymentId = checkoutData?.data?.payment_id;
           const checkoutUrl = checkoutData?.data?.checkout_url;
-          if (!checkoutRes.ok || !paymentId || !checkoutUrl) {
-            console.error("[RatixPay] checkout create failed", checkoutRes.status, checkoutData);
+          const checkoutAmount = Number(checkoutData?.data?.amount);
+          const checkoutCurrency = String(checkoutData?.data?.currency || "").toUpperCase();
+          if (!checkoutRes.ok || !paymentId || !checkoutUrl ||
+              !Number.isFinite(checkoutAmount) || checkoutAmount !== amount ||
+              checkoutCurrency !== "MZN") {
+            console.error("[RatixPay] checkout response did not match the internal order", {
+              status: checkoutRes.status,
+              hasPaymentId: Boolean(paymentId),
+              hasCheckoutUrl: Boolean(checkoutUrl),
+              amountMatches: checkoutAmount === amount,
+              currency: checkoutCurrency || "missing",
+            });
             await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
-            return reply({ error: "Não foi possível criar a página de pagamento RatixPay." }, 502);
+            return reply({ error: "A RatixPay devolveu dados de cobrança diferentes do pedido. O pagamento não foi disponibilizado." }, 502);
           }
           const { error: updateError } = await (supabaseAdmin.from("payment_requests") as any)
             .update({ ratixpay_payment_id: paymentId }).eq("id", order.id);
