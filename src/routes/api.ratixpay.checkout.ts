@@ -172,7 +172,9 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
               custom_metadata: { order_id: order.id, product_key: productKey, user_id: auth.user.id },
             }),
           });
-          const checkoutData = await checkoutRes.json().catch(() => ({})) as any;
+          const checkoutText = await checkoutRes.text();
+          let checkoutData: any = {};
+          try { checkoutData = checkoutText ? JSON.parse(checkoutText) : {}; } catch { /* provider may return an HTML/WAF response */ }
           const paymentId = checkoutData?.data?.payment_id;
           const checkoutUrl = checkoutData?.data?.checkout_url;
           const checkoutAmount = Number(checkoutData?.data?.amount);
@@ -180,15 +182,28 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           if (!checkoutRes.ok || !paymentId || !checkoutUrl ||
               !Number.isFinite(checkoutAmount) || checkoutAmount !== amount ||
               checkoutCurrency !== "MZN") {
-            console.error("[RatixPay] checkout response did not match the internal order", {
+            console.error("[RatixPay] checkout session rejected or returned invalid data", {
               status: checkoutRes.status,
               hasPaymentId: Boolean(paymentId),
               hasCheckoutUrl: Boolean(checkoutUrl),
               amountMatches: checkoutAmount === amount,
               currency: checkoutCurrency || "missing",
+              providerResponse: checkoutText.slice(0, 500),
             });
             await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
-            return reply({ error: "A RatixPay devolveu dados de cobrança diferentes do pedido. O pagamento não foi disponibilizado." }, 502);
+            if (checkoutRes.status === 403) {
+              return reply({
+                error: "A RatixPay bloqueou a criação do checkout (HTTP 403). Nenhuma cobrança foi disponibilizada. O suporte RatixPay precisa autorizar as chamadas API feitas pelo servidor da RuJe IA.",
+                provider_status: 403,
+              }, 502);
+            }
+            if (!checkoutRes.ok) {
+              return reply({
+                error: `A RatixPay recusou a criação do checkout (HTTP ${checkoutRes.status}). Tenta novamente mais tarde ou contacta o suporte.`,
+                provider_status: checkoutRes.status,
+              }, 502);
+            }
+            return reply({ error: "A RatixPay criou uma resposta incompleta ou com valor/moeda diferentes do pedido. O pagamento não foi disponibilizado." }, 502);
           }
           const { error: updateError } = await (supabaseAdmin.from("payment_requests") as any)
             .update({ ratixpay_payment_id: paymentId }).eq("id", order.id);
