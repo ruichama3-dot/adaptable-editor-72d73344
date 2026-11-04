@@ -16,13 +16,52 @@ const SUPPORT_URL = "https://wa.me/" + SUPPORT_NUMBER + "?text=" + encodeURIComp
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "RuJe IA 🇲🇿 — Inteligência artificial para estudar e crescer" },
-      { name: "description", content: "Crie trabalhos académicos com IA, prepare-se com exames e aulas de estudo e produza currículos profissionais em PDF. Plataforma moçambicana." },
-      { property: "og:title", content: "RuJe IA 🇲🇿 — Estudar, preparar e crescer" },
-      { property: "og:description", content: "Trabalhos académicos, exames e currículos profissionais numa só plataforma." },
+      { title: "RuJe IA — IA moçambicana para estudos, exames e currículos" },
+      { name: "description", content: "Plataforma moçambicana de inteligência artificial para criar trabalhos académicos, estudar com exames e preparar currículos profissionais. Preços em meticais." },
+      { name: "author", content: "RuJe IA" },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
+      { property: "og:site_name", content: "RuJe IA" },
+      { property: "og:title", content: "RuJe IA — Estudar, preparar e crescer" },
+      { property: "og:description", content: "Trabalhos académicos, exames e currículos profissionais numa só plataforma moçambicana." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://rujeia.online/" },
+      { property: "og:locale", content: "pt_MZ" },
+      { property: "og:image", content: "https://rujeia.online/icon-512.png" },
+      { property: "og:image:alt", content: "Logótipo oficial da RuJe IA" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "RuJe IA — IA moçambicana para estudos, exames e currículos" },
+      { name: "twitter:description", content: "Trabalhos académicos, exames e currículos profissionais numa só plataforma." },
+      { name: "twitter:image", content: "https://rujeia.online/icon-512.png" },
     ],
+    links: [{ rel: "canonical", href: "https://rujeia.online/" }],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://rujeia.online/#organization",
+            name: "RuJe IA",
+            alternateName: ["RuJe IA Moçambique", "rujeia.online"],
+            url: "https://rujeia.online/",
+            description: "Plataforma moçambicana de inteligência artificial para apoio académico, preparação para exames e criação de currículos profissionais.",
+            logo: { "@type": "ImageObject", url: "https://rujeia.online/icon-512.png", width: 512, height: 512 },
+            areaServed: { "@type": "Country", name: "Moçambique" },
+            contactPoint: { "@type": "ContactPoint", telephone: "+258847296041", contactType: "customer support", availableLanguage: ["Portuguese"] }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://rujeia.online/#website",
+            url: "https://rujeia.online/",
+            name: "RuJe IA",
+            alternateName: ["RuJe IA Moçambique", "rujeia.online"],
+            publisher: { "@id": "https://rujeia.online/#organization" },
+            inLanguage: "pt-MZ"
+          }
+        ]
+      })
+    }],
   }),
   component: Landing,
 });

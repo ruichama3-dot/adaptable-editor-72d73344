@@ -25,21 +25,15 @@ export async function resolveAccess(
   userId: string,
 ): Promise<Access> {
   // 1. Administrador
-  let isAdmin = false;
-  const { data: roleRpc, error: roleErr } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  if (roleErr) {
-    const { data: roleRows } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin");
-    isAdmin = (roleRows?.length ?? 0) > 0;
-  } else {
-    isAdmin = roleRpc === true;
-  }
+  // A política RLS permite ao utilizador consultar apenas o seu próprio papel.
+  // Não chamar RPC público com SECURITY DEFINER para verificar permissões.
+  const { data: ownAdminRole, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  const isAdmin = !roleError && ownAdminRole?.role === "admin";
 
   if (isAdmin) {
     return {

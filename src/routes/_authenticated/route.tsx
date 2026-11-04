@@ -11,6 +11,7 @@ import { applyTheme, readTheme, t, usePreferences } from "@/lib/preferences";
 import { LogOut, Settings, CreditCard, ShieldCheck, LayoutDashboard, BookOpenCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow, noarchive" }] }),
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow, noarchive" },
       { title: "Nova palavra-passe | RuJe IA" },
       { name: "description", content: "Defina uma nova palavra-passe para a sua conta RuJe IA." },
       { property: "og:title", content: "Nova palavra-passe | RuJe IA" },

@@ -13,6 +13,7 @@ export const Route = createFileRoute("/auth")({
   validateSearch: z.object({ modo: z.enum(["entrar", "registo"]).optional() }),
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow, noarchive" },
       { title: "Entrar ou criar conta | RuJe IA" },
       { name: "description", content: "Aceda à sua conta RuJe IA e crie trabalhos académicos com IA." },
       { property: "og:title", content: "Entrar ou criar conta | RuJe IA" },

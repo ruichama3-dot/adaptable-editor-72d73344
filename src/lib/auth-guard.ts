@@ -8,13 +8,9 @@ import {
 } from "@/integrations/supabase/config";
 
 /**
- * Middleware de autenticação resiliente para produção (Vercel).
- *
- * Em vez de depender apenas das variáveis de ambiente do servidor, a validação
- * usa o emissor (`iss`) declarado no próprio access_token. Assim, mesmo que as
- * variáveis da Vercel apontem para outro projecto (ou faltem), o token é
- * verificado contra o Supabase que o emitiu — era esta divergência que
- * produzia "Sessão inválida ou expirada" só em produção.
+ * Autenticação do servidor: o destino Supabase vem apenas da configuração
+ * confiável do projecto. Nunca usar o issuer não verificado do JWT como URL
+ * de destino, para evitar SSRF e envio do token a hosts controlados por terceiros.
  */
 
 function isNewSupabaseApiKey(value: string): boolean {
@@ -63,17 +59,6 @@ function decodeJwt(token: string): JwtPayload | undefined {
   }
 }
 
-/** Deriva a URL base do Supabase a partir do `iss` do token (…/auth/v1). */
-function baseUrlFromIssuer(iss?: string): string | undefined {
-  if (!iss) return undefined;
-  try {
-    const url = new URL(iss);
-    return `${url.origin}${url.pathname.replace(/\/auth\/v1\/?$/, "")}`.replace(/\/$/, "");
-  } catch {
-    return undefined;
-  }
-}
-
 export const requireAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
   const request = getRequest();
   const authHeader = request?.headers?.get("authorization") ?? "";
@@ -89,9 +74,25 @@ export const requireAuth = createMiddleware({ type: "function" }).server(async (
     throw new Error("A sua sessão expirou. Actualize a página ou volte a entrar.");
   }
 
-  const ENV_URL = readEnv("SUPABASE_URL", "VITE_SUPABASE_URL") ?? DEFAULT_SUPABASE_URL;
-  // A URL do emissor do token tem prioridade: é sempre o projecto certo.
-  const SUPABASE_URL = baseUrlFromIssuer(payload?.iss) ?? ENV_URL;
+  const ENV_URL = readEnv("VITE_SUPABASE_URL", "SUPABASE_URL") ?? DEFAULT_SUPABASE_URL;
+  let SUPABASE_URL: string;
+  try {
+    const configuredUrl = new URL(ENV_URL);
+    const isLocalHost = ["localhost", "127.0.0.1"].includes(configuredUrl.hostname);
+    const isSecureProtocol = configuredUrl.protocol === "https:" ||
+      (configuredUrl.protocol === "http:" && isLocalHost);
+    if (!isSecureProtocol || configuredUrl.pathname !== "/" || configuredUrl.username ||
+        configuredUrl.password || configuredUrl.search || configuredUrl.hash) {
+      throw new Error("Invalid Supabase URL");
+    }
+    SUPABASE_URL = configuredUrl.origin;
+  } catch {
+    throw new Error("A configuração do serviço de autenticação é inválida.");
+  }
+  const expectedIssuer = `${SUPABASE_URL}/auth/v1`;
+  if (!payload?.iss || payload.iss.replace(/\/+$/, "") !== expectedIssuer) {
+    throw new Error("Sessão inválida ou expirada. Termine sessão e volte a entrar.");
+  }
   const SUPABASE_KEY =
     readEnv(
       "SUPABASE_PUBLISHABLE_KEY",
@@ -108,36 +109,18 @@ export const requireAuth = createMiddleware({ type: "function" }).server(async (
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
   });
 
-  let userId: string | undefined;
-  let claims: Record<string, unknown> = {};
-
-  // 1) Verificação remota (fiável em qualquer runtime, sem depender de JWKS).
+  // Falha de forma segura: sem resposta válida do Supabase Auth, não aceitar o token.
   const { data, error } = await supabase.auth.getUser(token);
-  if (data?.user?.id) {
-    userId = data.user.id;
-    claims = { sub: data.user.id, email: data.user.email };
-  } else {
-    // 2) Fallback: validação local das claims (caso a rede /auth/v1/user falhe).
-    try {
-      const local = await supabase.auth.getClaims(token);
-      if (local.data?.claims?.sub) {
-        userId = local.data.claims.sub;
-        claims = local.data.claims as unknown as Record<string, unknown>;
-      }
-    } catch (err) {
-      console.warn("[auth] getClaims também falhou:", err);
-    }
-  }
-
-  if (!userId) {
+  if (!data?.user?.id) {
     console.error("[auth] Token rejeitado", {
       issuer: payload?.iss,
       supabaseUrl: SUPABASE_URL,
-      envUrl: ENV_URL,
       reason: error?.message,
     });
     throw new Error("Sessão inválida ou expirada. Termine sessão e volte a entrar.");
   }
+  const userId = data.user.id;
+  const claims = { sub: userId, email: data.user.email };
 
   return next({ context: { supabase, userId, claims } });
 });

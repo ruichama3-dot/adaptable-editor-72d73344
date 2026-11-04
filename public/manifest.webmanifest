@@ -1,8 +1,8 @@
 {
-  "name": "RuJe IA — Trabalhos académicos com IA",
+  "name": "RuJe IA — Plataforma moçambicana de IA",
   "short_name": "RuJe IA",
-  "description": "Crie trabalhos escolares, académicos e científicos completos em minutos.",
-  "lang": "pt",
+  "description": "Plataforma moçambicana de IA para trabalhos académicos, exames e currículos profissionais.",
+  "lang": "pt-MZ",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
