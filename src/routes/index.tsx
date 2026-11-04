@@ -48,7 +48,6 @@ export const Route = createFileRoute("/")({
             description: "Plataforma moçambicana de inteligência artificial para apoio académico, preparação para exames e criação de currículos profissionais.",
             logo: { "@type": "ImageObject", url: "https://rujeia.online/icon-512.png", width: 512, height: 512 },
             areaServed: { "@type": "Country", name: "Moçambique" },
-            contactPoint: { "@type": "ContactPoint", telephone: "+258847296041", contactType: "customer support", availableLanguage: ["Portuguese"] }
           },
           {
             "@type": "WebSite",
