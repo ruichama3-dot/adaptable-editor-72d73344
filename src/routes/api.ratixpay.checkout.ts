@@ -54,10 +54,14 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           if (body.productType === "plan" && !plan) return reply({ error: "Plano inválido." }, 400);
           if (!plan && !service) return reply({ error: "Produto inválido." }, 400);
 
-          const token = process.env.RATIXPAY_API_TOKEN;
-          const merchant = process.env.RATIXPAY_MERCHANT_ID;
-          const base = (process.env.RATIXPAY_API_BASE_URL || "https://ratixpay.co.mz/v2").replace(/\/$/, "");
+          const token = process.env.RATIXPAY_API_TOKEN?.trim();
+          const merchant = process.env.RATIXPAY_MERCHANT_ID?.trim();
+          const base = (process.env.RATIXPAY_API_BASE_URL || "https://ratixpay.co.mz/v2").trim().replace(/\/$/, "");
           if (!token || !merchant) return reply({ error: "RatixPay não está configurada no servidor." }, 503);
+          if (!/^https:\/\/(ratixpay\.co\.mz)(\/v2)?$/i.test(base)) {
+            console.error("[RatixPay] unexpected API base URL", { host: (() => { try { return new URL(base).host; } catch { return "invalid"; } })() });
+            return reply({ error: "A URL da API RatixPay está incorreta. Confirma a configuração do servidor." }, 503);
+          }
 
           const { data: profile } = await supabaseAdmin.from("profiles").select("full_name,phone").eq("id", auth.user.id).maybeSingle();
           const fullName = profile?.full_name || auth.user.email || "Cliente RuJe IA";
@@ -76,7 +80,12 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           }
           orderId = order.id;
 
-          const headers = { Authorization: `Bearer ${token}`, "X-Merchant-Id": merchant, "Content-Type": "application/json" };
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            "X-Merchant-Id": merchant,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          };
           const { data: savedProduct } = await (supabaseAdmin.from("ratixpay_products") as any)
             .select("product_id").eq("plan_id", productKey).eq("amount", amount).maybeSingle();
           const configuredProductId = plan?.id === "teste"
@@ -174,11 +183,15 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           });
           const checkoutText = await checkoutRes.text();
           let checkoutData: any = {};
-          try { checkoutData = checkoutText ? JSON.parse(checkoutText) : {}; } catch { /* provider may return an HTML/WAF response */ }
-          const paymentId = checkoutData?.data?.payment_id;
-          const checkoutUrl = checkoutData?.data?.checkout_url;
-          const checkoutAmount = Number(checkoutData?.data?.amount);
-          const checkoutCurrency = String(checkoutData?.data?.currency || "").toUpperCase();
+          try { checkoutData = checkoutText ? JSON.parse(checkoutText) : {}; } catch { /* preserve non-JSON provider response for diagnosis */ }
+          const checkoutPayload = checkoutData?.data ?? checkoutData;
+          const paymentId = checkoutPayload?.payment_id;
+          const checkoutUrl = checkoutPayload?.checkout_url;
+          const checkoutAmount = Number(checkoutPayload?.amount);
+          const checkoutCurrency = String(checkoutPayload?.currency || "").toUpperCase();
+          const providerMessage = [checkoutData?.message, checkoutData?.error, checkoutData?.detail]
+            .find((value) => typeof value === "string" && value.trim())?.trim().slice(0, 300);
+          const providerCode = typeof checkoutData?.code === "string" ? checkoutData.code.slice(0, 100) : undefined;
           if (!checkoutRes.ok || !paymentId || !checkoutUrl ||
               !Number.isFinite(checkoutAmount) || checkoutAmount !== amount ||
               checkoutCurrency !== "MZN") {
@@ -188,13 +201,20 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
               hasCheckoutUrl: Boolean(checkoutUrl),
               amountMatches: checkoutAmount === amount,
               currency: checkoutCurrency || "missing",
-              providerResponse: checkoutText.slice(0, 500),
+              providerCode,
+              providerMessage,
+              contentType: checkoutRes.headers.get("content-type"),
+              requestId: checkoutRes.headers.get("x-request-id") || checkoutRes.headers.get("cf-ray"),
+              providerResponse: checkoutText.slice(0, 800),
             });
             await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
             if (checkoutRes.status === 403) {
               return reply({
-                error: "A RatixPay bloqueou a criação do checkout (HTTP 403). Nenhuma cobrança foi disponibilizada. O suporte RatixPay precisa autorizar as chamadas API feitas pelo servidor da RuJe IA.",
+                error: providerMessage
+                  ? `A RatixPay recusou a criação do checkout (HTTP 403): ${providerMessage}`
+                  : "A RatixPay respondeu HTTP 403 ao pedido de checkout. A resposta técnica foi registada para identificar se é autenticação, permissões, produto ou validação do pedido. Nenhuma cobrança foi disponibilizada.",
                 provider_status: 403,
+                provider_code: providerCode,
               }, 502);
             }
             if (!checkoutRes.ok) {
