@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/ratixpay/checkout")({
           const merchant = process.env.RATIXPAY_MERCHANT_ID?.trim();
           const base = (process.env.RATIXPAY_API_BASE_URL || "https://ratixpay.co.mz/v2").trim().replace(/\/$/, "");
           if (!token || !merchant) return reply({ error: "RatixPay não está configurada no servidor." }, 503);
-          if (!/^https:\/\/(ratixpay\.co\.mz)(\/v2)?$/i.test(base)) {
+          if (!/^https:\/\/ratixpay\.co\.mz\/v2$/i.test(base)) {
             console.error("[RatixPay] unexpected API base URL", { host: (() => { try { return new URL(base).host; } catch { return "invalid"; } })() });
             return reply({ error: "A URL da API RatixPay está incorreta. Confirma a configuração do servidor." }, 503);
           }
