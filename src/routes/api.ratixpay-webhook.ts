@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/ratixpay-webhook")({
           return reply({ ok: true, ignored: true });
 
         const paymentId = String(event.payment_id || "");
-        const orderId = String(event.order_id || "");
+        const orderId = String(event.order_id || event.custom_metadata?.order_id || event.metadata?.order_id || "");
         if (!paymentId || !orderId) return reply({ error: "missing_reference" }, 400);
         try {
           const token = process.env.RATIXPAY_API_TOKEN;
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/ratixpay-webhook")({
             return reply({ ok: true, already_processed: true });
 
           const check = await fetch(`${base}/payment-status/${encodeURIComponent(paymentId)}`, {
-            headers: { Authorization: `Bearer ${token}`, "X-Merchant-Id": merchant },
+            headers: { Authorization: `Bearer ${token}`, "X-Merchant-Id": merchant, Accept: "application/json" },
           });
           const verified = await check.json().catch(() => ({})) as any;
           if (!check.ok || verified?.data?.status !== "approved" ||
