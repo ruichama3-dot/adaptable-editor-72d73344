@@ -279,7 +279,7 @@ function CurriculoPage() {
         <div className="mt-6 rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground"><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />A verificar o pagamento...</div>
       ) : approved ? (
         <section className="mt-6 rounded-2xl border border-[#cfe5d5] bg-white p-5 shadow-sm sm:p-7">
-          <div className="flex items-center gap-2 text-[#16834a]"><CheckCircle2 className="h-5 w-5" /><p className="font-bold">Pagamento confirmado · Serviço desbloqueado</p></div>
+          <div className="flex items-center gap-2 text-[#16834a]"><CheckCircle2 className="h-5 w-5" /><p className="font-bold">Pagamento concluído · Serviço desbloqueado</p></div>
           <div className="mt-5 flex items-start gap-3 rounded-xl bg-[#f2f8f3] p-4"><ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-[#16834a]" /><div><h2 className="font-bold text-[#203128]">Questionário para o teu currículo</h2><p className="mt-1 text-sm text-[#66766c]">Preenche com informações verdadeiras. Se ainda não tens experiência profissional, indica estágios, voluntariado, projectos ou actividades relevantes — apenas se realmente os fizeste.</p></div></div>
           <form className="mt-6 space-y-6" onSubmit={createPdf}>
             <section className="space-y-4">
