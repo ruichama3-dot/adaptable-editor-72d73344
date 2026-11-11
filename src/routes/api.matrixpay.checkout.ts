@@ -30,6 +30,9 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       if (body.productType === "plan" && !plan) return reply({ error: "Plano inválido." }, 400);
       if (!plan && !service) return reply({ error: "Produto inválido." }, 400);
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: activeOrder, error: activeOrderError } = await supabaseAdmin.from("payment_requests").select("id, plan, amount, created_at").eq("user_id", auth.user.id).eq("method", "MatrixPay").in("status", ["pendente", "pending", "processing"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (activeOrderError) { console.error("[MatrixPay] active order lookup failed", activeOrderError.message); return reply({ error: "Não foi possível verificar um pagamento anterior. Aguarda um momento e tenta novamente." }, 503); }
+      if (activeOrder) return reply({ pending_confirmation: true, order_id: activeOrder.id, message: "Já existe um pagamento em processamento. Aguarda a confirmação antes de iniciar outro." });
       const { data: profile } = await supabaseAdmin.from("profiles").select("full_name,phone").eq("id", auth.user.id).maybeSingle();
       const email = auth.user.email?.trim();
       if (!email) return reply({ error: "A conta precisa de um e-mail válido para emitir o recibo." }, 400);
