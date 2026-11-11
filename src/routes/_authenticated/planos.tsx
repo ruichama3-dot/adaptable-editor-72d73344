@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PLANS, planById, createMatrixPayCheckout } from "@/lib/plans";
@@ -27,6 +27,7 @@ function Planos() {
   const [selected, setSelected] = useState<string | null>(null);
 
   const [busy, setBusy] = useState(false);
+  const paymentLock = useRef(false);
   const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<"mpesa" | "emola">("mpesa");
 
@@ -59,6 +60,7 @@ function Planos() {
 
   const latestPlanPayment = pedidos.find((p) => PLANS.some((item) => item.name === p.plan) && String(p.method ?? "").toLowerCase() === "matrixpay");
   const latestPlanStatus = String(latestPlanPayment?.status ?? "").toLowerCase();
+  const activePending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "matrixpay");
   const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && PLANS.some((item) => item.name === p.plan) && String(p.method ?? "").toLowerCase() === "matrixpay");
   const planPaid = /^(aprovado|approved|pago|paid|completed)$/i.test(latestPlanStatus);
 
@@ -67,10 +69,14 @@ function Planos() {
     if (/^(aprovado|approved|pago|paid|completed)$/i.test(String(latestPlanPayment.status ?? ""))) {
       toast.success("Pagamento concluído. O teu plano já está disponível.");
       setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
       void queryClient.invalidateQueries({ queryKey: ["my-subscription"] });
     } else if (/^(falhou|failed|rejeitado|rejected|declined|cancelled|canceled|expired)$/i.test(String(latestPlanPayment.status ?? ""))) {
       toast.error("Pagamento não concluído. Verifica o PIN e o saldo da carteira e tenta novamente.");
       setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
     }
   }, [busy, latestPlanPayment?.id, latestPlanPayment?.status, queryClient]);
   const plan = selected ? planById(selected) : undefined;
@@ -81,17 +87,22 @@ function Planos() {
   }
 
   async function payWithMatrixPay() {
-    if (!plan || busy || pending) return;
+    if (!plan || busy || paymentLock.current || activePending) return;
+    paymentLock.current = true;
     setBusy(true);
+    toast.loading("A processar pagamento...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "plan", planId: plan.id, phone, method });
+      toast.dismiss("ruje-payment-processing");
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
         await queryClient.invalidateQueries({ queryKey: ["my-payments"] });
         // Keep processing until the provider confirms success or failure.
       }
     } catch (error) {
+      toast.dismiss("ruje-payment-processing");
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
+      paymentLock.current = false;
       setBusy(false);
     }
   }
@@ -142,14 +153,14 @@ function Planos() {
           <p className="mt-1">O teu plano está activo.</p>
         </div>
       )}
-      {pending && (
+      {activePending && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-primary bg-card p-6">
           <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-primary" />
           <div>
             <p className="flex items-center gap-2 text-lg font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p>
             <p className="text-muted-foreground mt-1 text-sm">
-              {pending.plan} · {pending.amount} MT · pedido criado em{" "}
-              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. Confirma a solicitação no telemóvel. O acesso será activado automaticamente após a confirmação do pagamento.
+              {activePending.plan} · {activePending.amount} MT · pedido criado em{" "}
+              {new Date(activePending.created_at).toLocaleDateString("pt-PT")}. Confirma a solicitação no telemóvel. Não inicies outro pagamento enquanto este estiver em processamento.
             </p>
           </div>
         </div>
@@ -216,7 +227,7 @@ function Planos() {
               </h2>
 
               <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><label htmlFor="plan-payment-method" className="text-sm font-medium">Método de pagamento</label><select id="plan-payment-method" value={method} onChange={(event) => setMethod(event.target.value as "mpesa" | "emola")} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select><p className="text-muted-foreground text-xs">Confirma a solicitação USSD no número indicado.</p></div>
-              <Button size="lg" className="mt-5 w-full" disabled={busy || Boolean(pending) || !phone.trim()} onClick={payWithMatrixPay}>
+              <Button size="lg" className="mt-5 w-full" disabled={busy || Boolean(activePending) || !phone.trim()} onClick={payWithMatrixPay}>
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} {busy ? "A processar pagamento..." : `Pagar agora · ${plan.price} MT`}
               </Button>
               <p className="text-muted-foreground mt-2 text-xs">A activação do plano é automática após a confirmação do pagamento.</p>
