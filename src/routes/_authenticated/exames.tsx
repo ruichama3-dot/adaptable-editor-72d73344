@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { prepareExamLesson } from "@/lib/prepared-exam-lessons";
@@ -26,6 +26,7 @@ function ExamesPage() {
   const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<"mpesa" | "emola">("mpesa");
   const [busy, setBusy] = useState(false);
+  const paymentLock = useRef(false);
   const [lesson, setLesson] = useState("");
   const [studying, setStudying] = useState(false);
   const [activeExam, setActiveExam] = useState("");
@@ -38,22 +39,27 @@ function ExamesPage() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.plan ?? "").toLowerCase() === "pacote de exames" && String(p.status ?? "").toLowerCase().startsWith("pend")) ? 2500 : false,
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.method ?? "").toLowerCase() === "matrixpay" && String(p.status ?? "").toLowerCase().startsWith("pend")) ? 2500 : false,
     refetchIntervalInBackground: true,
   });
   const purchase = requests.find((p: any) => String(p.plan ?? "").toLowerCase() === "pacote de exames");
   const isApproved = Boolean(purchase && /aprov|approved|pago/i.test(String(purchase.status ?? "")));
-  const isPending = Boolean(purchase && /^(pendente|pending|processing)$/i.test(String(purchase.status ?? "")));
+  const activePending = requests.find((p: any) => String(p.method ?? "").toLowerCase() === "matrixpay" && /^(pendente|pending|processing)$/i.test(String(p.status ?? "")));
+  const isPending = Boolean(activePending);
 
   useEffect(() => {
     if (!busy || !purchase) return;
     if (/^(aprovado|approved|pago|paid|completed)$/i.test(String(purchase.status ?? ""))) {
       toast.success("Pagamento concluído. Os teus exames já estão disponíveis.");
       setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
       void queryClient.invalidateQueries({ queryKey: ["approved-exam-library", user.id] });
     } else if (/^(falhou|failed|rejeitado|rejected|declined|cancelled|canceled|expired)$/i.test(String(purchase.status ?? ""))) {
       toast.error("Pagamento não concluído. Verifica o PIN e o saldo da carteira e tenta novamente.");
       setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
     }
   }, [busy, purchase?.id, purchase?.status, queryClient, user.id]);
   const { data: libraryExams = [], isLoading: loadingExams, error: libraryError, refetch: refreshExams } = useQuery({
@@ -65,17 +71,22 @@ function ExamesPage() {
 
   async function buyExams(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (busy || isPending || isApproved) return;
+    if (busy || paymentLock.current || isPending || isApproved) return;
+    paymentLock.current = true;
     setBusy(true);
+    toast.loading("A processar pagamento...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "exams", phone, method });
+      toast.dismiss("ruje-payment-processing");
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
         await queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] });
         // Keep processing until the webhook confirms success or failure.
       }
     } catch (error) {
+      toast.dismiss("ruje-payment-processing");
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
+      paymentLock.current = false;
       setBusy(false);
     }
   }
@@ -103,7 +114,7 @@ function ExamesPage() {
           <div><span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"><ShoppingCart className="h-3.5 w-3.5" /> PACOTE DE EXAMES</span><h2 className="mt-3 text-2xl font-extrabold">Acesso por 125 MT</h2><p className="mt-1 text-sm text-muted-foreground">Consulta cada exame e abre a aula correspondente, organizada por disciplina.</p></div>
           <div className="rounded-2xl bg-primary/10 p-4 text-center"><p className="text-3xl font-extrabold">125 MT</p><p className="text-xs text-muted-foreground">pagamento único</p></div>
         </div>
-        {isLoading ? <p className="mt-5 text-sm text-muted-foreground">A verificar o teu acesso...</p> : isApproved ? <div className="mt-5 rounded-xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="h-5 w-5" /> Pagamento concluído</p><p className="mt-1">O teu acesso ao pacote de exames está confirmado.</p></div> : isPending ? <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm text-muted-foreground">Confirma a solicitação no teu telemóvel. Os exames serão desbloqueados automaticamente após a confirmação.</p></div> : <form className="mt-6 space-y-4" onSubmit={buyExams}>
+        {isLoading ? <p className="mt-5 text-sm text-muted-foreground">A verificar o teu acesso...</p> : isApproved ? <div className="mt-5 rounded-xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="h-5 w-5" /> Pagamento concluído</p><p className="mt-1">O teu acesso ao pacote de exames está confirmado.</p></div> : isPending ? <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm text-muted-foreground">Já existe um pagamento em processamento na tua conta. Confirma a solicitação no telemóvel; só poderás iniciar outro pagamento depois da confirmação ou falha.</p></div> : <form className="mt-6 space-y-4" onSubmit={buyExams}>
           <div className="space-y-2"><Label htmlFor="exam-buyer-phone">Número de telefone para a cobrança</Label><Input id="exam-buyer-phone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
           <div className="space-y-2"><Label htmlFor="exam-pay-method">Método de pagamento</Label><select id="exam-pay-method" value={method} onChange={(e) => setMethod(e.target.value as "mpesa" | "emola")} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select></div><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
           <Button type="submit" variant="brand" className="w-full" disabled={busy || isPending || isApproved || !phone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</> : <><ShoppingCart className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
