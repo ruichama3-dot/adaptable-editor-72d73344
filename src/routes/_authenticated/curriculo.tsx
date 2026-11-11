@@ -29,7 +29,7 @@ function isApproved(status: unknown) {
   return /^(aprovado|aprovada|approved|pago|paid)$/i.test(String(status ?? "").trim());
 }
 function isPending(status: unknown) {
-  return /^pend/i.test(String(status ?? "").trim());
+  return /^(pendente|pending|processing)$/i.test(String(status ?? "").trim());
 }
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
