@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { jsPDF } from "jspdf";
@@ -49,6 +49,7 @@ function CurriculoPage() {
   const [paymentPhone, setPaymentPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "emola">("mpesa");
   const [busy, setBusy] = useState(false);
+  const paymentLock = useRef(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState("curriculo.pdf");
@@ -63,7 +64,7 @@ function CurriculoPage() {
         .from("payment_requests")
         .select("id, plan, amount, method, created_at, status")
         .eq("user_id", user.id)
-        .eq("plan", PRODUCT_NAME)
+        .eq("method", "MatrixPay")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -72,34 +73,45 @@ function CurriculoPage() {
     refetchIntervalInBackground: true,
   });
 
-  const approved = useMemo(() => payments.some((payment) => Number(payment.amount) === PRICE && isApproved(payment.status)), [payments]);
-  const pending = useMemo(() => payments.some((payment) => Number(payment.amount) === PRICE && isPending(payment.status)), [payments]);
-  const latestRequest = payments[0];
+  const curriculumPayments = useMemo(() => payments.filter((payment) => payment.plan === PRODUCT_NAME), [payments]);
+  const approved = useMemo(() => curriculumPayments.some((payment) => Number(payment.amount) === PRICE && isApproved(payment.status)), [curriculumPayments]);
+  const activePending = useMemo(() => payments.find((payment) => isPending(payment.status)), [payments]);
+  const pending = Boolean(activePending);
+  const latestRequest = curriculumPayments[0];
 
   useEffect(() => {
     if (!busy || !latestRequest) return;
     if (isApproved(latestRequest.status)) {
       toast.success("Pagamento concluído. Já podes criar o teu currículo.");
       setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
     } else if (/^(falhou|failed|rejeitado|rejected|declined|cancelled|canceled|expired)$/i.test(String(latestRequest.status ?? ""))) {
       toast.error("Pagamento não concluído. Verifica o PIN e o saldo da carteira e tenta novamente.");
       setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
     }
   }, [busy, latestRequest?.id, latestRequest?.status]);
 
   async function submitPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || pending || approved) return;
+    if (busy || paymentLock.current || pending || approved) return;
+    paymentLock.current = true;
     setBusy(true);
+    toast.loading("A processar pagamento...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "cv", phone: paymentPhone, method: paymentMethod });
+      toast.dismiss("ruje-payment-processing");
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
         await queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] });
         // Keep processing until the webhook confirms success or failure.
       }
     } catch (error) {
+      toast.dismiss("ruje-payment-processing");
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
+      paymentLock.current = false;
       setBusy(false);
     }
   }
@@ -330,7 +342,7 @@ function CurriculoPage() {
       ) : (
         <section className="mt-6 rounded-2xl border border-[#dcebe0] bg-white p-5 shadow-sm sm:p-7">
           {pending ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm">Confirma a solicitação no teu telemóvel. O questionário será desbloqueado automaticamente após a confirmação do pagamento.</p></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm">Já existe um pagamento em processamento na tua conta. Confirma a solicitação no telemóvel; o questionário será desbloqueado após a confirmação do pagamento.</p></div>
           ) : (
             <>
               <div className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-[#16834a]" /><h2 className="text-lg font-bold text-[#203128]">Desbloqueia a criação do teu currículo</h2></div>
