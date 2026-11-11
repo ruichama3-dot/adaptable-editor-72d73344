@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PLANS, planById, createMatrixPayCheckout } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
-import { BookOpenCheck, Check, Clock, Crown, GraduationCap, Loader2 } from "lucide-react";
+import { BookOpenCheck, Check, Crown, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/planos")({
