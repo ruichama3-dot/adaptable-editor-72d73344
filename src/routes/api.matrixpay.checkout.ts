@@ -48,6 +48,12 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       const raw = await response.text();
       let json: any = {}; try { json = raw ? JSON.parse(raw) : {}; } catch { /* provider response not JSON */ }
       const data = json?.data ?? json?.payment ?? json;
+      const providerStatus = String(data?.status ?? json?.status ?? "").toLowerCase();
+      if (/^(failed|falhou|rejected|rejeitado|declined|cancelled|canceled|expired|error)$/i.test(providerStatus)) {
+        await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id).eq("status", "pendente");
+        const providerMessage = pickString(data?.message, data?.error, json?.message, json?.error);
+        return reply({ error: providerMessage || "O pagamento não foi concluído. Verifica o PIN e o saldo da carteira e tenta novamente." }, 402);
+      }
       const providerId = pickString(data?.id, data?.payment_id, data?.transaction_id);
       const storedId = providerId || order.id;
       const checkoutUrl = pickString(data?.checkout_url, data?.payment_url, data?.url, data?.link, json?.checkout_url, json?.payment_url, json?.url);
