@@ -3,6 +3,7 @@ import { PLANS } from "@/lib/plans";
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/config";
 const reply = (body: Record<string, unknown>, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+const USSD_TIMEOUT_MS = 3 * 60 * 1000;
 const PRODUCTS = { exams: { name: "Pacote de exames", amount: 125 }, cv: { name: "Currículo profissional", amount: 125 } } as const;
 function normalizeMozPhone(value: unknown) { const digits = String(value ?? "").replace(/[^0-9]/g, ""); const local = digits.startsWith("258") ? digits.slice(3) : digits; return /^(82|83|84|85|86|87)\d{7}$/.test(local) ? local : null; }
 function pickString(...values: unknown[]) { return values.find((value): value is string => typeof value === "string" && value.trim())?.trim(); }
@@ -32,7 +33,20 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: activeOrder, error: activeOrderError } = await supabaseAdmin.from("payment_requests").select("id, plan, amount, created_at").eq("user_id", auth.user.id).eq("method", "MatrixPay").in("status", ["pendente", "pending", "processing"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (activeOrderError) { console.error("[MatrixPay] active order lookup failed", activeOrderError.message); return reply({ error: "Não foi possível verificar um pagamento anterior. Aguarda um momento e tenta novamente." }, 503); }
-      if (activeOrder) return reply({ pending_confirmation: true, order_id: activeOrder.id, message: "Já existe um pagamento em processamento. Aguarda a confirmação antes de iniciar outro." });
+      if (activeOrder) {
+        const createdAt = new Date(activeOrder.created_at).getTime();
+        const ussdExpired = Number.isFinite(createdAt) && Date.now() - createdAt >= USSD_TIMEOUT_MS;
+        if (!ussdExpired) {
+          return reply({ pending_confirmation: true, order_id: activeOrder.id, message: "Já existe um pedido USSD activo. Aguarda a resposta do telemóvel antes de iniciar outro." });
+        }
+        // Mobile-wallet USSD prompts normally expire after about three minutes.
+        // Expire unanswered attempts so the customer can start a fresh attempt.
+        const { error: expireError } = await supabaseAdmin.from("payment_requests").update({ status: "expirado" }).eq("id", activeOrder.id).in("status", ["pendente", "pending", "processing"]);
+        if (expireError) {
+          console.error("[MatrixPay] stale order expiry failed", expireError.message);
+          return reply({ error: "O pedido anterior ainda está a ser verificado. Aguarda alguns segundos e tenta novamente." }, 503);
+        }
+      }
       const { data: profile } = await supabaseAdmin.from("profiles").select("full_name,phone").eq("id", auth.user.id).maybeSingle();
       const email = auth.user.email?.trim();
       if (!email) return reply({ error: "A conta precisa de um e-mail válido para emitir o recibo." }, 400);
