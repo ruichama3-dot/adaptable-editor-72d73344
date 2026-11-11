@@ -27,6 +27,8 @@ import { Route as PartilhaIdRouteImport } from './routes/partilha.$id'
 import { Route as AuthenticatedAmostraIdRouteImport } from './routes/_authenticated/amostra.$id'
 import { Route as AuthenticatedTrabalhoIdRouteImport } from './routes/_authenticated/trabalho.$id'
 import { Route as ApiPagarWebhookRouteImport } from './routes/api.pagar.webhook'
+import { Route as ApiMatrixPayCheckoutRouteImport } from './routes/api.matrixpay.checkout'
+import { Route as ApiMatrixPayWebhookRouteImport } from './routes/api.matrixpay-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -119,6 +121,16 @@ const ApiPagarWebhookRoute = ApiPagarWebhookRouteImport.update({
   path: '/api/pagar/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMatrixPayCheckoutRoute = ApiMatrixPayCheckoutRouteImport.update({
+  id: '/api/matrixpay/checkout',
+  path: '/api/matrixpay/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMatrixPayWebhookRoute = ApiMatrixPayWebhookRouteImport.update({
+  id: '/api/matrixpay-webhook',
+  path: '/api/matrixpay-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +150,8 @@ export interface FileRoutesByFullPath {
   '/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
   '/api/pagar/webhook': typeof ApiPagarWebhookRoute
+  '/api/matrixpay/checkout': typeof ApiMatrixPayCheckoutRoute
+  '/api/matrixpay-webhook': typeof ApiMatrixPayWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -199,6 +213,8 @@ export interface FileRouteTypes {
     | '/amostra/$id'
     | '/trabalho/$id'
     | '/api/pagar/webhook'
+    | '/api/matrixpay/checkout'
+    | '/api/matrixpay-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -247,6 +263,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   PartilhaIdRoute: typeof PartilhaIdRoute
   ApiPagarWebhookRoute: typeof ApiPagarWebhookRoute
+  ApiMatrixPayCheckoutRoute: typeof ApiMatrixPayCheckoutRoute
+  ApiMatrixPayWebhookRoute: typeof ApiMatrixPayWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -377,6 +395,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPagarWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/matrixpay/checkout': {
+      id: '/api/matrixpay/checkout'
+      path: '/api/matrixpay/checkout'
+      fullPath: '/api/matrixpay/checkout'
+      preLoaderRoute: typeof ApiMatrixPayCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/matrixpay-webhook': {
+      id: '/api/matrixpay-webhook'
+      path: '/api/matrixpay-webhook'
+      fullPath: '/api/matrixpay-webhook'
+      preLoaderRoute: typeof ApiMatrixPayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -420,6 +452,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   PartilhaIdRoute: PartilhaIdRoute,
   ApiPagarWebhookRoute: ApiPagarWebhookRoute,
+  ApiMatrixPayCheckoutRoute: ApiMatrixPayCheckoutRoute,
+  ApiMatrixPayWebhookRoute: ApiMatrixPayWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
