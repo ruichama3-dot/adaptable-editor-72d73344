@@ -267,11 +267,11 @@ function Admin() {
                       <br />
                       <span className="text-muted-foreground">{p.amount} MT</span>
                     </td>
-                    <td className={cell}>{p.method}</td>
+                    <td className={cell}>{String(p.method ?? "").toLowerCase() === "matrixpay" ? "Pagamento móvel" : p.method}</td>
                     <td className={`${cell} max-w-xs whitespace-pre-wrap`}>{p.proof}</td>
                     <td className={`${cell} capitalize`}>{p.status}</td>
                     <td className={cell}>
-                      {p.status === "pendente" ? (
+                      {p.status === "pendente" && String(p.method ?? "").toLowerCase() !== "matrixpay" ? (
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => decide(p, true)}>
                             <CheckCircle2 className="h-4 w-4" /> Aprovar
@@ -281,7 +281,7 @@ function Admin() {
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">{p.status === "pendente" && String(p.method ?? "").toLowerCase() === "matrixpay" ? "Confirmação automática" : "—"}</span>
                       )}
                     </td>
                   </tr>
