@@ -52,9 +52,17 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       const storedId = providerId || order.id;
       const checkoutUrl = pickString(data?.checkout_url, data?.payment_url, data?.url, data?.link, json?.checkout_url, json?.payment_url, json?.url);
       if (!response.ok) {
-        console.error("[MatrixPay] create payment failed", { status: response.status, response: raw.slice(0, 700) });
+        const providerCode = pickString(json?.code, data?.code);
+        const providerMessage = pickString(json?.message, json?.error, data?.message, data?.error);
+        console.error("[MatrixPay] create payment failed", { status: response.status, code: providerCode || "unknown", response: raw.slice(0, 700) });
         await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
-        return reply({ error: response.status === 401 || response.status === 403 ? "A MatrixPay recusou a chave ou as permissões da API. Confirma o acesso de vendedor." : "A MatrixPay não conseguiu criar a cobrança. Tenta novamente." }, 502);
+        if (response.status === 401 || response.status === 403) {
+          return reply({ error: "A MatrixPay recusou a chave ou as permissões da API. Confirma com a MatrixPay se a conta de vendedor está activada." }, 502);
+        }
+        if (providerCode === "PAYMENT_FAILED" && providerMessage) {
+          return reply({ error: `A MatrixPay recusou o pagamento: ${providerMessage} Verifica o número M-Pesa/e-Mola e se a carteira tem saldo. Se os dados estiverem correctos, pede à MatrixPay para confirmar a activação da tua conta de vendedor e o estado do operador.` }, 502);
+        }
+        return reply({ error: providerMessage ? `A MatrixPay não criou a cobrança: ${providerMessage}` : "A MatrixPay não conseguiu criar a cobrança. Tenta novamente." }, 502);
       }
       const { error: saveError } = await (supabaseAdmin.from("payment_requests") as any).update({ matrixpay_payment_id: storedId }).eq("id", order.id);
       if (saveError) { console.error("[MatrixPay] reference save failed", saveError.message); return reply({ error: "A cobrança foi criada, mas a referência não foi guardada. Contacta o apoio." }, 500); }
