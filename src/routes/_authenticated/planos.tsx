@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PLANS, planById, createMatrixPayCheckout } from "@/lib/plans";
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/planos")({
   head: () => ({
     meta: [
       { title: "Planos e pagamento | RuJe IA" },
-      { name: "description", content: "Escolha o seu plano RuJe IA e pague com segurança pela MatrixPay." },
+      { name: "description", content: "Escolha o seu plano RuJe IA e pague com segurança." },
       { property: "og:title", content: "Planos e pagamento | RuJe IA" },
       { property: "og:description", content: "Planos semanais, de 14 e de 30 dias para criar trabalhos com IA." },
       { property: "og:type", content: "website" },
@@ -23,8 +23,8 @@ export const Route = createFileRoute("/_authenticated/planos")({
 
 function statusLabel(s: string | null | undefined) {
   const v = String(s ?? "").toLowerCase();
-  if (v.startsWith("pend")) return "A aguardar aprovação";
-  if (v.startsWith("aprov") || v === "approved" || v === "pago") return "Aprovado";
+  if (v.startsWith("pend")) return "A processar pagamento";
+  if (v.startsWith("aprov") || v === "approved" || v === "pago") return "Pagamento concluído";
   if (v.startsWith("rejeit") || v.startsWith("neg")) return "Recusado";
   return s ?? "—";
 }
@@ -61,9 +61,26 @@ function Planos() {
         .order("created_at", { ascending: false });
       return data ?? [];
     },
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.status ?? "").toLowerCase().startsWith("pend")) ? 2500 : false,
+    refetchIntervalInBackground: true,
   });
 
-  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "matrixpay");
+  const latestPlanPayment = pedidos.find((p) => PLANS.some((item) => item.name === p.plan));
+  const latestPlanStatus = String(latestPlanPayment?.status ?? "").toLowerCase();
+  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && PLANS.some((item) => item.name === p.plan));
+  const planPaid = /^(aprovado|approved|pago|paid|completed)$/i.test(latestPlanStatus);
+
+  useEffect(() => {
+    if (!busy || !latestPlanPayment) return;
+    if (/^(aprovado|approved|pago|paid|completed)$/i.test(String(latestPlanPayment.status ?? ""))) {
+      toast.success("Pagamento concluído. O teu plano já está disponível.");
+      setBusy(false);
+      void queryClient.invalidateQueries({ queryKey: ["my-subscription"] });
+    } else if (/^(falhou|failed|rejeitado|rejected|declined|cancelled|canceled|expired)$/i.test(String(latestPlanPayment.status ?? ""))) {
+      toast.error("Pagamento não concluído. Verifica o PIN e o saldo da carteira e tenta novamente.");
+      setBusy(false);
+    }
+  }, [busy, latestPlanPayment?.id, latestPlanPayment?.status, queryClient]);
   const plan = selected ? planById(selected) : undefined;
 
   function choose(id: string) {
@@ -78,13 +95,11 @@ function Planos() {
       const result = await createMatrixPayCheckout({ productType: "plan", planId: plan.id, phone, method });
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
-        if (result.pendingConfirmation) toast.warning("A MatrixPay ainda está a confirmar o pedido. Não repitas o pagamento; o estado será actualizado quando recebermos a confirmação.");
-        else toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel.");
         await queryClient.invalidateQueries({ queryKey: ["my-payments"] });
-        setBusy(false);
+        // Keep processing until the provider confirms success or failure.
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao iniciar pagamento MatrixPay.");
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
       setBusy(false);
     }
   }
@@ -129,14 +144,14 @@ function Planos() {
         </div>
       )}
 
-      {pending && (
+      {planPaid && !pending && (\n        <div className="mt-6 rounded-2xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><Check className="h-5 w-5" /> Pagamento concluído</p><p className="mt-1">O teu plano está activo.</p></div>\n      )}\n      {pending && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-primary bg-card p-6">
           <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div>
-            <p className="text-lg font-bold">Pedido enviado · a aguardar aprovação</p>
+            <p className="flex items-center gap-2 text-lg font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p>
             <p className="text-muted-foreground mt-1 text-sm">
               {pending.plan} · {pending.amount} MT · pedido criado em{" "}
-              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela MatrixPay. Não inicie outro pedido enquanto este estiver em verificação.
+              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. Confirma a solicitação no telemóvel. O acesso será activado automaticamente após a confirmação do pagamento.
             </p>
           </div>
         </div>
@@ -206,31 +221,12 @@ function Planos() {
               <Button size="lg" className="mt-5 w-full" disabled={busy || Boolean(pending) || !phone.trim()} onClick={payWithMatrixPay}>
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar agora · {plan.price} MT
               </Button>
-              <p className="text-muted-foreground mt-2 text-xs">A activação do plano acontece automaticamente após a confirmação do pagamento.</p>
+              <p className="text-muted-foreground mt-2 text-xs">A activação do plano é automática após a confirmação do pagamento.</p>
             </section>
           )}
         </>
 
-      {pedidos.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-bold">Os meus pedidos</h2>
-          <div className="mt-4 grid gap-3">
-            {pedidos.map((p) => (
-              <div
-                key={p.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card p-4 text-sm"
-              >
-                <span className="font-semibold">
-                  {p.plan} · {p.amount} MT · {p.method}
-                </span>
-                <span className="text-muted-foreground">
-                  {new Date(p.created_at).toLocaleDateString("pt-PT")} · <strong>{statusLabel(p.status)}</strong>
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+
     </main>
   );
 }
