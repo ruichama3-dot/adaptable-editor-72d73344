@@ -68,9 +68,20 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       if (saveError) { console.error("[MatrixPay] reference save failed", saveError.message); return reply({ error: "A cobrança foi criada, mas a referência não foi guardada. Contacta o apoio." }, 500); }
       return reply({ checkout_url: checkoutUrl ?? null, payment_id: storedId, order_id: order.id, awaiting_ussd: !checkoutUrl });
     } catch (error) {
-      console.error("[MatrixPay] checkout error", error);
+      const isTimeout = error instanceof Error && (error.name === "TimeoutError" || /timed? out|timeout/i.test(error.message));
+      console.error("[MatrixPay] checkout error", { orderId: orderId || null, name: error instanceof Error ? error.name : "UnknownError", message: error instanceof Error ? error.message : String(error) });
+      // A timeout is ambiguous: MatrixPay may have accepted the charge even if
+      // our server did not receive its response. Keep the order pending so a
+      // later webhook can safely confirm it and the user is not charged twice.
+      if (orderId && isTimeout) {
+        return reply({
+          pending_confirmation: true,
+          order_id: orderId,
+          message: "A MatrixPay ainda não respondeu. O pedido ficou em verificação; não repitas o pagamento enquanto confirmamos o estado.",
+        }, 202);
+      }
       if (orderId) { try { const { supabaseAdmin } = await import("@/integrations/supabase/client.server"); await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", orderId).eq("status", "pendente"); } catch { /* preserve original error */ } }
-      return reply({ error: "Erro inesperado ao iniciar o pagamento." }, 500);
+      return reply({ error: "Erro inesperado ao iniciar o pagamento. Tenta novamente mais tarde ou contacta o apoio se o valor tiver sido debitado." }, 500);
     }
   } } },
 });
