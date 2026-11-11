@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { jsPDF } from "jspdf";
@@ -68,11 +68,24 @@ function CurriculoPage() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.status ?? "").toLowerCase().startsWith("pend")) ? 2500 : false,
+    refetchIntervalInBackground: true,
   });
 
   const approved = useMemo(() => payments.some((payment) => Number(payment.amount) === PRICE && isApproved(payment.status)), [payments]);
   const pending = useMemo(() => payments.some((payment) => Number(payment.amount) === PRICE && isPending(payment.status)), [payments]);
   const latestRequest = payments[0];
+
+  useEffect(() => {
+    if (!busy || !latestRequest) return;
+    if (isApproved(latestRequest.status)) {
+      toast.success("Pagamento concluído. Já podes criar o teu currículo.");
+      setBusy(false);
+    } else if (/^(falhou|failed|rejeitado|rejected|declined|cancelled|canceled|expired)$/i.test(String(latestRequest.status ?? ""))) {
+      toast.error("Pagamento não concluído. Verifica o PIN e o saldo da carteira e tenta novamente.");
+      setBusy(false);
+    }
+  }, [busy, latestRequest?.id, latestRequest?.status]);
 
   async function submitPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,10 +95,8 @@ function CurriculoPage() {
       const result = await createMatrixPayCheckout({ productType: "cv", phone: paymentPhone, method: paymentMethod });
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
-        if (result.pendingConfirmation) toast.warning("A MatrixPay ainda está a confirmar o pedido. Não repitas o pagamento; o estado será actualizado automaticamente.");
-        else toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel.");
         await queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] });
-        setBusy(false);
+        // Keep processing until the webhook confirms success or failure.
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
@@ -319,11 +330,11 @@ function CurriculoPage() {
       ) : (
         <section className="mt-6 rounded-2xl border border-[#dcebe0] bg-white p-5 shadow-sm sm:p-7">
           {pending ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><LockKeyhole className="h-5 w-5" /> Pagamento em verificação</p><p className="mt-1 text-sm">O teu comprovativo foi enviado{latestRequest?.created_at ? ` em ${new Date(latestRequest.created_at).toLocaleDateString("pt-PT")}` : ""}. O questionário será desbloqueado automaticamente assim que a MatrixPay confirmar o pagamento.</p><Button type="button" variant="glass" className="mt-3" onClick={() => queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] })}>Actualizar estado</Button></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><LockKeyhole className="h-5 w-5" /> A processar pagamento...</p><p className="mt-1 text-sm">Confirma a solicitação no teu telemóvel. O questionário será desbloqueado automaticamente após a confirmação do pagamento.</p><Button type="button" variant="glass" className="mt-3" onClick={() => queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] })}>Actualizar estado</Button></div>
           ) : (
             <>
               <div className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-[#16834a]" /><h2 className="text-lg font-bold text-[#203128]">Desbloqueia a criação do teu currículo</h2></div>
-              <p className="mt-2 text-sm text-[#66766c]">Faz um pagamento único de <strong>125 MT</strong>. Depois da aprovação, poderás preencher o questionário e gerar o teu PDF.</p>
+              <p className="mt-2 text-sm text-[#66766c]">Faz um pagamento único de <strong>125 MT</strong>. Após o pagamento concluído, poderás preencher o questionário e gerar o teu PDF.</p>
               <div className="mt-5 rounded-xl bg-[#f2f8f3] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#718078]">Preço do serviço</p><p className="mt-1 text-3xl font-extrabold text-[#16834a]">125 MT</p><p className="text-xs text-[#718078]">Pagamento único · um currículo em PDF</p></div>
               <form className="mt-5 space-y-4" onSubmit={submitPayment}>
                 <div className="space-y-2"><Label htmlFor="cv-pay-phone">Número de telefone para a cobrança</Label><Input id="cv-pay-phone" value={paymentPhone} onChange={(event) => setPaymentPhone(event.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
