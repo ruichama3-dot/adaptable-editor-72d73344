@@ -8,12 +8,15 @@ export async function createMatrixPayCheckout(input: { productType: "plan" | "ex
     cache: "no-store",
   });
 
-  // Refresh proactively so a stale access token is never sent to the server.
-  const refreshed = await supabase.auth.refreshSession();
-  let token = refreshed.data.session?.access_token;
-  if (refreshed.error || !token) {
-    const current = await supabase.auth.getSession();
-    token = current.data.session?.access_token;
+  // Reuse the current session for the common case. Refresh only when the
+  // token is missing or close to expiry, avoiding an unnecessary auth round-trip
+  // before every checkout attempt.
+  const sessionResult = await supabase.auth.getSession();
+  let token = sessionResult.data.session?.access_token;
+  const expiresAt = sessionResult.data.session?.expires_at ?? 0;
+  if (!token || expiresAt * 1000 <= Date.now() + 60_000) {
+    const refreshed = await supabase.auth.refreshSession();
+    token = refreshed.data.session?.access_token;
   }
   if (!token) {
     throw new Error("Não foi possível validar a tua conta. Termina a sessão, entra novamente e tenta pagar.");
