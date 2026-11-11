@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
     try {
       const apiKey = process.env.MATRIXPAY_API_KEY?.trim();
       const base = (process.env.MATRIXPAY_API_BASE_URL || "https://matrixpay.tech").replace(/\/$/, "");
-      if (!apiKey) return reply({ error: "MatrixPay não está configurada. Adiciona MATRIXPAY_API_KEY na Vercel." }, 503);
+      if (!apiKey) return reply({ error: "O serviço de pagamento está temporariamente indisponível. Tenta novamente mais tarde." }, 503);
       const accessToken = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
       if (!accessToken) return reply({ error: "Sessão inválida. Entra novamente." }, 401);
       const body = await request.json() as { productType?: string; planId?: string; phone?: string; method?: string };
@@ -63,12 +63,12 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
         console.error("[MatrixPay] create payment failed", { status: response.status, code: providerCode || "unknown", response: raw.slice(0, 700) });
         await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
         if (response.status === 401 || response.status === 403) {
-          return reply({ error: "A MatrixPay recusou a chave ou as permissões da API. Confirma com a MatrixPay se a conta de vendedor está activada." }, 502);
+          return reply({ error: "Não foi possível iniciar o pagamento neste momento. Contacta o apoio da RuJe IA se o problema continuar." }, 502);
         }
         if (providerCode === "PAYMENT_FAILED" && providerMessage) {
-          return reply({ error: `A MatrixPay recusou o pagamento: ${providerMessage} Verifica o número M-Pesa/e-Mola e se a carteira tem saldo. Se os dados estiverem correctos, pede à MatrixPay para confirmar a activação da tua conta de vendedor e o estado do operador.` }, 502);
+          return reply({ error: `Pagamento não concluído: ${providerMessage} Verifica o número M-Pesa/e-Mola, o PIN e se a carteira tem saldo. Depois, tenta novamente.` }, 502);
         }
-        return reply({ error: providerMessage ? `A MatrixPay não criou a cobrança: ${providerMessage}` : "A MatrixPay não conseguiu criar a cobrança. Tenta novamente." }, 502);
+        return reply({ error: providerMessage ? `Não foi possível iniciar o pagamento: ${providerMessage}` : "Não foi possível iniciar o pagamento. Tenta novamente." }, 502);
       }
       const { error: saveError } = await (supabaseAdmin.from("payment_requests") as any).update({ matrixpay_payment_id: storedId }).eq("id", order.id);
       if (saveError) { console.error("[MatrixPay] reference save failed", saveError.message); return reply({ error: "A cobrança foi criada, mas a referência não foi guardada. Contacta o apoio." }, 500); }
