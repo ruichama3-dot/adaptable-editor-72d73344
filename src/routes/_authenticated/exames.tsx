@@ -39,7 +39,7 @@ function ExamesPage() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.method ?? "").toLowerCase() === "matrixpay" && String(p.status ?? "").toLowerCase().startsWith("pend")) ? 2500 : false,
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.method ?? "").toLowerCase() === "matrixpay" && /^(pendente|pending|processing)$/i.test(String(p.status ?? ""))) ? 2500 : false,
     refetchIntervalInBackground: true,
   });
   const purchase = requests.find((p: any) => String(p.plan ?? "").toLowerCase() === "pacote de exames");
