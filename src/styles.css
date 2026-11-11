@@ -359,7 +359,13 @@ a[href*="lovable"] {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.62), transparent);
   pointer-events: none;
 }
-.ruje-liquid-nav > div { position: relative; }
+.ruje-liquid-nav { pointer-events: none; }
+.ruje-liquid-nav > div { position: relative; pointer-events: auto; }
+@media (max-width: 767px) {
+  body:has(.ruje-liquid-nav) {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+}
 @media (min-width: 768px) {
   .ruje-liquid-nav { bottom: 22px; padding: 8px 12px; }
 }
