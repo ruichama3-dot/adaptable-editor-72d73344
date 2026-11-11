@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 const reply = (body: Record<string, unknown>, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
-const isApproved = (value: unknown) => /^(approved|aprovado|paid|pago|completed|liquidado)$/i.test(String(value ?? ""));
+const isApproved = (value: unknown) => /^(approved|aprovado|paid|pago|completed|liquidado|success|successful)$/i.test(String(value ?? ""));
+const isFailed = (value: unknown) => /^(failed|falhou|rejected|rejeitado|declined|cancelled|canceled|expired|error)$/i.test(String(value ?? ""));
 const numeric = (value: unknown) => Number(String(value ?? "").replace(",", "."));
 export const Route = createFileRoute("/api/matrixpay-webhook")({
   server: { handlers: {
@@ -10,7 +11,10 @@ export const Route = createFileRoute("/api/matrixpay-webhook")({
       const base = (process.env.MATRIXPAY_API_BASE_URL || "https://matrixpay.tech").replace(/\/$/, "");
       if (!apiKey) return reply({ error: "provider_not_configured" }, 503);
       let event: any; try { event = await request.json(); } catch { return reply({ error: "invalid_json" }, 400); }
-      if (event?.event !== "payment.approved") return reply({ ok: true, ignored: true });
+      const eventType = String(event?.event || "").toLowerCase();
+      const approvalEvent = eventType === "payment.approved";
+      const failureEvent = ["payment.failed", "payment.rejected", "payment.declined", "payment.cancelled", "payment.canceled", "payment.expired"].includes(eventType);
+      if (!approvalEvent && !failureEvent) return reply({ ok: true, ignored: true });
       const payload = event?.data ?? event?.payment ?? {};
       const reference = String(payload?.external_reference || payload?.referencia || payload?.reference || "");
       const eventPaymentId = String(payload?.id || payload?.payment_id || "");
@@ -21,6 +25,7 @@ export const Route = createFileRoute("/api/matrixpay-webhook")({
         if (error || !order) return reply({ error: "order_not_found" }, 404);
         if (eventPaymentId && order.matrixpay_payment_id && order.matrixpay_payment_id !== order.id && eventPaymentId !== order.matrixpay_payment_id) return reply({ error: "payment_mismatch" }, 409);
         if (/^(aprovado|approved|pago|paid)$/i.test(String(order.status || ""))) return reply({ ok: true, already_processed: true });
+        if (failureEvent && !/^(pendente|pending|processing)$/i.test(String(order.status || ""))) return reply({ ok: true, already_processed: true });
         const lookup = eventPaymentId || reference;
         const check = await fetch(`${base}/api/v1/payments/${encodeURIComponent(lookup)}`, { headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" }, signal: AbortSignal.timeout(15000) });
         const checkJson = await check.json().catch(() => ({})) as any;
@@ -29,9 +34,18 @@ export const Route = createFileRoute("/api/matrixpay-webhook")({
         const verifiedId = String(verified?.id || verified?.payment_id || "");
         const verifiedAmount = numeric(verified?.valor ?? verified?.amount);
         const verifiedCurrency = String(verified?.moeda || verified?.currency || "MZN").toUpperCase();
-        if (!check.ok || !isApproved(verified?.status) || (verifiedReference && verifiedReference !== order.id) ||
-            (verifiedId && order.matrixpay_payment_id && order.matrixpay_payment_id !== order.id && verifiedId !== order.matrixpay_payment_id) ||
-            verifiedAmount !== Number(order.amount) || verifiedCurrency !== "MZN") return reply({ error: "payment_not_verified" }, 409);
+        const identityMatches = (!verifiedReference || verifiedReference === order.id) &&
+          (!verifiedId || !order.matrixpay_payment_id || order.matrixpay_payment_id === order.id || verifiedId === order.matrixpay_payment_id);
+        const paymentMatches = check.ok && identityMatches && verifiedAmount === Number(order.amount) && verifiedCurrency === "MZN";
+        if (!paymentMatches) return reply({ error: "payment_not_verified" }, 409);
+        if (failureEvent) {
+          if (!isFailed(verified?.status)) return reply({ error: "payment_failure_not_verified" }, 409);
+          const { data: failedOrder, error: failureUpdateError } = await supabaseAdmin.from("payment_requests")
+            .update({ status: "falhou" }).eq("id", order.id).in("status", ["pendente", "pending", "processing"]).select("id").maybeSingle();
+          if (failureUpdateError) return reply({ error: "payment_failure_update_failed" }, 500);
+          return reply({ ok: true, failed: Boolean(failedOrder), message: "payment_failed" });
+        }
+        if (!isApproved(verified?.status)) return reply({ error: "payment_not_verified" }, 409);
         const plans: Record<string, { days: number; dailyLimit: number; amount: number }> = {
           "Plano 1 dia": { days: 1, dailyLimit: 2, amount: 30 }, "Plano Semanal": { days: 7, dailyLimit: 2, amount: 150 },
           "Plano 14 dias": { days: 14, dailyLimit: 4, amount: 250 }, "Plano 30 dias": { days: 30, dailyLimit: 10, amount: 400 },
