@@ -22,11 +22,16 @@ export const Route = createFileRoute("/_authenticated/curriculo")({
   component: CurriculoPage,
 });
 
+const USSD_TIMEOUT_MS = 3 * 60 * 1000;
 const PRODUCT_NAME = "Currículo profissional";
 const PRICE = 125;
 
 function isApproved(status: unknown) {
   return /^(aprovado|aprovada|approved|pago|paid)$/i.test(String(status ?? "").trim());
+}
+function isUnexpiredPending(payment: any) {
+  const createdAt = new Date(payment.created_at).getTime();
+  return isPending(payment.status) && Number.isFinite(createdAt) && Date.now() - createdAt < USSD_TIMEOUT_MS;
 }
 function isPending(status: unknown) {
   return /^(pendente|pending|processing)$/i.test(String(status ?? "").trim());
@@ -69,13 +74,13 @@ function CurriculoPage() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.status ?? "").toLowerCase().startsWith("pend")) ? 2500 : false,
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => isUnexpiredPending(p)) ? 2500 : false,
     refetchIntervalInBackground: true,
   });
 
   const curriculumPayments = useMemo(() => payments.filter((payment) => payment.plan === PRODUCT_NAME), [payments]);
   const approved = useMemo(() => curriculumPayments.some((payment) => Number(payment.amount) === PRICE && isApproved(payment.status)), [curriculumPayments]);
-  const activePending = useMemo(() => payments.find((payment) => isPending(payment.status)), [payments]);
+  const activePending = useMemo(() => payments.find((payment) => isUnexpiredPending(payment)), [payments]);
   const pending = Boolean(activePending);
   const latestRequest = curriculumPayments[0];
 
@@ -115,6 +120,20 @@ function CurriculoPage() {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!busy || !activePending) return;
+    const createdAt = new Date(activePending.created_at).getTime();
+    const remaining = Math.max(0, USSD_TIMEOUT_MS - (Date.now() - createdAt));
+    const timeout = window.setTimeout(() => {
+      setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
+      toast.error("O pedido USSD expirou sem confirmação. Já podes tentar pagar novamente.");
+      void queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] });
+    }, remaining);
+    return () => window.clearTimeout(timeout);
+  }, [busy, activePending?.id, activePending?.created_at, queryClient, user.id]);
 
   async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -342,7 +361,7 @@ function CurriculoPage() {
       ) : (
         <section className="mt-6 rounded-2xl border border-[#dcebe0] bg-white p-5 shadow-sm sm:p-7">
           {pending ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm">Já existe um pagamento em processamento na tua conta. Confirma a solicitação no telemóvel; o questionário será desbloqueado após a confirmação do pagamento.</p></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm">Existe um pedido USSD activo. Confirma no telemóvel; se não responderes em 3 minutos, ele expira e poderás tentar novamente.</p></div>
           ) : (
             <>
               <div className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-[#16834a]" /><h2 className="text-lg font-bold text-[#203128]">Desbloqueia a criação do teu currículo</h2></div>
