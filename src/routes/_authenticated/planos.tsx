@@ -54,7 +54,7 @@ function Planos() {
         .order("created_at", { ascending: false });
       return data ?? [];
     },
-    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "matrixpay") ? 2500 : false,
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => /^(pendente|pending|processing)$/i.test(String(p.status ?? "")) && String(p.method ?? "").toLowerCase() === "matrixpay") ? 2500 : false,
     refetchIntervalInBackground: true,
   });
 
