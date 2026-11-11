@@ -54,9 +54,14 @@ function ExamesPage() {
     if (busy || isPending || isApproved) return;
     setBusy(true);
     try {
-      const checkoutUrl = await createMatrixPayCheckout({ productType: "exams", phone, method });
-      if (checkoutUrl) window.location.assign(checkoutUrl);
-      else { toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel."); await queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] }); setBusy(false); }
+      const result = await createMatrixPayCheckout({ productType: "exams", phone, method });
+      if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
+      else {
+        if (result.pendingConfirmation) toast.warning("A MatrixPay ainda está a confirmar o pedido. Não repitas o pagamento; o estado será actualizado automaticamente.");
+        else toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel.");
+        await queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] });
+        setBusy(false);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
       setBusy(false);
@@ -89,7 +94,7 @@ function ExamesPage() {
         {isLoading ? <p className="mt-5 text-sm text-muted-foreground">A verificar o teu acesso...</p> : isApproved ? <div className="mt-5 rounded-xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="h-5 w-5" /> Pagamento aprovado</p><p className="mt-1">O teu acesso ao pacote de exames está confirmado.</p></div> : isPending ? <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4"><p className="font-bold">Pagamento em verificação</p><p className="mt-1 text-sm text-muted-foreground">O pedido foi enviado. Assim que a MatrixPay confirmar o pagamento, esta área será desbloqueada automaticamente.</p><Button className="mt-3" variant="glass" onClick={() => queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] })}>Atualizar estado</Button></div> : <form className="mt-6 space-y-4" onSubmit={buyExams}>
           <div className="space-y-2"><Label htmlFor="exam-buyer-phone">Número de telefone para a cobrança</Label><Input id="exam-buyer-phone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
           <div className="space-y-2"><Label htmlFor="exam-pay-method">Método de pagamento</Label><select id="exam-pay-method" value={method} onChange={(e) => setMethod(e.target.value as "mpesa" | "emola")} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select></div><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
-          <Button type="submit" variant="brand" className="w-full" disabled={busy || !phone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A preparar pagamento...</> : <><ShoppingCart className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
+          <Button type="submit" variant="brand" className="w-full" disabled={busy || isPending || isApproved || !phone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A preparar pagamento...</> : <><ShoppingCart className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
         </form>}
       </section>
 
