@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export async function createRatixPayCheckout(input: { productType: "plan" | "exams" | "cv"; phone: string; planId?: string }) {
-  const sendCheckout = async (accessToken: string) => fetch("/api/ratixpay/checkout", {
+export async function createMatrixPayCheckout(input: { productType: "plan" | "exams" | "cv"; phone: string; method: "mpesa" | "emola"; planId?: string }) {
+  const sendCheckout = async (accessToken: string) => fetch("/api/matrixpay/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(input),
@@ -31,10 +31,8 @@ export async function createRatixPayCheckout(input: { productType: "plan" | "exa
   }
 
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.checkout_url) {
-    throw new Error(result.error || "Não foi possível iniciar o pagamento.");
-  }
-  return String(result.checkout_url);
+  if (!response.ok) throw new Error(result.error || "Não foi possível iniciar o pagamento.");
+  return result.checkout_url ? String(result.checkout_url) : null;
 }
 
 export type Plan = {

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PLANS, planById, createRatixPayCheckout } from "@/lib/plans";
+import { PLANS, planById, createMatrixPayCheckout } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { BookOpenCheck, Check, Clock, Crown, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/planos")({
   head: () => ({
     meta: [
       { title: "Planos e pagamento | RuJe IA" },
-      { name: "description", content: "Escolha o seu plano RuJe IA e pague com segurança pela RatixPay." },
+      { name: "description", content: "Escolha o seu plano RuJe IA e pague com segurança pela MatrixPay." },
       { property: "og:title", content: "Planos e pagamento | RuJe IA" },
       { property: "og:description", content: "Planos semanais, de 14 e de 30 dias para criar trabalhos com IA." },
       { property: "og:type", content: "website" },
@@ -36,6 +36,7 @@ function Planos() {
 
   const [busy, setBusy] = useState(false);
   const [phone, setPhone] = useState("");
+  const [method, setMethod] = useState<"mpesa" | "emola">("mpesa");
 
   const { data: sub } = useQuery({
     queryKey: ["subscription"],
@@ -62,7 +63,7 @@ function Planos() {
     },
   });
 
-  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "ratixpay");
+  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "matrixpay");
   const plan = selected ? planById(selected) : undefined;
 
   function choose(id: string) {
@@ -70,14 +71,15 @@ function Planos() {
     setTimeout(() => document.getElementById("pagamento")?.scrollIntoView({ behavior: "smooth" }), 50);
   }
 
-  async function payWithRatixPay() {
+  async function payWithMatrixPay() {
     if (!plan || busy) return;
     setBusy(true);
     try {
-      const checkoutUrl = await createRatixPayCheckout({ productType: "plan", planId: plan.id, phone });
-      window.location.assign(checkoutUrl);
+      const checkoutUrl = await createMatrixPayCheckout({ productType: "plan", planId: plan.id, phone, method });
+      if (checkoutUrl) window.location.assign(checkoutUrl);
+      else { toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel."); await queryClient.invalidateQueries({ queryKey: ["my-payments"] }); setBusy(false); }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao iniciar pagamento RatixPay.");
+      toast.error(error instanceof Error ? error.message : "Erro ao iniciar pagamento MatrixPay.");
       setBusy(false);
     }
   }
@@ -129,7 +131,7 @@ function Planos() {
             <p className="text-lg font-bold">Pedido enviado · a aguardar aprovação</p>
             <p className="text-muted-foreground mt-1 text-sm">
               {pending.plan} · {pending.amount} MT · pedido criado em{" "}
-              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela RatixPay. Pode continuar a consultar os planos e iniciar outro pedido, se necessário.
+              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela MatrixPay. Pode continuar a consultar os planos e iniciar outro pedido, se necessário.
             </p>
           </div>
         </div>
@@ -195,8 +197,8 @@ function Planos() {
                 {plan.name} · {plan.price} MT
               </h2>
 
-              <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><p className="text-muted-foreground text-xs">Na página segura da RatixPay, confirma o método disponível: M-Pesa ou e-Mola.</p></div>
-              <Button size="lg" className="mt-5 w-full" disabled={busy || !phone.trim()} onClick={payWithRatixPay}>
+              <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><label htmlFor="plan-payment-method" className="text-sm font-medium">Método de pagamento</label><select id="plan-payment-method" value={method} onChange={(event) => setMethod(event.target.value as "mpesa" | "emola")} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select><p className="text-muted-foreground text-xs">Confirma a solicitação USSD no número indicado.</p></div>
+              <Button size="lg" className="mt-5 w-full" disabled={busy || !phone.trim()} onClick={payWithMatrixPay}>
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar agora · {plan.price} MT
               </Button>
               <p className="text-muted-foreground mt-2 text-xs">A activação do plano acontece automaticamente após a confirmação do pagamento.</p>

@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { jsPDF } from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
-import { createRatixPayCheckout } from "@/lib/plans";
+import { createMatrixPayCheckout } from "@/lib/plans";
 import { improveCurriculumWithAI } from "@/lib/curriculum-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,7 @@ function CurriculoPage() {
   const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const [paymentPhone, setPaymentPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "emola">("mpesa");
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -78,8 +79,9 @@ function CurriculoPage() {
     if (busy || pending || approved) return;
     setBusy(true);
     try {
-      const checkoutUrl = await createRatixPayCheckout({ productType: "cv", phone: paymentPhone });
-      window.location.assign(checkoutUrl);
+      const checkoutUrl = await createMatrixPayCheckout({ productType: "cv", phone: paymentPhone, method: paymentMethod });
+      if (checkoutUrl) window.location.assign(checkoutUrl);
+      else { toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel."); await queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] }); setBusy(false); }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
       setBusy(false);
@@ -312,7 +314,7 @@ function CurriculoPage() {
       ) : (
         <section className="mt-6 rounded-2xl border border-[#dcebe0] bg-white p-5 shadow-sm sm:p-7">
           {pending ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><LockKeyhole className="h-5 w-5" /> Pagamento em verificação</p><p className="mt-1 text-sm">O teu comprovativo foi enviado{latestRequest?.created_at ? ` em ${new Date(latestRequest.created_at).toLocaleDateString("pt-PT")}` : ""}. O questionário será desbloqueado assim que o administrador aprovar o pagamento.</p><Button type="button" variant="glass" className="mt-3" onClick={() => queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] })}>Actualizar estado</Button></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><LockKeyhole className="h-5 w-5" /> Pagamento em verificação</p><p className="mt-1 text-sm">O teu comprovativo foi enviado{latestRequest?.created_at ? ` em ${new Date(latestRequest.created_at).toLocaleDateString("pt-PT")}` : ""}. O questionário será desbloqueado automaticamente assim que a MatrixPay confirmar o pagamento.</p><Button type="button" variant="glass" className="mt-3" onClick={() => queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] })}>Actualizar estado</Button></div>
           ) : (
             <>
               <div className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-[#16834a]" /><h2 className="text-lg font-bold text-[#203128]">Desbloqueia a criação do teu currículo</h2></div>
@@ -320,7 +322,7 @@ function CurriculoPage() {
               <div className="mt-5 rounded-xl bg-[#f2f8f3] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#718078]">Preço do serviço</p><p className="mt-1 text-3xl font-extrabold text-[#16834a]">125 MT</p><p className="text-xs text-[#718078]">Pagamento único · um currículo em PDF</p></div>
               <form className="mt-5 space-y-4" onSubmit={submitPayment}>
                 <div className="space-y-2"><Label htmlFor="cv-pay-phone">Número de telefone para a cobrança</Label><Input id="cv-pay-phone" value={paymentPhone} onChange={(event) => setPaymentPhone(event.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
-                <p className="text-sm text-muted-foreground">A seguir, a RatixPay abrirá o checkout seguro. Escolhe M-Pesa ou e-Mola e confirma a cobrança no teu telemóvel.</p>
+                <div className="space-y-2"><Label htmlFor="cv-pay-method">Método de pagamento</Label><select id="cv-pay-method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as "mpesa" | "emola")} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select></div><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
                 <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A preparar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
               </form>
             </>
