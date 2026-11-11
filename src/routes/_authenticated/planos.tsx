@@ -21,14 +21,6 @@ export const Route = createFileRoute("/_authenticated/planos")({
   component: Planos,
 });
 
-function statusLabel(s: string | null | undefined) {
-  const v = String(s ?? "").toLowerCase();
-  if (v.startsWith("pend")) return "A processar pagamento";
-  if (v.startsWith("aprov") || v === "approved" || v === "pago") return "Pagamento concluído";
-  if (v.startsWith("rejeit") || v.startsWith("neg")) return "Recusado";
-  return s ?? "—";
-}
-
 function Planos() {
   const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
@@ -61,13 +53,13 @@ function Planos() {
         .order("created_at", { ascending: false });
       return data ?? [];
     },
-    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.status ?? "").toLowerCase().startsWith("pend")) ? 2500 : false,
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "matrixpay") ? 2500 : false,
     refetchIntervalInBackground: true,
   });
 
-  const latestPlanPayment = pedidos.find((p) => PLANS.some((item) => item.name === p.plan));
+  const latestPlanPayment = pedidos.find((p) => PLANS.some((item) => item.name === p.plan) && String(p.method ?? "").toLowerCase() === "matrixpay");
   const latestPlanStatus = String(latestPlanPayment?.status ?? "").toLowerCase();
-  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && PLANS.some((item) => item.name === p.plan));
+  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && PLANS.some((item) => item.name === p.plan) && String(p.method ?? "").toLowerCase() === "matrixpay");
   const planPaid = /^(aprovado|approved|pago|paid|completed)$/i.test(latestPlanStatus);
 
   useEffect(() => {
@@ -144,9 +136,15 @@ function Planos() {
         </div>
       )}
 
-      {planPaid && !pending && (\n        <div className="mt-6 rounded-2xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><Check className="h-5 w-5" /> Pagamento concluído</p><p className="mt-1">O teu plano está activo.</p></div>\n      )}\n      {pending && (
+      {planPaid && !pending && (
+        <div className="mt-6 rounded-2xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950">
+          <p className="flex items-center gap-2 font-bold"><Check className="h-5 w-5" /> Pagamento concluído</p>
+          <p className="mt-1">O teu plano está activo.</p>
+        </div>
+      )}
+      {pending && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-primary bg-card p-6">
-          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-primary" />
           <div>
             <p className="flex items-center gap-2 text-lg font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p>
             <p className="text-muted-foreground mt-1 text-sm">
