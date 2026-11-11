@@ -79,9 +79,14 @@ function CurriculoPage() {
     if (busy || pending || approved) return;
     setBusy(true);
     try {
-      const checkoutUrl = await createMatrixPayCheckout({ productType: "cv", phone: paymentPhone, method: paymentMethod });
-      if (checkoutUrl) window.location.assign(checkoutUrl);
-      else { toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel."); await queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] }); setBusy(false); }
+      const result = await createMatrixPayCheckout({ productType: "cv", phone: paymentPhone, method: paymentMethod });
+      if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
+      else {
+        if (result.pendingConfirmation) toast.warning("A MatrixPay ainda está a confirmar o pedido. Não repitas o pagamento; o estado será actualizado automaticamente.");
+        else toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel.");
+        await queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] });
+        setBusy(false);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
       setBusy(false);
