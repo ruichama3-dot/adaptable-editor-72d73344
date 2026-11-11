@@ -21,6 +21,11 @@ export const Route = createFileRoute("/_authenticated/planos")({
   component: Planos,
 });
 
+const USSD_TIMEOUT_MS = 3 * 60 * 1000;
+function isUnexpiredPending(payment: any) {
+  const createdAt = new Date(payment.created_at).getTime();
+  return /^(pendente|pending|processing)$/i.test(String(payment.status ?? "")) && String(payment.method ?? "").toLowerCase() === "matrixpay" && Number.isFinite(createdAt) && Date.now() - createdAt < USSD_TIMEOUT_MS;
+}
 function Planos() {
   const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
@@ -54,14 +59,14 @@ function Planos() {
         .order("created_at", { ascending: false });
       return data ?? [];
     },
-    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => /^(pendente|pending|processing)$/i.test(String(p.status ?? "")) && String(p.method ?? "").toLowerCase() === "matrixpay") ? 2500 : false,
+    refetchInterval: (query) => (query.state.data ?? []).some((p: any) => isUnexpiredPending(p)) ? 2500 : false,
     refetchIntervalInBackground: true,
   });
 
   const latestPlanPayment = pedidos.find((p) => PLANS.some((item) => item.name === p.plan) && String(p.method ?? "").toLowerCase() === "matrixpay");
   const latestPlanStatus = String(latestPlanPayment?.status ?? "").toLowerCase();
-  const activePending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && String(p.method ?? "").toLowerCase() === "matrixpay");
-  const pending = pedidos.find((p) => String(p.status ?? "").toLowerCase().startsWith("pend") && PLANS.some((item) => item.name === p.plan) && String(p.method ?? "").toLowerCase() === "matrixpay");
+  const activePending = pedidos.find((p) => isUnexpiredPending(p));
+  const pending = pedidos.find((p) => isUnexpiredPending(p) && PLANS.some((item) => item.name === p.plan));
   const planPaid = /^(aprovado|approved|pago|paid|completed)$/i.test(latestPlanStatus);
 
   useEffect(() => {
@@ -79,6 +84,20 @@ function Planos() {
       toast.dismiss("ruje-payment-processing");
     }
   }, [busy, latestPlanPayment?.id, latestPlanPayment?.status, queryClient]);
+  useEffect(() => {
+    if (!busy || !activePending) return;
+    const createdAt = new Date(activePending.created_at).getTime();
+    const remaining = Math.max(0, USSD_TIMEOUT_MS - (Date.now() - createdAt));
+    const timeout = window.setTimeout(() => {
+      setBusy(false);
+      paymentLock.current = false;
+      toast.dismiss("ruje-payment-processing");
+      toast.error("O pedido USSD expirou sem confirmação. Já podes tentar pagar novamente.");
+      void queryClient.invalidateQueries({ queryKey: ["my-payments"] });
+    }, remaining);
+    return () => window.clearTimeout(timeout);
+  }, [busy, activePending?.id, activePending?.created_at, queryClient]);
+
   const plan = selected ? planById(selected) : undefined;
 
   function choose(id: string) {
@@ -160,7 +179,7 @@ function Planos() {
             <p className="flex items-center gap-2 text-lg font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p>
             <p className="text-muted-foreground mt-1 text-sm">
               {activePending.plan} · {activePending.amount} MT · pedido criado em{" "}
-              {new Date(activePending.created_at).toLocaleDateString("pt-PT")}. Confirma a solicitação no telemóvel. Não inicies outro pagamento enquanto este estiver em processamento.
+              {new Date(activePending.created_at).toLocaleDateString("pt-PT")}. Confirma o pedido no telemóvel. Se não responderes em 3 minutos, o pedido expira e poderás tentar novamente.
             </p>
           </div>
         </div>
