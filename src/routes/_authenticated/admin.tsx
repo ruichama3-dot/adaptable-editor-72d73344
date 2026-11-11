@@ -81,6 +81,10 @@ function Admin() {
   });
 
   async function decide(p: (typeof payments)[number], approve: boolean) {
+    if (String(p.method ?? "").toLowerCase() === "matrixpay") {
+      toast.error("Este pagamento é confirmado automaticamente pelo sistema.");
+      return;
+    }
     const subscriptionPlan = PLANS.find((x) => x.name === p.plan);
     if (approve && subscriptionPlan) {
       const expires = new Date(Date.now() + subscriptionPlan.days * 86400000).toISOString();
