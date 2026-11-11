@@ -72,12 +72,17 @@ function Planos() {
   }
 
   async function payWithMatrixPay() {
-    if (!plan || busy) return;
+    if (!plan || busy || pending) return;
     setBusy(true);
     try {
-      const checkoutUrl = await createMatrixPayCheckout({ productType: "plan", planId: plan.id, phone, method });
-      if (checkoutUrl) window.location.assign(checkoutUrl);
-      else { toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel."); await queryClient.invalidateQueries({ queryKey: ["my-payments"] }); setBusy(false); }
+      const result = await createMatrixPayCheckout({ productType: "plan", planId: plan.id, phone, method });
+      if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
+      else {
+        if (result.pendingConfirmation) toast.warning("A MatrixPay ainda está a confirmar o pedido. Não repitas o pagamento; o estado será actualizado quando recebermos a confirmação.");
+        else toast.success("Pedido enviado. Confirma a solicitação USSD no teu telemóvel.");
+        await queryClient.invalidateQueries({ queryKey: ["my-payments"] });
+        setBusy(false);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao iniciar pagamento MatrixPay.");
       setBusy(false);
@@ -131,7 +136,7 @@ function Planos() {
             <p className="text-lg font-bold">Pedido enviado · a aguardar aprovação</p>
             <p className="text-muted-foreground mt-1 text-sm">
               {pending.plan} · {pending.amount} MT · pedido criado em{" "}
-              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela MatrixPay. Pode continuar a consultar os planos e iniciar outro pedido, se necessário.
+              {new Date(pending.created_at).toLocaleDateString("pt-PT")}. O pagamento será confirmado automaticamente pela MatrixPay. Não inicie outro pedido enquanto este estiver em verificação.
             </p>
           </div>
         </div>
@@ -198,7 +203,7 @@ function Planos() {
               </h2>
 
               <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><label htmlFor="plan-payment-method" className="text-sm font-medium">Método de pagamento</label><select id="plan-payment-method" value={method} onChange={(event) => setMethod(event.target.value as "mpesa" | "emola")} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select><p className="text-muted-foreground text-xs">Confirma a solicitação USSD no número indicado.</p></div>
-              <Button size="lg" className="mt-5 w-full" disabled={busy || !phone.trim()} onClick={payWithMatrixPay}>
+              <Button size="lg" className="mt-5 w-full" disabled={busy || Boolean(pending) || !phone.trim()} onClick={payWithMatrixPay}>
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pagar agora · {plan.price} MT
               </Button>
               <p className="text-muted-foreground mt-2 text-xs">A activação do plano acontece automaticamente após a confirmação do pagamento.</p>
