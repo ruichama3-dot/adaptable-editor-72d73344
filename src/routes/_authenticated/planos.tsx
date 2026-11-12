@@ -109,12 +109,13 @@ function Planos() {
     if (!plan || busy || paymentLock.current || activePending) return;
     paymentLock.current = true;
     setBusy(true);
-    toast.loading("A processar pagamento...", { id: "ruje-payment-processing" });
+    toast.loading("A enviar pedido USSD...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "plan", planId: plan.id, phone, method });
       toast.dismiss("ruje-payment-processing");
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
+        toast.info(result.message || "Pedido USSD enviado. Confirma a solicitação no teu telemóvel.");
         await queryClient.invalidateQueries({ queryKey: ["my-payments"] });
         // Keep processing until the provider confirms success or failure.
       }
@@ -247,7 +248,7 @@ function Planos() {
 
               <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><label htmlFor="plan-payment-method" className="text-sm font-medium">Método de pagamento</label><select id="plan-payment-method" value={method} onChange={(event) => setMethod(event.target.value as "mpesa" | "emola")} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select><p className="text-muted-foreground text-xs">Confirma a solicitação USSD no número indicado.</p></div>
               <Button size="lg" className="mt-5 w-full" disabled={busy || Boolean(activePending) || !phone.trim()} onClick={payWithMatrixPay}>
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} {busy ? "A processar pagamento..." : `Pagar agora · ${plan.price} MT`}
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} {busy ? "A enviar pedido USSD..." : `Pagar agora · ${plan.price} MT`}
               </Button>
               <p className="text-muted-foreground mt-2 text-xs">A activação do plano é automática após a confirmação do pagamento.</p>
             </section>
