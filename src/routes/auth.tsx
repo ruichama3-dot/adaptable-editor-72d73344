@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { BellRing } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: z.object({ modo: z.enum(["entrar", "registo"]).optional() }),
@@ -40,6 +41,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
+  const [notificationStep, setNotificationStep] = useState(false);
   const [purpose, setPurpose] = useState<Purpose | "">("");
   const [studyLevel, setStudyLevel] = useState("");
   const [studyArea, setStudyArea] = useState("");
@@ -88,8 +90,31 @@ function AuthPage() {
       toast.error("O registo ainda está a exigir confirmação por e-mail. Verifique a opção Confirm email no Supabase.");
       return;
     }
-    toast.success("Conta criada com sucesso! Vamos personalizar o seu perfil.");
+    toast.success("Conta criada com sucesso! Vamos configurar as tuas notificações e personalizar o perfil.");
+    setNotificationStep(true);
     setOnboarding(true);
+  }
+
+  async function requestBrowserNotifications() {
+    if (!("Notification" in window)) {
+      toast.error("Este navegador não suporta notificações do sistema. Continuarás a receber avisos dentro da RuJe IA.");
+      setNotificationStep(false);
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        toast.success("Notificações activadas! Vais receber avisos importantes da RuJe IA.");
+      } else if (permission === "denied") {
+        toast.info("As notificações do navegador foram recusadas. Continuarás a receber avisos dentro da plataforma.");
+      } else {
+        toast.info("Podes activar as notificações mais tarde nas definições do navegador.");
+      }
+    } catch {
+      toast.error("Não foi possível pedir autorização ao navegador. Os avisos internos continuam activos.");
+    } finally {
+      setNotificationStep(false);
+    }
   }
 
   async function chooseCurriculum() {
