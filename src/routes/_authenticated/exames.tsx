@@ -94,12 +94,13 @@ function ExamesPage() {
     if (busy || paymentLock.current || isPending || isApproved) return;
     paymentLock.current = true;
     setBusy(true);
-    toast.loading("A processar pagamento...", { id: "ruje-payment-processing" });
+    toast.loading("A enviar pedido USSD...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "exams", phone, method });
       toast.dismiss("ruje-payment-processing");
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
+        toast.info(result.message || "Pedido USSD enviado. Confirma a solicitação no teu telemóvel.");
         await queryClient.invalidateQueries({ queryKey: ["exam-purchase-status", user.id] });
         // Keep processing until the webhook confirms success or failure.
       }
