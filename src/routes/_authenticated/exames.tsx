@@ -36,6 +36,7 @@ function ExamesPage() {
   const [studying, setStudying] = useState(false);
   const [activeExam, setActiveExam] = useState("");
   const [activeLesson, setActiveLesson] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<"12a" | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["exam-purchase-status", user.id],
@@ -128,9 +129,35 @@ function ExamesPage() {
         <div><h1 className="text-2xl font-extrabold sm:text-3xl">{isApproved ? "Ver Exames" : "Comprar Exames"}</h1><p className="mt-1 text-muted-foreground">{isApproved ? "Abre cada exame para consultar a aula de preparação guardada." : "Compra o pacote de exames e prepara-te para as provas."}</p></div>
       </div>
 
+      {!isApproved && !selectedCategory ? (
+        <section className="mt-7 space-y-4">
+          <div>
+            <h2 className="text-xl font-extrabold">Escolhe o tipo de exame</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Selecciona a categoria para consultar a disponibilidade e iniciar a compra.</p>
+          </div>
+          <button type="button" onClick={() => setSelectedCategory("12a")} className="w-full rounded-2xl border-2 border-primary/40 bg-card p-5 text-left shadow-sm transition hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div><span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">DISPONÍVEL</span><h3 className="mt-3 text-xl font-extrabold">Exames da 12.ª classe</h3><p className="mt-1 text-sm text-muted-foreground">Exames anteriores de 2018 a 2025, organizados para facilitar a tua preparação.</p></div>
+              <div className="flex shrink-0 items-center gap-3"><span className="text-lg font-extrabold">125 MT</span><span className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Comprar <span aria-hidden="true">→</span></span></div>
+            </div>
+          </button>
+          <article className="rounded-2xl border bg-card p-5 opacity-90">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div><span className="inline-flex rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700">INDISPONÍVEL NO MOMENTO</span><h3 className="mt-3 text-xl font-extrabold">Exames da UniRevuma</h3><p className="mt-1 text-sm text-muted-foreground">Estamos a preparar esta colecção de exames universitários para disponibilizar em breve.</p></div>
+              <div className="shrink-0 text-lg font-extrabold text-muted-foreground">199 MT</div>
+            </div>
+          </article>
+          <article className="rounded-2xl border bg-card p-5 opacity-90">
+            <span className="inline-flex rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">INDISPONÍVEL NO MOMENTO</span>
+            <h3 className="mt-3 text-xl font-extrabold">Exames IFEP / IFP</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Formação de professores do ensino primário. Esta categoria estará disponível numa próxima actualização.</p>
+          </article>
+        </section>
+      ) : (
       <section className="mt-7 rounded-2xl border-2 border-primary/30 bg-card p-5 sm:p-7">
+        {!isApproved && <Button type="button" variant="glass" className="mb-4" onClick={() => setSelectedCategory(null)}>← Voltar às categorias</Button>}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"><ShoppingCart className="h-3.5 w-3.5" /> PACOTE DE EXAMES</span><h2 className="mt-3 text-2xl font-extrabold">Acesso por 125 MT</h2><p className="mt-1 text-sm text-muted-foreground">Consulta cada exame e abre a aula correspondente, organizada por disciplina.</p></div>
+          <div><span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"><ShoppingCart className="h-3.5 w-3.5" /> EXAMES DA 12.ª CLASSE</span><h2 className="mt-3 text-2xl font-extrabold">Exames de 2018 a 2025</h2><p className="mt-1 text-sm text-muted-foreground">Acesso aos exames anteriores da 12.ª classe e às respectivas aulas de preparação com apoio de IA.</p></div>
           <div className="rounded-2xl bg-primary/10 p-4 text-center"><p className="text-3xl font-extrabold">125 MT</p><p className="text-xs text-muted-foreground">pagamento único</p></div>
         </div>
         {isLoading ? <p className="mt-5 text-sm text-muted-foreground">A verificar o teu acesso...</p> : isApproved ? <div className="mt-5 rounded-xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="h-5 w-5" /> Pagamento concluído</p><p className="mt-1">O teu acesso ao pacote de exames está confirmado.</p></div> : isPending ? <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm text-muted-foreground">Já existe um pagamento em processamento na tua conta. Confirma o pedido no telemóvel. Se não responderes em 3 minutos, o pedido expira e poderás tentar novamente.</p></div> : <form className="mt-6 space-y-4" onSubmit={buyExams}>
@@ -139,6 +166,7 @@ function ExamesPage() {
           <Button type="submit" variant="brand" className="w-full" disabled={busy || isPending || isApproved || !phone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</> : <><ShoppingCart className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
         </form>}
       </section>
+      )}
 
       {isApproved && <section className="mt-7 space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-xl font-extrabold">Os teus exames e aulas</h2><p className="mt-1 text-sm text-muted-foreground">Cada exame tem a sua aula de preparação. Podes consultar o enunciado e estudar na mesma página.</p></div><Button variant="glass" onClick={() => refreshExams()} disabled={loadingExams}>{loadingExams ? <Loader2 className="h-4 w-4 animate-spin" /> : "Atualizar biblioteca"}</Button></div>
