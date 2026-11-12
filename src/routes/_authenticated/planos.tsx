@@ -109,7 +109,7 @@ function Planos() {
     if (!plan || busy || paymentLock.current || activePending) return;
     paymentLock.current = true;
     setBusy(true);
-    toast.loading("A enviar pedido USSD...", { id: "ruje-payment-processing" });
+    toast.loading("A contactar a MatrixPay para iniciar a cobrança...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "plan", planId: plan.id, phone, method });
       toast.dismiss("ruje-payment-processing");
@@ -177,7 +177,7 @@ function Planos() {
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-primary bg-card p-6">
           <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-primary" />
           <div>
-            <p className="flex items-center gap-2 text-lg font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p>
+            <p className="flex items-center gap-2 text-lg font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A aguardar confirmação no telemóvel...</p>
             <p className="text-muted-foreground mt-1 text-sm">
               {activePending.plan} · {activePending.amount} MT · pedido criado em{" "}
               {new Date(activePending.created_at).toLocaleDateString("pt-PT")}. Confirma o pedido no telemóvel. Se não responderes em 3 minutos, o pedido expira e poderás tentar novamente.
@@ -248,9 +248,9 @@ function Planos() {
 
               <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><label htmlFor="plan-payment-method" className="text-sm font-medium">Método de pagamento</label><select id="plan-payment-method" value={method} onChange={(event) => setMethod(event.target.value as "mpesa" | "emola")} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select><p className="text-muted-foreground text-xs">Confirma a solicitação USSD no número indicado.</p></div>
               <Button size="lg" className="mt-5 w-full" disabled={busy || Boolean(activePending) || !phone.trim()} onClick={payWithMatrixPay}>
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} {busy ? "A enviar pedido USSD..." : `Pagar agora · ${plan.price} MT`}
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} {busy ? "A contactar a operadora..." : `Pagar agora · ${plan.price} MT`}
               </Button>
-              <p className="text-muted-foreground mt-2 text-xs">A activação do plano é automática após a confirmação do pagamento.</p>
+              <p aria-live="polite" className="text-muted-foreground mt-2 text-xs">{busy ? "Estamos a enviar o pedido à MatrixPay. Assim que o USSD chegar, confirma no telemóvel. Não repitas o pagamento nem feches esta página enquanto o pedido está a ser enviado." : "A activação do plano é automática após a confirmação do pagamento."}</p>
             </section>
           )}
         </>
