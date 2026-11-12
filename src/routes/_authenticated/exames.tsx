@@ -135,11 +135,25 @@ function ExamesPage() {
             <h2 className="text-xl font-extrabold">Escolhe o tipo de exame</h2>
             <p className="mt-1 text-sm text-muted-foreground">Selecciona a categoria para consultar a disponibilidade e iniciar a compra.</p>
           </div>
-          <button type="button" onClick={() => setSelectedCategory("12a")} className="w-full rounded-2xl border-2 border-primary/40 bg-card p-5 text-left shadow-sm transition hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div><span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">DISPONÍVEL</span><h3 className="mt-3 text-xl font-extrabold">Exames da 12.ª classe</h3><p className="mt-1 text-sm text-muted-foreground">Exames anteriores de 2018 a 2025, organizados para facilitar a tua preparação.</p></div>
-              <div className="flex shrink-0 items-center gap-3"><span className="text-lg font-extrabold">125 MT</span><span className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Comprar <span aria-hidden="true">→</span></span></div>
+          <button type="button" onClick={() => setSelectedCategory("12a")} className="group w-full overflow-hidden rounded-2xl border-2 border-primary bg-gradient-to-br from-primary/10 via-card to-primary/5 p-5 text-left shadow-lg shadow-primary/10 ring-1 ring-primary/15 transition duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-xl hover:shadow-primary/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-extrabold tracking-wide text-primary-foreground shadow-sm"><span className="h-2 w-2 rounded-full bg-white" /> DISPONÍVEL PARA COMPRA</span>
+                <h3 className="mt-3 text-xl font-extrabold sm:text-2xl">Exames da 12.ª classe</h3>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Exames anteriores de 2018 a 2025, organizados para facilitar a tua preparação.</p>
+              </div>
+              <div className="shrink-0 rounded-xl border border-primary/20 bg-background/80 px-4 py-3 text-left shadow-sm sm:text-right">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pagamento único</p>
+                <p className="mt-0.5 text-2xl font-black text-primary">125 MT</p>
+              </div>
             </div>
+            <div className="my-5 border-t border-primary/20" />
+            <div className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-primary px-5 py-4 text-base font-extrabold text-primary-foreground shadow-md transition group-hover:brightness-110 group-active:scale-[0.99] sm:text-lg">
+              <ShoppingCart className="h-5 w-5" />
+              <span>COMPRAR EXAMES AGORA</span>
+              <span aria-hidden="true" className="text-xl">→</span>
+            </div>
+            <p className="mt-2 text-center text-xs font-medium text-muted-foreground">Toca aqui para escolher o método de pagamento</p>
           </button>
           <article className="rounded-2xl border bg-card p-5 opacity-90">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
