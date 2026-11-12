@@ -49,15 +49,28 @@ export function NotificationBell({ userId }: { userId: string }) {
 
   useEffect(() => {
     const ch = supabase
-      .channel("notifications-bell")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => {
+      .channel(`notifications-bell-${userId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
+        const notification = payload.new as Notif & { user_id: string | null };
+        if (notification.user_id && notification.user_id !== userId) return;
         void qc.invalidateQueries({ queryKey: ["notifications", userId] });
+        if ("Notification" in window && Notification.permission === "granted") {
+          try {
+            new Notification(notification.title, {
+              body: notification.body,
+              tag: notification.id,
+              icon: "/icon-512.png",
+            });
+          } catch {
+            // The in-app notification remains available if the browser blocks system alerts.
+          }
+        }
       })
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [qc]);
+  }, [qc, userId]);
 
   const items = data?.items ?? [];
   const unread = items.filter((n) => !data?.readSet.has(n.id));
@@ -125,7 +138,7 @@ export function NotificationBell({ userId }: { userId: string }) {
                   <div className="flex items-start gap-2">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${isNew ? "bg-primary" : "bg-transparent"}`} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{n.title}</p>
+                      <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{n.title}</p><span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{n.kind === "admin" ? "Comunicado" : n.kind === "payment_success" || n.kind === "payment_failed" ? "Pagamento" : n.kind === "work_created" ? "Trabalho" : n.kind === "welcome" ? "Conta" : "Actualização"}</span></div>
                       {n.body && <p className="text-muted-foreground mt-0.5 whitespace-pre-line text-sm">{n.body}</p>}
                       <p className="text-muted-foreground mt-1 text-xs">{new Date(n.created_at).toLocaleString("pt-PT")}</p>
                     </div>
