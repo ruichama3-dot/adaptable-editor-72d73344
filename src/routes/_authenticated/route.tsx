@@ -88,7 +88,7 @@ function AuthedLayout() {
                 <Settings className="h-4 w-4" /> {t(lang, "definicoes")}
               </Link>
             </Button>
-            <NotificationBell />
+            <NotificationBell userId={user.id} />
             <Button variant="danger" size="sm" className={navBtn} onClick={() => setConfirmOut(true)}>
               <LogOut className="h-4 w-4" /> {t(lang, "sair")}
             </Button>
