@@ -8,6 +8,7 @@ import { improveCurriculumWithAI } from "@/lib/curriculum-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { BadgeCheck, Camera, CheckCircle2, ClipboardList, Copy, Download, FileText, Loader2, LockKeyhole, Sparkles, UserRound } from "lucide-react";
@@ -369,7 +370,7 @@ function CurriculoPage() {
               <div className="mt-5 rounded-xl bg-[#f2f8f3] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#718078]">Preço do serviço</p><p className="mt-1 text-3xl font-extrabold text-[#16834a]">125 MT</p><p className="text-xs text-[#718078]">Pagamento único · um currículo em PDF</p></div>
               <form className="mt-5 space-y-4" onSubmit={submitPayment}>
                 <div className="space-y-2"><Label htmlFor="cv-pay-phone">Número de telefone para a cobrança</Label><Input id="cv-pay-phone" value={paymentPhone} onChange={(event) => setPaymentPhone(event.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
-                <div className="space-y-2"><Label htmlFor="cv-pay-method">Método de pagamento</Label><select id="cv-pay-method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as "mpesa" | "emola")} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select></div><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
+                <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} /><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
                 <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> {busy ? "A processar pagamento..." : "Pagar agora · 125 MT"}</>}</Button>
               </form>
             </>
