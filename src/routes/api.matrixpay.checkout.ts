@@ -10,6 +10,7 @@ function pickString(...values: unknown[]) { return values.find((value): value is
 export const Route = createFileRoute("/api/matrixpay/checkout")({
   server: { handlers: { POST: async ({ request }) => {
     let orderId: string | undefined;
+    const checkoutStartedAt = Date.now();
     try {
       const apiKey = process.env.MATRIXPAY_API_KEY?.trim();
       const base = (process.env.MATRIXPAY_API_BASE_URL || "https://matrixpay.tech").replace(/\/$/, "");
@@ -26,13 +27,24 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       const authClient = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
       const { data: auth, error: authError } = await authClient.auth.getUser(accessToken);
       if (authError || !auth.user) return reply({ error: "Não foi possível validar a tua sessão. Entra novamente." }, 401);
+      console.info("[MatrixPay] session verified", { durationMs: Date.now() - checkoutStartedAt });
       const plan = body.productType === "plan" ? PLANS.find((item) => item.id === body.planId) : undefined;
       const service = body.productType === "exams" ? PRODUCTS.exams : body.productType === "cv" ? PRODUCTS.cv : undefined;
       if (body.productType === "plan" && !plan) return reply({ error: "Plano inválido." }, 400);
       if (!plan && !service) return reply({ error: "Produto inválido." }, 400);
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: activeOrder, error: activeOrderError } = await supabaseAdmin.from("payment_requests").select("id, plan, amount, created_at").eq("user_id", auth.user.id).eq("method", "MatrixPay").in("status", ["pendente", "pending", "processing"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      // The profile and pending-order reads are independent; run them together
+      // so the normal checkout path avoids one serial database round-trip.
+      const preflightStartedAt = Date.now();
+      const [activeOrderResult, profileResult] = await Promise.all([
+        supabaseAdmin.from("payment_requests").select("id, plan, amount, created_at").eq("user_id", auth.user.id).eq("method", "MatrixPay").in("status", ["pendente", "pending", "processing"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabaseAdmin.from("profiles").select("full_name,phone").eq("id", auth.user.id).maybeSingle(),
+      ]);
+      const { data: activeOrder, error: activeOrderError } = activeOrderResult;
+      const profile = profileResult.data;
       if (activeOrderError) { console.error("[MatrixPay] active order lookup failed", activeOrderError.message); return reply({ error: "Não foi possível verificar um pagamento anterior. Aguarda um momento e tenta novamente." }, 503); }
+      if (profileResult.error) console.warn("[MatrixPay] profile lookup failed", profileResult.error.message);
+      console.info("[MatrixPay] preflight completed", { durationMs: Date.now() - preflightStartedAt });
       if (activeOrder) {
         const createdAt = new Date(activeOrder.created_at).getTime();
         const ussdExpired = Number.isFinite(createdAt) && Date.now() - createdAt >= USSD_TIMEOUT_MS;
@@ -47,7 +59,6 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
           return reply({ error: "O pedido anterior ainda está a ser verificado. Aguarda alguns segundos e tenta novamente." }, 503);
         }
       }
-      const { data: profile } = await supabaseAdmin.from("profiles").select("full_name,phone").eq("id", auth.user.id).maybeSingle();
       const email = auth.user.email?.trim();
       if (!email) return reply({ error: "A conta precisa de um e-mail válido para emitir o recibo." }, 400);
       const amount = plan?.price ?? service!.amount;
@@ -57,11 +68,14 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       }).select("id").single();
       if (orderError || !order) { console.error("[MatrixPay] order insert failed", orderError?.message); return reply({ error: "Não foi possível criar o pedido de pagamento." }, 500); }
       orderId = order.id;
+      console.info("[MatrixPay] local order created", { durationMs: Date.now() - checkoutStartedAt });
+      const providerStartedAt = Date.now();
       const response = await fetch(`${base}/api/v1/payments`, {
         method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ titulo: `RuJe IA - ${productName}`, valor: amount, cliente_email: email, referencia: order.id, cliente_nome: profile?.full_name || email, cliente_telefone: phone, metodo: method }),
         signal: AbortSignal.timeout(20000),
       });
+      console.info("[MatrixPay] provider response received", { durationMs: Date.now() - providerStartedAt, status: response.status });
       const raw = await response.text();
       let json: any = {}; try { json = raw ? JSON.parse(raw) : {}; } catch { /* provider response not JSON */ }
       const data = json?.data ?? json?.payment ?? json;
@@ -89,7 +103,8 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       }
       const { error: saveError } = await (supabaseAdmin.from("payment_requests") as any).update({ matrixpay_payment_id: storedId }).eq("id", order.id);
       if (saveError) { console.error("[MatrixPay] reference save failed", saveError.message); return reply({ error: "A cobrança foi criada, mas a referência não foi guardada. Contacta o apoio." }, 500); }
-      return reply({ checkout_url: checkoutUrl ?? null, payment_id: storedId, order_id: order.id, awaiting_ussd: !checkoutUrl });
+      console.info("[MatrixPay] checkout completed", { durationMs: Date.now() - checkoutStartedAt, awaitingUssd: !checkoutUrl });
+      return reply({ checkout_url: checkoutUrl ?? null, payment_id: storedId, order_id: order.id, awaiting_ussd: !checkoutUrl, pending_confirmation: !checkoutUrl, message: !checkoutUrl ? "Pedido USSD enviado. Confirma a solicitação no teu telemóvel." : undefined });
     } catch (error) {
       const isTimeout = error instanceof Error && (error.name === "TimeoutError" || /timed? out|timeout/i.test(error.message));
       console.error("[MatrixPay] checkout error", { orderId: orderId || null, name: error instanceof Error ? error.name : "UnknownError", message: error instanceof Error ? error.message : String(error) });
