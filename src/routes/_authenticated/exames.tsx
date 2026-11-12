@@ -10,6 +10,7 @@ import { BookOpenCheck, CheckCircle2, Copy, Download, FileText, Loader2, Shoppin
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PaymentMethodSelector } from "@/components/PaymentMethodSelector";
 import { Textarea } from "@/components/ui/textarea";
 import { listApprovedExams, getApprovedExamPdf } from "@/lib/exam-library.functions";
 
@@ -176,7 +177,7 @@ function ExamesPage() {
         </div>
         {isLoading ? <p className="mt-5 text-sm text-muted-foreground">A verificar o teu acesso...</p> : isApproved ? <div className="mt-5 rounded-xl border border-green-600/30 bg-green-50 p-4 text-sm text-green-950"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="h-5 w-5" /> Pagamento concluído</p><p className="mt-1">O teu acesso ao pacote de exames está confirmado.</p></div> : isPending ? <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm text-muted-foreground">Já existe um pagamento em processamento na tua conta. Confirma o pedido no telemóvel. Se não responderes em 3 minutos, o pedido expira e poderás tentar novamente.</p></div> : <form className="mt-6 space-y-4" onSubmit={buyExams}>
           <div className="space-y-2"><Label htmlFor="exam-buyer-phone">Número de telefone para a cobrança</Label><Input id="exam-buyer-phone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
-          <div className="space-y-2"><Label htmlFor="exam-pay-method">Método de pagamento</Label><select id="exam-pay-method" value={method} onChange={(e) => setMethod(e.target.value as "mpesa" | "emola")} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select></div><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
+          <PaymentMethodSelector value={method} onChange={setMethod} /><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
           <Button type="submit" variant="brand" className="w-full" disabled={busy || isPending || isApproved || !phone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</> : <><ShoppingCart className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
         </form>}
       </section>
