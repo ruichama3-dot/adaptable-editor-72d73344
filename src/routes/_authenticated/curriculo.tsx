@@ -104,12 +104,13 @@ function CurriculoPage() {
     if (busy || paymentLock.current || pending || approved) return;
     paymentLock.current = true;
     setBusy(true);
-    toast.loading("A processar pagamento...", { id: "ruje-payment-processing" });
+    toast.loading("A enviar pedido USSD...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "cv", phone: paymentPhone, method: paymentMethod });
       toast.dismiss("ruje-payment-processing");
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
       else {
+        toast.info(result.message || "Pedido USSD enviado. Confirma a solicitação no teu telemóvel.");
         await queryClient.invalidateQueries({ queryKey: ["curriculum-payment", user.id] });
         // Keep processing until the webhook confirms success or failure.
       }
@@ -370,7 +371,7 @@ function CurriculoPage() {
               <form className="mt-5 space-y-4" onSubmit={submitPayment}>
                 <div className="space-y-2"><Label htmlFor="cv-pay-phone">Número de telefone para a cobrança</Label><Input id="cv-pay-phone" value={paymentPhone} onChange={(event) => setPaymentPhone(event.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
                 <div className="space-y-2"><Label htmlFor="cv-pay-method">Método de pagamento</Label><select id="cv-pay-method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as "mpesa" | "emola")} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select></div><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
-                <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> {busy ? "A processar pagamento..." : "Pagar agora · 125 MT"}</>}</Button>
+                <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> {busy ? "A enviar pedido USSD..." : "Pagar agora · 125 MT"}</>}</Button>
               </form>
             </>
           )}
