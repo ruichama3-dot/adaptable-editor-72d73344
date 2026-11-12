@@ -204,6 +204,22 @@ function AuthPage() {
       <div className="shadow-soft w-full max-w-md rounded-2xl border border-border bg-card p-6">
         {onboarding ? (
           <div className="space-y-5">
+            {notificationStep && (
+              <section className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><BellRing className="h-5 w-5" /></span>
+                  <div className="min-w-0">
+                    <h2 className="font-bold">Activa as notificações da RuJe IA</h2>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">Recebe avisos personalizados sobre pagamentos, trabalhos criados, exames, currículo e actualizações importantes da plataforma.</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  <Button type="button" onClick={requestBrowserNotifications} className="w-full"><BellRing className="h-4 w-4" /> Activar notificações</Button>
+                  <Button type="button" variant="outline" onClick={() => setNotificationStep(false)} className="w-full">Continuar sem activar</Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">A autorização é pedida pelo navegador. Se recusares, os avisos continuarão disponíveis no sino dentro da tua conta.</p>
+              </section>
+            )}
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Configuração do perfil · 1 de 2</p>
               <h1 className="text-2xl font-bold">O que veio fazer na RuJe IA?</h1>
