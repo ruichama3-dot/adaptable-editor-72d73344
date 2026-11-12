@@ -27,9 +27,17 @@ export const DocPages = forwardRef<DocPagesHandle, Props>(function DocPages(
   }));
 
   return (
-    <div className="doc-pages mt-5">
+    <section className="doc-pages mt-5" aria-label="Pré-visualização do documento">
       {pages.map((page, i) => (
-        <div key={`${String(version ?? "v")}-${i}`} className="w-full max-w-[794px] min-w-0">
+        <article
+          key={`${String(version ?? "v")}-${i}`}
+          className="doc-page-frame w-full max-w-[794px] min-w-0"
+          aria-label={`Página ${i + 1} de ${pages.length}`}
+        >
+          <div className="doc-page-heading print:hidden">
+            <span>DOCUMENTO</span>
+            <span>PÁGINA {String(i + 1).padStart(2, "0")} / {String(pages.length).padStart(2, "0")}</span>
+          </div>
           <div
             ref={(el) => {
               refs.current[i] = el;
@@ -43,8 +51,8 @@ export const DocPages = forwardRef<DocPagesHandle, Props>(function DocPages(
             className="doc-sheet shadow-soft rounded-md border border-border outline-none"
           />
           <p className="page-number mt-1.5 pr-2 print:hidden">Página {i + 1} de {pages.length}</p>
-        </div>
+        </article>
       ))}
-    </div>
+    </section>
   );
 });
