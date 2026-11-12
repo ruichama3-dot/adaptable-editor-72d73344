@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
 
-type Notif = { id: string; title: string; body: string; link: string | null; created_at: string };
+type Notif = { id: string; title: string; body: string; link: string | null; kind: string; created_at: string };
 
 function readableDbError(error: { code?: string; message?: string } | null | undefined) {
   if (!error) return null;
@@ -23,25 +23,26 @@ function readableDbError(error: { code?: string; message?: string } | null | und
   return "Não foi possível carregar as notificações. Tente novamente.";
 }
 
-export function NotificationBell() {
+export function NotificationBell({ userId }: { userId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", userId],
     refetchInterval: 30000,
     queryFn: async () => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData.user) throw new Error("A sessão expirou. Entre novamente.");
       const uid = authData.user.id;
       const [{ data: list, error: listError }, { data: reads, error: readsError }] = await Promise.all([
-        db.from("notifications").select("id,title,body,link,created_at").order("created_at", { ascending: false }).limit(30),
+        db.from("notifications").select("id,title,body,link,kind,created_at").order("created_at", { ascending: false }).limit(40),
         db.from("notification_reads").select("notification_id").eq("user_id", uid),
       ]);
       if (listError) throw new Error(readableDbError(listError) ?? "Falha ao consultar notificações.");
       if (readsError) throw new Error(readableDbError(readsError) ?? "Falha ao consultar o estado de leitura.");
       const readSet = new Set<string>((reads ?? []).map((r: { notification_id: string }) => r.notification_id));
+      if (uid !== userId) throw new Error("A sessão mudou. Actualiza a página.");
       return { uid, items: (list ?? []) as Notif[], readSet };
     },
   });
@@ -50,7 +51,7 @@ export function NotificationBell() {
     const ch = supabase
       .channel("notifications-bell")
       .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => {
-        void qc.invalidateQueries({ queryKey: ["notifications"] });
+        void qc.invalidateQueries({ queryKey: ["notifications", userId] });
       })
       .subscribe();
     return () => {
