@@ -104,7 +104,7 @@ function CurriculoPage() {
     if (busy || paymentLock.current || pending || approved) return;
     paymentLock.current = true;
     setBusy(true);
-    toast.loading("A enviar pedido USSD...", { id: "ruje-payment-processing" });
+    toast.loading("A contactar a MatrixPay para iniciar a cobrança...", { id: "ruje-payment-processing" });
     try {
       const result = await createMatrixPayCheckout({ productType: "cv", phone: paymentPhone, method: paymentMethod });
       toast.dismiss("ruje-payment-processing");
@@ -362,7 +362,7 @@ function CurriculoPage() {
       ) : (
         <section className="mt-6 rounded-2xl border border-[#dcebe0] bg-white p-5 shadow-sm sm:p-7">
           {pending ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A processar pagamento...</p><p className="mt-1 text-sm">Existe um pedido USSD activo. Confirma no telemóvel; se não responderes em 3 minutos, ele expira e poderás tentar novamente.</p></div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950"><p className="flex items-center gap-2 font-bold"><Loader2 className="h-5 w-5 animate-spin" /> A aguardar confirmação no telemóvel...</p><p className="mt-1 text-sm">Existe um pedido USSD activo. Confirma no telemóvel; se não responderes em 3 minutos, ele expira e poderás tentar novamente.</p></div>
           ) : (
             <>
               <div className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-[#16834a]" /><h2 className="text-lg font-bold text-[#203128]">Desbloqueia a criação do teu currículo</h2></div>
@@ -371,7 +371,8 @@ function CurriculoPage() {
               <form className="mt-5 space-y-4" onSubmit={submitPayment}>
                 <div className="space-y-2"><Label htmlFor="cv-pay-phone">Número de telefone para a cobrança</Label><Input id="cv-pay-phone" value={paymentPhone} onChange={(event) => setPaymentPhone(event.target.value)} inputMode="tel" autoComplete="tel" required placeholder="84... / 85... / 86... / 87..." /></div>
                 <div className="space-y-2"><Label htmlFor="cv-pay-method">Método de pagamento</Label><select id="cv-pay-method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as "mpesa" | "emola")} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select></div><p className="text-sm text-muted-foreground">Confirma a solicitação USSD no número indicado.</p>
-                <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar pagamento...</> : <><BadgeCheck className="h-4 w-4" /> {busy ? "A enviar pedido USSD..." : "Pagar agora · 125 MT"}</>}</Button>
+                <Button type="submit" variant="brand" className="w-full" disabled={busy || !paymentPhone.trim()}>{busy ? <><Loader2 className="h-4 w-4 animate-spin" /> A contactar a operadora...</> : <><BadgeCheck className="h-4 w-4" /> Pagar agora · 125 MT</>}</Button>
+                <p aria-live="polite" className="text-xs text-muted-foreground">{busy ? "Estamos a enviar o pedido à MatrixPay. Assim que o USSD chegar, confirma no telemóvel. Não repitas o pagamento enquanto estiver em verificação." : "O pedido é enviado de imediato após clicares. A confirmação é feita no teu telemóvel."}</p>
               </form>
             </>
           )}
