@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export async function createMatrixPayCheckout(input: { productType: "plan" | "exams" | "cv"; phone: string; method: "mpesa" | "emola"; planId?: string }): Promise<{ checkoutUrl: string | null; pendingConfirmation: boolean; orderId: string | null }> {
+export async function createMatrixPayCheckout(input: { productType: "plan" | "exams" | "cv"; phone: string; method: "mpesa" | "emola"; planId?: string }): Promise<{ checkoutUrl: string | null; pendingConfirmation: boolean; orderId: string | null; message: string | null }> {
   const sendCheckout = async (accessToken: string) => fetch("/api/matrixpay/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -37,8 +37,9 @@ export async function createMatrixPayCheckout(input: { productType: "plan" | "ex
   if (!response.ok) throw new Error(result.error || "Não foi possível iniciar o pagamento.");
   return {
     checkoutUrl: result.checkout_url ? String(result.checkout_url) : null,
-    pendingConfirmation: result.pending_confirmation === true,
+    pendingConfirmation: result.pending_confirmation === true || result.awaiting_ussd === true,
     orderId: result.order_id ? String(result.order_id) : null,
+    message: typeof result.message === "string" ? result.message : null,
   };
 }
 
