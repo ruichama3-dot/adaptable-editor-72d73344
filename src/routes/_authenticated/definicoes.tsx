@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { saveLang, saveTheme, usePreferences, type Lang, type Theme } from "@/lib/preferences";
-import { Sun, Moon, Languages, User, KeyRound } from "lucide-react";
+import { Sun, Moon, Languages, User, KeyRound, Bell, BellRing } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/definicoes")({
   head: () => ({
@@ -43,6 +43,33 @@ function Definicoes() {
   const queryClient = useQueryClient();
   const { theme, lang } = usePreferences();
   const [savingPass, setSavingPass] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
+
+  async function enableNotifications() {
+    if (typeof Notification === "undefined") {
+      setNotificationPermission("unsupported");
+      toast.error("Este navegador não suporta notificações do sistema.");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      setNotificationPermission("granted");
+      toast.success("As notificações já estão activadas neste navegador.");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      setNotificationPermission("denied");
+      toast.error("As notificações estão bloqueadas nas definições do navegador. Permite-as para este site e tenta novamente.");
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      if (permission === "granted") toast.success("Notificações activadas com sucesso.");
+      else toast.info("Não activaste as notificações. Continuarás a ver os avisos dentro da RuJe IA.");
+    } catch {
+      toast.error("Não foi possível pedir autorização para as notificações.");
+    }
+  }
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -99,6 +126,20 @@ function Definicoes() {
               {v === "claro" ? "Claro" : "Escuro"}
             </Choice>
           ))}
+        </div>
+      </section>
+
+      <section className={card}>
+        <h2 className="flex items-center gap-2 font-bold"><Bell className="h-4 w-4 text-primary" /> Notificações</h2>
+        <p className="text-muted-foreground mt-2 text-sm">Recebe avisos sobre pagamentos, trabalhos, novidades e comunicados da RuJe IA.</p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm">
+            <p className="font-semibold">{notificationPermission === "granted" ? "Notificações permitidas neste navegador" : notificationPermission === "denied" ? "Permissão bloqueada no navegador" : notificationPermission === "unsupported" ? "Notificações não suportadas" : "Notificações ainda não activadas"}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{notificationPermission === "denied" ? "Altera a permissão nas definições do navegador para este site." : "Podes alterar esta opção a qualquer momento nas definições do navegador."}</p>
+          </div>
+          <Button type="button" variant="brand" className="w-full sm:w-auto" onClick={enableNotifications} disabled={notificationPermission === "unsupported" || notificationPermission === "granted"}>
+            <BellRing className="h-4 w-4" /> {notificationPermission === "granted" ? "Notificações activadas" : notificationPermission === "denied" ? "Como desbloquear" : notificationPermission === "unsupported" ? "Não suportado" : "Activar notificações"}
+          </Button>
         </div>
       </section>
 
