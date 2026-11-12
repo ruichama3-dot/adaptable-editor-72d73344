@@ -138,7 +138,7 @@ export function NotificationBell({ userId }: { userId: string }) {
                   <div className="flex items-start gap-2">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${isNew ? "bg-primary" : "bg-transparent"}`} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{n.title}</p><span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{n.kind === "admin" ? "Comunicado" : n.kind === "payment_success" || n.kind === "payment_failed" ? "Pagamento" : n.kind === "work_created" ? "Trabalho" : n.kind === "welcome" ? "Conta" : "Actualização"}</span></div>
+                      <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{n.title}</p><span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{n.kind === "admin" ? "Comunicado" : n.kind === "payment_success" || n.kind === "payment_failed" ? "Pagamento" : (n.kind === "work_created" || n.kind === "work_updated") ? "Trabalho" : n.kind === "welcome" ? "Conta" : "Actualização"}</span></div>
                       {n.body && <p className="text-muted-foreground mt-0.5 whitespace-pre-line text-sm">{n.body}</p>}
                       <p className="text-muted-foreground mt-1 text-xs">{new Date(n.created_at).toLocaleString("pt-PT")}</p>
                     </div>
