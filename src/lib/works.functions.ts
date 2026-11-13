@@ -179,6 +179,7 @@ ${opt['cover'] === false ? "" : `CAPA E FOLHA DE ROSTO: inclui apenas quando for
 ORGANIZAÇÃO DO CORPO: segue a estrutura específica indicada acima. Não imponhas automaticamente introdução + objetivos + metodologia + capítulos + conclusão a todos os tipos. Cria secções, páginas novas, anexos ou recomendações apenas quando fizerem sentido. Usa títulos <h1>, subtítulos <h2>/<h3> e separadores de página entre blocos completos quando o documento for extenso.
 
 REFERÊNCIAS BIBLIOGRÁFICAS:
+${referenceResearchInstruction}
 ${manualRefs
   ? `- O utilizador escolheu REFERÊNCIAS MANUAIS. Usa EXACTAMENTE e apenas as referências indicadas abaixo, formatando-as segundo as normas ${f("norms")}, e cita-as no corpo do texto:\n${f("manual_references")}`
   : `- Usa exclusivamente as fontes verificadas fornecidas acima que sejam pertinentes ao tema. Não acrescentes autores, livros, artigos, editoras, anos ou DOI que não estejam nessa lista. Cita as fontes utilizadas no corpo do texto no formato (Autor, ano) e mantém a bibliografia coerente com essas citações. Formata segundo as normas ${f("norms")}.`}
