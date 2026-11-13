@@ -183,6 +183,8 @@
   overflow-wrap: anywhere;
   word-break: normal;
 }
+.doc-sheet, .doc-sheet * { font-family: "Times New Roman", Times, serif !important; }
+
 .doc-sheet .sample-cover,
 .doc-sheet .sample-cover p { text-align: center; }
 .doc-sheet h1 {
