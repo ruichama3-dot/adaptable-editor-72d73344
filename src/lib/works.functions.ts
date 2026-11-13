@@ -135,6 +135,20 @@ function ensureVerifiedBibliography(html: string, references: VerifiedAcademicRe
     (entries.length ? entries.join("\n") : emptyMessage);
 }
 
+function ensureManualBibliography(html: string, manualReferences: string): string {
+  const headings = Array.from(html.matchAll(/<h([1-3])\\b[^>]*>[\\s\\S]*?<\\/h\\1>/gi));
+  const bibliographyHeading = headings.find((match) =>
+    /refer[eê]ncias|bibliografia/i.test(match[0].replace(/<[^>]*>/g, " ")),
+  );
+  let body = bibliographyHeading?.index !== undefined ? html.slice(0, bibliographyHeading.index) : html;
+  body = body.replace(/(?:<hr\\b[^>]*class=["'][^"']*page-break[^"']*["'][^>]*>\\s*)+$/i, "").trim();
+  const entries = manualReferences.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean);
+  const list = entries.length
+    ? entries.map((entry) => "<p>" + escapeAcademicHtml(entry) + "</p>").join("\\n")
+    : "<p>Não foram fornecidas referências bibliográficas. Acrescenta fontes consultadas e confirma-as com o docente; nenhuma fonte foi inventada.</p>";
+  return body + '\\n<hr class="page-break">\\n<h1>Referências bibliográficas</h1>\\n' + list;
+}
+
 function buildPrompt(w: Record<string, unknown>, verifiedReferences: VerifiedAcademicReference[] = []) {
   const opt = (w['options'] ?? {}) as Record<string, boolean>;
   const f = (k: string) => (w[k] ? String(w[k]) : "—");
@@ -509,7 +523,9 @@ export const generateWork = createServerFn({ method: "POST" })
     if (!html) throw new Error(BUSY_MSG);
 
     if (outputFormat === "normal") {
-      if (String(work.references_mode ?? "automatica") !== "manual") {
+      if (String(work.references_mode ?? "automatica") === "manual") {
+        html = ensureManualBibliography(html, String(work.manual_references ?? ""));
+      } else {
         html = ensureVerifiedBibliography(html, verifiedReferences, String(work.norms ?? ""));
       }
       html = buildAutomaticIndex(html);
