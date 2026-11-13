@@ -155,7 +155,20 @@ async function callGemini(prompt: string, apiKey: string, maxOutputTokens = 1638
     }
   }
 
-  console.error("[IA] Falha em todos os modelos principais:", errors.join(" | "));
+  const failureSummary = errors.join(" | ");
+  console.error("[IA] Falha em todos os modelos principais:", failureSummary);
+  if (/quota|resource_exhausted|billing|limit reached|limit: 0/i.test(failureSummary)) {
+    throw new Error("A quota da API Gemini foi atingida. A geração está temporariamente indisponível por limite da conta Google; verifica a quota e a facturação do projecto Google AI Studio.");
+  }
+  if (/chave sem autorização|HTTP 401|HTTP 403/i.test(failureSummary)) {
+    throw new Error("A API Gemini recusou a chave ou as permissões configuradas. Verifica a GEMINI_API_KEY e o acesso à Gemini API na Vercel/Google AI Studio.");
+  }
+  if (/429/.test(failureSummary)) {
+    throw new Error("A API Gemini está a limitar temporariamente os pedidos. Aguarda um pouco e tenta novamente; não é uma fila de utilizadores da RuJe IA.");
+  }
+  if (/5\\d\\d/.test(failureSummary)) {
+    throw new Error("O serviço Gemini está temporariamente indisponível. Tenta novamente dentro de instantes.");
+  }
   return "";
 }
 
@@ -194,16 +207,23 @@ async function callAI(prompt: string, maxOutputTokens = 16384): Promise<string> 
   }
 
   // Uma passagem por fornecedor evita multiplicar pedidos quando a API limita a taxa.
+  let geminiFailure: Error | null = null;
   if (geminiKey) {
-    const text = await callGemini(prompt, geminiKey, maxOutputTokens);
-    if (text.trim()) return text;
+    try {
+      const text = await callGemini(prompt, geminiKey, maxOutputTokens);
+      if (text.trim()) return text;
+    } catch (error) {
+      geminiFailure = error instanceof Error ? error : new Error(String(error));
+      console.error("[IA] Falha Gemini; a verificar fornecedor alternativo:", geminiFailure.message);
+    }
   }
   if (gatewayKey) {
     const text = await callLovableGateway(prompt, gatewayKey, maxOutputTokens).catch(() => "");
     if (text.trim()) return text;
   }
 
-  throw new Error(BUSY_MSG);
+  if (geminiFailure) throw geminiFailure;
+  throw new Error("A IA não devolveu conteúdo. Verifica a disponibilidade do fornecedor configurado e tenta novamente.");
 }
 
 
