@@ -108,14 +108,16 @@ p, li, tr, figure, img { break-inside: avoid; }
       let sourceY = 0;
       while (sourceY < contentCanvas.height - 8) {
         const sourceStart = sourceY === 0 ? 0 : sourceY;
+        const firstPage = sourceStart === 0;
+        const pageCapacity = firstPage ? pageHeight : contentHeight;
         const targetEnd = Math.min(
           contentCanvas.height,
-          sourceStart + pageHeight * scale,
+          sourceStart + pageCapacity * scale,
         );
         let sourceEnd = targetEnd;
 
         if (targetEnd < contentCanvas.height) {
-          const targetContentEnd = Math.floor((sourceStart / scale + contentHeight) * scale);
+          const targetContentEnd = targetEnd - (pagePadding * scale);
           const safeBoundary = candidates
             .map((value) => value * scale)
             .filter((value) => value > sourceStart + 120 * scale && value <= targetContentEnd)
@@ -133,11 +135,11 @@ p, li, tr, figure, img { break-inside: avoid; }
 
         context.fillStyle = "#ffffff";
         context.fillRect(0, 0, output.width, output.height);
-        const destinationY = pagePadding * scale;
+        const destinationY = sourceStart === 0 ? 0 : pagePadding * scale;
         context.drawImage(
           contentCanvas,
           0, sourceStart, contentCanvas.width, sliceHeight,
-          0, destinationY, output.width, Math.min(sliceHeight, output.height - destinationY - pagePadding * scale),
+          0, destinationY, output.width, Math.min(sliceHeight, output.height - destinationY),
         );
 
         if (renderedPages > 0) pdf.addPage();
