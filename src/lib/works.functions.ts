@@ -509,10 +509,10 @@ export const generateWork = createServerFn({ method: "POST" })
     if (!html) throw new Error(BUSY_MSG);
 
     if (outputFormat === "normal") {
-      html = buildAutomaticIndex(html);
       if (String(work.references_mode ?? "automatica") !== "manual") {
         html = ensureVerifiedBibliography(html, verifiedReferences, String(work.norms ?? ""));
       }
+      html = buildAutomaticIndex(html);
     }
 
     let imagesAdded = 0;
