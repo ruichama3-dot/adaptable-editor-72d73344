@@ -24,38 +24,132 @@ export async function downloadPdf(title: string, html: string) {
   ]);
   const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pages = splitPages(html);
+  const pageWidth = 794;
+  const pageHeight = 1123;
+  const pagePadding = 64;
+  const contentHeight = pageHeight - pagePadding * 2;
+  const scale = 2;
+  let renderedPages = 0;
 
-  for (let index = 0; index < pages.length; index++) {
-    const sheet = document.createElement("div");
-    sheet.innerHTML = pages[index] ?? "";
-    // Render a single document sheet in an isolated frame, away from app theme tokens.
+  for (const pageHtml of pages) {
     const frame = document.createElement("iframe");
     frame.setAttribute("aria-hidden", "true");
-    frame.style.cssText = "position:fixed;left:0;top:0;width:794px;height:1123px;opacity:0;pointer-events:none;";
+    frame.tabIndex = -1;
+    frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${pageWidth}px;height:${pageHeight}px;border:0;opacity:0;pointer-events:none;`;
     document.body.appendChild(frame);
+
     try {
       const frameDoc = frame.contentDocument;
       if (!frameDoc) throw new Error("Não foi possível preparar o PDF.");
+
       frameDoc.open();
-      frameDoc.write(`<!doctype html><html><head><style>*{box-sizing:border-box}html,body{margin:0;width:794px;background:#fff;color:#111}body{font:12pt/1.5 'Times New Roman',serif;padding:64px 72px;min-height:1122px;overflow-wrap:break-word}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}p{text-align:justify;margin:0 0 .8em}ul,ol{margin:0 0 .8em 1.4em}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:6px 8px}table.rosto td{border:none;vertical-align:top}table.rosto td:last-child{text-align:right}img{max-width:100%;height:auto}</style></head><body>${sheet.innerHTML}</body></html>`);
+      frameDoc.write(`<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; width: ${pageWidth}px; background: #fff; color: #111; }
+body {
+  width: ${pageWidth}px;
+  min-height: ${pageHeight}px;
+  padding: ${pagePadding}px 72px;
+  font: 12pt/1.5 "Times New Roman", Times, serif;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+body, body * { font-family: "Times New Roman", Times, serif !important; }
+h1 { margin: 1.2em 0 .6em; font-size: 18pt; font-weight: 700; line-height: 1.2; break-after: avoid; }
+h2 { margin: 1.1em 0 .5em; font-size: 15pt; font-weight: 700; line-height: 1.2; break-after: avoid; }
+h3 { margin: 1em 0 .4em; font-size: 13pt; font-weight: 700; line-height: 1.2; break-after: avoid; }
+p { margin: 0 0 .8em; text-align: justify; overflow-wrap: anywhere; }
+ul, ol { margin: 0 0 .8em 1.4em; padding: 0; }
+li { margin: 0 0 .25em; }
+table { width: 100%; max-width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0 0 1em; }
+td, th { border: 1px solid #999; padding: 6px 8px; overflow-wrap: anywhere; word-break: break-word; vertical-align: top; }
+table.rosto, table.rosto td, table.rosto th { border: 0; background: transparent; vertical-align: top; }
+table.rosto td:last-child { text-align: right; }
+img, video { display: block; max-width: 100%; height: auto; object-fit: contain; }
+figure { max-width: 100%; margin: 1em auto; text-align: center; }
+figcaption { margin-top: .4em; font-size: 9pt; text-align: center; }
+a { color: inherit; overflow-wrap: anywhere; }
+p, li, tr, figure, img { break-inside: avoid; }
+.sample-cover, .sample-cover p { text-align: center; }
+</style>
+</head>
+<body>${pageHtml}</body>
+</html>`);
       frameDoc.close();
+
       await Promise.all(Array.from(frameDoc.images).map((image) => image.decode().catch(() => undefined)));
-      const canvas = await html2canvas(frameDoc.body, { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 794, height: Math.max(1122, frameDoc.body.scrollHeight) });
-      const pixelsPerPage = Math.floor((canvas.width * 297) / 210);
-      for (let start = 0; start < canvas.height; start += pixelsPerPage) {
-        const remaining = canvas.height - start;
-        if (remaining < 12) break; // canvas rounding must not create a blank trailing page
-        const height = Math.min(pixelsPerPage, remaining);
-        const slice = document.createElement("canvas");
-        slice.width = canvas.width;
-        slice.height = height;
-        slice.getContext("2d")?.drawImage(canvas, 0, start, canvas.width, height, 0, 0, canvas.width, height);
-        if (index || start) pdf.addPage();
-        pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 210, (height * 210) / canvas.width);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+      const body = frameDoc.body;
+      const contentCanvas = await html2canvas(body, {
+        scale,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: pageWidth,
+        width: pageWidth,
+        height: Math.max(pageHeight, body.scrollHeight),
+        logging: false,
+      });
+
+      // Cut only at the end of a paragraph/heading/list/table when possible,
+      // then restore the same top and bottom page margins on every PDF page.
+      const candidates = Array.from(body.querySelectorAll("h1,h2,h3,p,li,table,figure,blockquote"))
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return Math.round(rect.bottom - body.getBoundingClientRect().top);
+        })
+        .filter((bottom) => bottom > pagePadding + 24 && bottom < body.scrollHeight - 8)
+        .sort((a, b) => a - b);
+
+      let sourceY = 0;
+      while (sourceY < contentCanvas.height - 8) {
+        const sourceStart = sourceY === 0 ? 0 : sourceY;
+        const targetEnd = Math.min(
+          contentCanvas.height,
+          sourceStart + pageHeight * scale,
+        );
+        let sourceEnd = targetEnd;
+
+        if (targetEnd < contentCanvas.height) {
+          const targetContentEnd = Math.floor((sourceStart / scale + contentHeight) * scale);
+          const safeBoundary = candidates
+            .map((value) => value * scale)
+            .filter((value) => value > sourceStart + 120 * scale && value <= targetContentEnd)
+            .pop();
+          if (safeBoundary) sourceEnd = safeBoundary;
+        }
+
+        if (sourceEnd <= sourceStart) sourceEnd = Math.min(contentCanvas.height, sourceStart + pageHeight * scale);
+        const sliceHeight = sourceEnd - sourceStart;
+        const output = document.createElement("canvas");
+        output.width = contentCanvas.width;
+        output.height = pageHeight * scale;
+        const context = output.getContext("2d");
+        if (!context) throw new Error("Não foi possível compor uma página do PDF.");
+
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, output.width, output.height);
+        const destinationY = pagePadding * scale;
+        context.drawImage(
+          contentCanvas,
+          0, sourceStart, contentCanvas.width, sliceHeight,
+          0, destinationY, output.width, Math.min(sliceHeight, output.height - destinationY - pagePadding * scale),
+        );
+
+        if (renderedPages > 0) pdf.addPage();
+        pdf.addImage(output.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, 210, 297);
+        renderedPages += 1;
+        sourceY = sourceEnd;
       }
     } finally {
       frame.remove();
     }
   }
+
+  if (!renderedPages) throw new Error("O documento não contém páginas para exportar.");
   pdf.save(`${safeName(title)}.pdf`);
 }
