@@ -135,7 +135,7 @@ function ensureVerifiedBibliography(html: string, references: VerifiedAcademicRe
     (entries.length ? entries.join("\n") : emptyMessage);
 }
 
-function buildPrompt(w: Record<string, unknown>, verifiedReferences: VerifiedAcademicReference[] = {}) {
+function buildPrompt(w: Record<string, unknown>, verifiedReferences: VerifiedAcademicReference[] = []) {
   const opt = (w['options'] ?? {}) as Record<string, boolean>;
   const f = (k: string) => (w[k] ? String(w[k]) : "—");
   const isGroup = String(w['work_mode'] ?? "individual") === "grupo";
@@ -181,7 +181,7 @@ ORGANIZAÇÃO DO CORPO: segue a estrutura específica indicada acima. Não impon
 REFERÊNCIAS BIBLIOGRÁFICAS:
 ${manualRefs
   ? `- O utilizador escolheu REFERÊNCIAS MANUAIS. Usa EXACTAMENTE e apenas as referências indicadas abaixo, formatando-as segundo as normas ${f("norms")}, e cita-as no corpo do texto:\n${f("manual_references")}`
-  : `- Usa apenas referências verificáveis e reais que conheças com confiança. Não inventes autores, títulos, editoras, anos ou DOI. Se não conseguires verificar referências, declara essa limitação e prioriza fontes fornecidas pelo utilizador ou pesquisa externa disponível. Formata as referências segundo as normas ${f("norms")}${opt['citations'] === false ? "" : ", com citações no corpo do texto (Autor, ano)"}.`}
+  : `- Usa exclusivamente as fontes verificadas fornecidas acima que sejam pertinentes ao tema. Não acrescentes autores, livros, artigos, editoras, anos ou DOI que não estejam nessa lista. Cita as fontes utilizadas no corpo do texto no formato (Autor, ano) e mantém a bibliografia coerente com essas citações. Formata segundo as normas ${f("norms")}.`}
 
 REGRAS DE SAÍDA:
 - Devolve APENAS HTML simples do corpo do documento: <h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <strong>, <em>. Sem markdown, sem \`\`\`, sem <html>, <head> ou <body>, sem comentários.
@@ -385,6 +385,16 @@ async function findAcademicImages(topic: string, limit = 1): Promise<string> {
 
 function buildAutomaticIndex(html: string): string {
   let pages = html.split(/<hr\b[^>]*class=["']page-break["'][^>]*>/i);
+  const hasIndex = pages.some((page) =>
+    /<h[1-3]\b[^>]*>\s*(?:índice|indice|sumário|sumario)\s*<\/h[1-3]>/i.test(page),
+  );
+  if (!hasIndex) {
+    const introductionPage = pages.findIndex((page) =>
+      /<h[1-3]\b[^>]*>\s*introdução\s*<\/h[1-3]>/i.test(page),
+    );
+    const insertAt = introductionPage >= 0 ? introductionPage : Math.min(2, pages.length);
+    pages.splice(insertAt, 0, "<h1>Índice</h1>");
+  }
   const headingPattern = /<h([1-3])\b([^>]*)>([\s\S]*?)<\/h\1>/gi;
   const cleanText = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
   const esc = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
