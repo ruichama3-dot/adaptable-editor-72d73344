@@ -134,8 +134,21 @@ ${JSON.stringify(data)}`;
       }
 
       if (!raw) {
-        console.error("[RuJe IA currículo] Todos os modelos falharam:", errors.join(" | "));
-        throw new Error("Não foi possível contactar os modelos de inteligência artificial da RuJe IA. Tenta novamente dentro de instantes.");
+        const failureSummary = errors.join(" | ");
+        console.error("[RuJe IA currículo] Todos os modelos falharam:", failureSummary);
+        if (/quota|resource_exhausted|billing|limit reached|limit: 0/i.test(failureSummary)) {
+          throw new Error("A quota da API Gemini foi atingida. A criação de currículos está temporariamente indisponível por limite da conta Google; verifica a quota e a facturação do projecto Google AI Studio.");
+        }
+        if (/HTTP 401|HTTP 403/.test(failureSummary)) {
+          throw new Error("A API Gemini recusou a chave ou as permissões configuradas. Verifica a GEMINI_API_KEY e o acesso à Gemini API na Vercel/Google AI Studio.");
+        }
+        if (/HTTP 429/.test(failureSummary)) {
+          throw new Error("A API Gemini está a limitar temporariamente os pedidos. Aguarda um pouco e tenta novamente; não é uma fila de utilizadores da RuJe IA.");
+        }
+        if (/HTTP 5\\d\\d/.test(failureSummary)) {
+          throw new Error("O serviço Gemini está temporariamente indisponível. Tenta novamente dentro de instantes.");
+        }
+        throw new Error("A IA não devolveu uma resposta válida para o currículo. Tenta novamente dentro de instantes.");
       }
       const parsed = JSON.parse(raw.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "")) as Record<string, unknown>;
       const requiredFields = ["professionalTitle", "profile", "objective", "experience", "education", "skills", "languages", "courses"];
