@@ -24,7 +24,118 @@ function workTypeGuidance(type: string) {
   return WORK_TYPE_GUIDANCE[type.trim().toLocaleLowerCase("pt")] ?? WORK_TYPE_GUIDANCE["trabalho científico"];
 }
 
-function buildPrompt(w: Record<string, unknown>) {
+type VerifiedAcademicReference = {
+  authors: string;
+  firstAuthor: string;
+  year: string;
+  title: string;
+  publication: string;
+  publisher: string;
+  doi: string;
+  citation: string;
+};
+
+async function findAcademicReferences(theme: string, subject: string): Promise<VerifiedAcademicReference[]> {
+  const query = [theme, subject].map((value) => value.trim()).filter(Boolean).join(" ");
+  if (!query) return [];
+
+  try {
+    const params = new URLSearchParams({
+      "query.bibliographic": query,
+      rows: "8",
+      select: "DOI,title,author,published,published-print,published-online,publisher,container-title,URL",
+    });
+    const response = await fetch("https://api.crossref.org/works?" + params.toString(), {
+      headers: { Accept: "application/json", "User-Agent": "RuJeIA/1.0 (academic reference lookup)" },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!response.ok) {
+      console.warn("[RuJe IA referências] Crossref respondeu:", response.status);
+      return [];
+    }
+
+    type CrossrefAuthor = { family?: string; given?: string; name?: string };
+    type CrossrefItem = {
+      DOI?: string;
+      title?: string[];
+      author?: CrossrefAuthor[];
+      published?: { "date-parts"?: number[][] };
+      "published-print"?: { "date-parts"?: number[][] };
+      "published-online"?: { "date-parts"?: number[][] };
+      publisher?: string;
+      "container-title"?: string[];
+    };
+    const payload = await response.json() as { message?: { items?: CrossrefItem[] } };
+    const results: VerifiedAcademicReference[] = [];
+    const seen = new Set<string>();
+
+    for (const item of payload.message?.items ?? []) {
+      const doi = String(item.DOI ?? "").trim();
+      const title = String(item.title?.[0] ?? "").trim();
+      const dateParts = item.published?.["date-parts"]?.[0] ??
+        item["published-print"]?.["date-parts"]?.[0] ??
+        item["published-online"]?.["date-parts"]?.[0];
+      const year = dateParts?.[0] ? String(dateParts[0]) : "";
+      const publisher = String(item.publisher ?? "").trim();
+      const authors = (item.author ?? []).map((author) => {
+        if (author.family && author.given) {
+          const initials = author.given.split(/\s+/).filter(Boolean)
+            .map((part) => part[0].toUpperCase() + ".").join(" ");
+          return author.family + ", " + initials;
+        }
+        return author.family || author.name || "";
+      }).filter(Boolean).slice(0, 6).join("; ");
+      const firstAuthor = item.author?.[0]?.family || item.author?.[0]?.name || publisher;
+      if (!doi || !title || !year || !firstAuthor || seen.has(doi)) continue;
+      seen.add(doi);
+      results.push({
+        authors: authors || publisher,
+        firstAuthor,
+        year,
+        title,
+        publication: String(item["container-title"]?.[0] ?? "").trim(),
+        publisher,
+        doi: "https://doi.org/" + doi,
+        citation: firstAuthor + ", " + year,
+      });
+      if (results.length >= 5) break;
+    }
+    return results;
+  } catch (error) {
+    console.warn("[RuJe IA referências] Não foi possível consultar fontes académicas:", error);
+    return [];
+  }
+}
+
+function escapeAcademicHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function ensureVerifiedBibliography(html: string, references: VerifiedAcademicReference[], norms: string): string {
+  const headings = Array.from(html.matchAll(/<h([1-3])\b[^>]*>[\s\S]*?<\/h\1>/gi));
+  const bibliographyHeading = headings.find((match) =>
+    /refer[eê]ncias|bibliografia/i.test(match[0].replace(/<[^>]*>/g, " ")),
+  );
+  let body = bibliographyHeading?.index !== undefined ? html.slice(0, bibliographyHeading.index) : html;
+  body = body.replace(/(?:<hr\b[^>]*class=["'][^"']*page-break[^"']*["'][^>]*>\s*)+$/i, "").trim();
+
+  const isAbnt = /abnt/i.test(norms);
+  const entries = references.map((reference) => {
+    const publication = [reference.publication, reference.publisher].filter(Boolean).join(". ");
+    const formatted = isAbnt
+      ? reference.authors.toLocaleUpperCase("pt") + ". " + reference.title + ". " +
+        [publication, reference.year, reference.doi].filter(Boolean).join(". ")
+      : reference.authors + " (" + reference.year + "). " + reference.title + ". " +
+        [publication, reference.doi].filter(Boolean).join(". ");
+    return "<p>" + escapeAcademicHtml(formatted) + "</p>";
+  });
+  const emptyMessage = "<p>Não foi possível localizar automaticamente fontes académicas verificáveis para este tema. Para manter o rigor, não foram inventadas referências; acrescenta fontes consultadas e confirma-as com o docente.</p>";
+  return body + '\n<hr class="page-break">\n<h1>Referências bibliográficas</h1>\n' +
+    (entries.length ? entries.join("\n") : emptyMessage);
+}
+
+function buildPrompt(w: Record<string, unknown>, verifiedReferences: VerifiedAcademicReference[] = {}) {
   const opt = (w['options'] ?? {}) as Record<string, boolean>;
   const f = (k: string) => (w[k] ? String(w[k]) : "—");
   const isGroup = String(w['work_mode'] ?? "individual") === "grupo";
@@ -38,6 +149,18 @@ function buildPrompt(w: Record<string, unknown>) {
     ? "O utilizador pediu imagens: NÃO cries uma secção geral de imagens nem as coloques no índice. As imagens serão inseridas automaticamente no desenvolvimento, junto da secção cujo conteúdo ilustram. Não inventes imagens nem atribuições."
     : "O utilizador pediu um documento sem imagens: não incluas imagens nem figuras.";
 
+const referenceResearchInstruction = manualRefs
+    ? ""
+    : verifiedReferences.length
+      ? "FONTES ACADÉMICAS LOCALIZADAS NA INTERNET (Crossref; registos com DOI):\n" +
+        verifiedReferences.map((reference, index) =>
+          (index + 1) + ". " + reference.authors + " (" + reference.year + "). " +
+          reference.title + ". " + reference.publication + ". " + reference.publisher +
+          ". DOI: " + reference.doi + ". Citação no texto: (" + reference.firstAuthor + ", " + reference.year + ")."
+        ).join("\n") +
+        "\nUsa apenas as fontes desta lista que sejam pertinentes ao tema; cita-as no corpo do texto e não inventes fontes adicionais."
+      : "A pesquisa automática não encontrou fontes académicas verificáveis. Não inventes referências; indica claramente essa limitação na secção bibliográfica.";
+
   return `És um assistente académico especialista em trabalhos usados em Moçambique. ${formatInstruction} ${imageInstruction} Escreve um resultado completo em ${f("language")}, do tipo "${f("work_type")}", nível ${f("academic_level")}, seguindo rigorosamente as normas ${f("norms")}. Não transformes automaticamente todos os tipos de trabalho em monografias.
 
 DADOS:
@@ -49,9 +172,9 @@ ${isGroup ? `- Elementos do grupo (lista numerada na folha de rosto): ${f("group
 - Instituição: ${f("institution")} | Faculdade: ${f("faculty")} | Departamento: ${f("department")}
 - Disciplina: ${f("subject")} | Docente: ${f("teacher")}
 - Local: ${f("city")}, ${f("country")} | Data de entrega: ${f("due_date")}
-- Extensão alvo: aproximadamente ${f("pages")} páginas (escreve texto extenso e denso, sem repetições).
+- Extensão alvo: aproximadamente ${f("pages")} páginas. Mantém profundidade adequada, texto claro e objetivo; desenvolve cada subtítulo com o necessário, sem repetições nem alongamento artificial.
 
-INSTRUÇÕES ESPECÍFICAS DO FORMATO SELECIONADO:\n${workTypeGuidance(f("work_type"))}\n\nESTRUTURA BASE FLEXÍVEL: aplica apenas os elementos adequados ao tipo selecionado; não forces uma estrutura única.
+INSTRUÇÕES ESPECÍFICAS DO FORMATO SELECIONADO:\n${workTypeGuidance(f("work_type"))}\n\nESTRUTURA ACADÉMICA: no formato normal, segue o padrão visual da amostra RuJe IA e apresenta, pela ordem adequada, capa, folha de rosto (identificação/contracapa interna), índice, introdução, desenvolvimento, conclusão e referências bibliográficas. Mantém a estrutura própria do tipo de trabalho; resumo, metodologia, resultados, recomendações, apêndices e anexos só entram quando forem adequados. Não forces uma monografia em artigos, seminários ou relatórios.
 ${opt['cover'] === false ? "" : `CAPA E FOLHA DE ROSTO: inclui apenas quando forem adequadas ao formato. Usa dados fornecidos e omite campos vazios; não acrescentes páginas pré-textuais a artigos curtos ou seminários quando não forem apropriadas.\n`}${outputFormat === "powerpoint" ? "" : (opt['index'] === false ? "" : "ÍNDICE: inclui apenas quando o documento for suficientemente extenso e adequado; lista somente títulos escritos.\n")}
 ORGANIZAÇÃO DO CORPO: segue a estrutura específica indicada acima. Não imponhas automaticamente introdução + objetivos + metodologia + capítulos + conclusão a todos os tipos. Cria secções, páginas novas, anexos ou recomendações apenas quando fizerem sentido. Usa títulos <h1>, subtítulos <h2>/<h3> e separadores de página entre blocos completos quando o documento for extenso.
 
@@ -363,7 +486,10 @@ export const generateWork = createServerFn({ method: "POST" })
     }
     const requestedPages = Math.max(2, Math.min(40, Number(work.pages) || 10));
     const outputBudget = outputFormat === "powerpoint" ? 8192 : Math.min(16384, Math.max(4096, requestedPages * 850));
-    const rawContent = await callAI(buildPrompt(work as Record<string, unknown>), outputBudget);
+    const verifiedReferences = String(work.references_mode ?? "automatica") === "manual"
+      ? []
+      : await findAcademicReferences(String(work.theme ?? work.title ?? ""), String(work.subject ?? ""));
+    const rawContent = await callAI(buildPrompt(work as Record<string, unknown>, verifiedReferences), outputBudget);
 
     let html = rawContent
       .replace(/^\`\`\`(?:html)?/i, "")
@@ -371,7 +497,12 @@ export const generateWork = createServerFn({ method: "POST" })
       .trim();
     if (!html) throw new Error(BUSY_MSG);
 
-    if (outputFormat === "normal") html = buildAutomaticIndex(html);
+    if (outputFormat === "normal") {
+      html = buildAutomaticIndex(html);
+      if (String(work.references_mode ?? "automatica") !== "manual") {
+        html = ensureVerifiedBibliography(html, verifiedReferences, String(work.norms ?? ""));
+      }
+    }
 
     let imagesAdded = 0;
     if (includeImages && outputFormat === "normal") {
