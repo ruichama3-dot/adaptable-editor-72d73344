@@ -52,7 +52,7 @@ function AuthedLayout() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur print:hidden">
+      <header className="ruje-glass-header sticky top-0 z-30 border-b border-border print:hidden">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-3">
           <Link to="/painel" className="w-fit shrink-0" aria-label="Ir para o painel">
             <Logo size="sm" />
