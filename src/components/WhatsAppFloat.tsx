@@ -54,7 +54,7 @@ export function WhatsAppFloat() {
       {open && (
         <div className="flex flex-col gap-2">
           <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-foreground shadow-[0_8px_28px_rgba(20,60,35,0.16)] backdrop-blur-2xl transition-transform hover:scale-105">
+            className="flex items-center gap-2 ruje-glass-button rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-sm font-semibold text-foreground shadow-[0_8px_28px_rgba(20,60,35,0.16)] backdrop-blur-2xl transition-transform hover:scale-105">
             <Users className="h-4 w-4 text-primary" /> Aderir à comunidade
           </a>
           <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer"
@@ -72,7 +72,7 @@ export function WhatsAppFloat() {
         onClick={() => { if (!moved.current) setOpen((v) => !v); }}
         aria-label={open ? "Fechar opções de WhatsApp" : "Mover ou abrir opções de WhatsApp"}
         title="Arraste para mover · toque para abrir"
-        className="grid h-14 w-14 touch-none select-none place-items-center rounded-full border border-white/35 bg-[linear-gradient(145deg,rgba(42,190,105,0.96),rgba(15,132,69,0.96))] text-white shadow-[0_12px_32px_rgba(22,131,74,0.34),inset_0_1px_1px_rgba(255,255,255,0.45)] backdrop-blur-2xl transition-[box-shadow,transform] hover:scale-105 hover:shadow-[0_16px_38px_rgba(22,131,74,0.42)] active:scale-95"
+        className="grid h-14 w-14 touch-none select-none place-items-center ruje-glass-button rounded-full border border-white/35 bg-[linear-gradient(145deg,rgba(42,190,105,0.96),rgba(15,132,69,0.96))] text-white shadow-[0_12px_32px_rgba(22,131,74,0.34),inset_0_1px_1px_rgba(255,255,255,0.45)] backdrop-blur-2xl transition-[box-shadow,transform] hover:scale-105 hover:shadow-[0_16px_38px_rgba(22,131,74,0.42)] active:scale-95"
       >
         <span className="relative grid place-items-center">
           {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
