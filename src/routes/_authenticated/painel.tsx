@@ -176,19 +176,17 @@ function Painel() {
             onFocusCapture={() => setCarouselPlaying(false)}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:thin] [scroll-behavior:smooth]"
           >
-            <div className="relative isolate flex min-h-[270px] min-w-full snap-center flex-col justify-center overflow-hidden rounded-3xl border border-[#087342] bg-gradient-to-br from-[#087a43] via-[#056536] to-[#064b32] p-6 text-white shadow-[0_16px_42px_rgba(5,91,51,0.24)] sm:min-h-[320px] sm:p-8">
-              <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[34px] border-white/10" />
-              <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 right-24 h-56 w-56 rounded-full bg-[#54c987]/15 blur-2xl" />
+            <div className="relative isolate flex min-h-[270px] min-w-full snap-center flex-col justify-center overflow-hidden rounded-3xl border border-[#0b6740] bg-[#075b37] p-6 text-white shadow-[0_12px_30px_rgba(12,54,32,0.12)] sm:min-h-[320px] sm:p-8">
               <div className="relative z-10 max-w-2xl">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-[#e5fff0] shadow-sm backdrop-blur-sm">
-                  <Sparkles className="h-3.5 w-3.5" /> O TEU ESPAÇO ACADÉMICO
+                  <Sparkles className="h-3.5 w-3.5" /> O teu espaço académico
                 </span>
-                <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Olá, {firstName} <span aria-hidden="true">👋</span></h1>
+                <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Olá, {firstName}</h1>
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">Organiza os teus estudos, cria trabalhos com inteligência artificial e continua a construir o teu futuro.</p>
                 <Button asChild size="lg" className="mt-6 h-12 w-fit rounded-xl border border-white/70 bg-white px-5 font-bold text-[#08663a] shadow-[0_8px_22px_rgba(0,0,0,0.14)] transition hover:-translate-y-0.5 hover:bg-[#effff4] hover:text-[#064b32]">
                   <Link to="/novo-trabalho"><Plus className="h-5 w-5" /> Criar novo trabalho <ArrowRight className="ml-1 h-4 w-4" /></Link>
                 </Button>
-                <p className="mt-5 flex items-center gap-2 text-xs font-medium text-white/75">Desliza para explorar <ArrowRight className="h-4 w-4 animate-pulse" /></p>
+                <p className="mt-5 flex items-center gap-2 text-xs font-medium text-white/75">Desliza para explorar <ArrowRight className="h-4 w-4" /></p>
               </div>
             </div>
             <Link
@@ -205,8 +203,8 @@ function Painel() {
               />
               <span className="sr-only">Criar currículo profissional na RuJe IA</span>
             </Link>
-            <Link to="/exames" aria-label="Estudar com exames e simulados" className="flex min-h-[270px] min-w-full snap-center flex-col justify-center rounded-3xl border border-[#cfe5d5] bg-gradient-to-br from-[#f4fbf6] to-[#dcefe2] p-7 shadow-sm sm:min-h-[320px] sm:p-10">
-              <span className="text-sm font-bold tracking-wide text-[#16834a]">PREPARAÇÃO PARA EXAMES</span>
+            <Link to="/exames" aria-label="Estudar com exames e simulados" className="flex min-h-[270px] min-w-full snap-center flex-col justify-center rounded-3xl border border-[#dce7df] bg-white p-7 shadow-sm sm:min-h-[320px] sm:p-10">
+              <span className="text-sm font-semibold text-[#16834a]">PREPARAÇÃO PARA EXAMES</span>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#173b28] sm:text-4xl">Estudar e praticar.</h2>
               <p className="mt-3 max-w-lg text-sm text-[#52685a] sm:text-base">Acede a exames e simulados para reforçar a tua preparação.</p>
               <span className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-[#078c4b] px-5 py-3 font-bold text-white">Explorar exames <ArrowRight className="h-4 w-4" /></span>
@@ -223,11 +221,11 @@ function Painel() {
         <section className="mt-6">
           <div className="mb-3"><h2 className="text-lg font-bold text-[#1b2b21]">Acesso rápido</h2><p className="mt-1 text-sm text-[#718078]">Encontra rapidamente aquilo de que precisas.</p></div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <Link to="/novo-trabalho" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><FileText className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Criar trabalho</span><span className="mt-1 block text-xs text-[#718078]">Gerar com IA</span></Link>
-            <Link to="/exames" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><BookOpenCheck className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Comprar exames</span><span className="mt-1 block text-xs text-[#718078]">Exames e simulados</span></Link>
-            <Link to="/curriculo" className="rounded-2xl border border-[#cfe5d5] bg-gradient-to-br from-white to-[#f0f8f2] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Contact className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Criar currículo</span><span className="mt-1 block text-xs font-semibold text-[#16834a]">Profissional · 125 MT</span></Link>
-            <Link to="/planos" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><CreditCard className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Planos</span><span className="mt-1 block text-xs text-[#718078]">Ver opções de acesso</span></Link>
-            <Link to="/amostra/$id" params={{ id: referenceSample.id }} className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9bcbaa] hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Eye className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Ver amostra</span><span className="mt-1 block text-xs text-[#718078]">Conhecer um exemplo</span></Link>
+            <Link to="/novo-trabalho" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:border-[#9bcbaa] hover:shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><FileText className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Criar trabalho</span><span className="mt-1 block text-xs text-[#718078]">Gerar com IA</span></Link>
+            <Link to="/exames" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:border-[#9bcbaa] hover:shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><BookOpenCheck className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Comprar exames</span><span className="mt-1 block text-xs text-[#718078]">Exames e simulados</span></Link>
+            <Link to="/curriculo" className="rounded-2xl border border-[#cfe5d5] bg-gradient-to-br from-white to-[#f0f8f2] p-4 shadow-sm transition hover:border-[#9bcbaa] hover:shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Contact className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Criar currículo</span><span className="mt-1 block text-xs font-semibold text-[#16834a]">Profissional · 125 MT</span></Link>
+            <Link to="/planos" className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:border-[#9bcbaa] hover:shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><CreditCard className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Planos</span><span className="mt-1 block text-xs text-[#718078]">Ver opções de acesso</span></Link>
+            <Link to="/amostra/$id" params={{ id: referenceSample.id }} className="rounded-2xl border border-[#e1ebe4] bg-white p-4 shadow-sm transition hover:border-[#9bcbaa] hover:shadow-sm"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f6ec] text-[#16834a]"><Eye className="h-5 w-5" /></span><span className="mt-3 block text-sm font-bold text-[#203128]">Ver amostra</span><span className="mt-1 block text-xs text-[#718078]">Conhecer um exemplo</span></Link>
           </div>
           {isAdmin && <Link to="/admin" className="mt-3 flex items-center justify-between rounded-xl border border-[#cfe5d5] bg-[#eff9f1] px-4 py-3 text-sm font-semibold text-[#167543]"><span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Painel de administração</span><ArrowRight className="h-4 w-4" /></Link>}
         </section>

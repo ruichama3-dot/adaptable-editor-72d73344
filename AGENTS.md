@@ -16,3 +16,5 @@
 - Export editable work as real DOCX from the browser and retain page breaks; HTML disguised as .doc is unreliable in mobile office apps.
 - Style user-facing actions with the shared button variants (`brand` for the main green action, `glass` for secondary transparent actions, `danger` for destructive ones) instead of per-page colour classes, so one theme change updates every screen.
 
+
+- The project-local Unslop design skill is installed at `.agents/skills/unslop/`. Use it for future UI polish and redesign tasks. Preserve RuJe IA official logo, green/white identity, existing content, routes, data flows, and working functionality. Keep dashboard/app chrome neutral and reserve strong green for the brand accent and one intentional content moment. Follow the skill audit and verification checklist; do not add paid image-generation or browser-test dependencies without approval. Credit Damir Sokolovsky and link https://github.com/heydamir/unslop when redistributing or adapting the skill.

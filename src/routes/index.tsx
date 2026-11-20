@@ -98,7 +98,7 @@ function Landing() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link to="/" aria-label="RuJe IA — página inicial"><Logo /></Link>
           <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground lg:flex" aria-label="Navegação principal">
@@ -116,12 +116,11 @@ function Landing() {
       </header>
 
       <main>
-        <section className="relative isolate">
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(34,197,94,0.14),transparent_48%),radial-gradient(ellipse_at_bottom_left,rgba(22,163,74,0.08),transparent_45%)]" />
+        <section>
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-24 lg:grid-cols-[1.08fr_0.92fr]">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-bold text-primary"><Sparkles className="h-4 w-4" /> Plataforma de inteligência artificial moçambicana</span>
-              <h1 className="mt-6 max-w-3xl text-4xl leading-[1.08] font-extrabold tracking-tight sm:text-6xl">As tuas ideias merecem <span className="text-brand-gradient">ir mais longe.</span></h1>
+              <p className="text-sm font-semibold text-primary">Plataforma moçambicana de apoio académico e profissional</p>
+              <h1 className="mt-6 max-w-3xl text-4xl leading-[1.08] font-extrabold tracking-tight sm:text-6xl">Trabalhos, exames e currículos. Num só lugar.</h1>
               <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">A RuJe IA reúne ferramentas inteligentes para apoiar os teus estudos, a preparação para exames e a tua apresentação profissional — tudo num só lugar, com acesso simples e preços em meticais.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg" className="h-12 shadow-brand"><Link to="/auth" search={{ modo: "registo" }}>Começar agora <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
@@ -136,11 +135,10 @@ function Landing() {
             </div>
 
             <div className="relative mx-auto w-full max-w-xl">
-              <div className="absolute -inset-5 rounded-[2.5rem] bg-primary/10 blur-2xl" />
-              <div className="relative rounded-[2rem] border border-primary/15 bg-card/90 p-4 shadow-[0_24px_80px_rgba(16,80,40,0.13)] backdrop-blur-xl sm:p-6">
+              <div className="relative rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6">
                 <div className="flex items-center justify-between border-b border-border pb-4">
                   <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground"><Sparkles className="h-5 w-5" /></div><div><p className="font-extrabold">RuJe IA</p><p className="text-xs text-muted-foreground">O teu espaço de aprendizagem</p></div></div>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">🇲🇿 Moçambique</span>
+                  <span className="text-xs font-semibold text-muted-foreground">Moçambique</span>
                 </div>
                 <p className="mt-5 text-sm font-semibold">O que pretendes fazer hoje?</p>
                 <div className="mt-3 space-y-3">
@@ -163,9 +161,9 @@ function Landing() {
         </section>
 
         <section id="servicos" className="scroll-mt-24 mx-auto max-w-7xl px-5 py-16 sm:px-6 sm:py-24">
-          <div className="mx-auto max-w-2xl text-center"><span className="text-xs font-extrabold tracking-[0.18em] text-primary uppercase">O que podes fazer</span><h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Três soluções. Um só espaço.</h2><p className="mt-4 leading-7 text-muted-foreground">Escolhe o serviço que corresponde ao teu objectivo e começa com orientação em cada etapa.</p></div>
+          <div className="mx-auto max-w-2xl text-center"><span className="text-xs font-semibold text-primary">O que podes fazer</span><h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Três soluções. Um só espaço.</h2><p className="mt-4 leading-7 text-muted-foreground">Escolhe o serviço que corresponde ao teu objectivo e começa com orientação em cada etapa.</p></div>
           <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {services.map((service) => <article key={service.title} className="group flex flex-col rounded-3xl border border-border bg-card p-6 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+            {services.map((service) => <article key={service.title} className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-colors duration-150 hover:border-primary/40">
               <div className="flex items-center justify-between gap-2"><span className="rounded-full bg-primary/8 px-3 py-1 text-xs font-bold text-primary">{service.tag}</span><service.icon className="h-6 w-6 text-primary" /></div>
               <h3 className="mt-5 text-xl font-extrabold">{service.title}</h3><p className="mt-3 min-h-[88px] text-sm leading-6 text-muted-foreground">{service.text}</p>
               <ul className="mt-5 space-y-3">{service.points.map(point => <li key={point} className="flex items-start gap-2 text-sm"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span>{point}</span></li>)}</ul>
@@ -182,7 +180,7 @@ function Landing() {
         </section>
 
         <section id="precos" className="scroll-mt-24 mx-auto max-w-7xl px-5 py-16 sm:px-6 sm:py-24">
-          <div className="mx-auto max-w-2xl text-center"><span className="text-xs font-extrabold tracking-[0.18em] text-primary uppercase">Preços transparentes</span><h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Escolhe o que precisas.</h2><p className="mt-4 leading-7 text-muted-foreground">Valores em meticais. Os serviços de exames e currículo são compras únicas; os planos académicos têm duração definida.</p></div>
+          <div className="mx-auto max-w-2xl text-center"><span className="text-xs font-semibold text-primary">Preços transparentes</span><h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Escolhe o que precisas.</h2><p className="mt-4 leading-7 text-muted-foreground">Valores em meticais. Os serviços de exames e currículo são compras únicas; os planos académicos têm duração definida.</p></div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { name: "Acesso de 1 dia", price: "30 MT", detail: "Até 2 trabalhos por dia", flag: "Para começar" },
@@ -200,7 +198,7 @@ function Landing() {
 
         <section className="border-y border-border bg-muted/25 py-16 sm:py-20">
           <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:items-center">
-            <div><span className="text-xs font-extrabold tracking-[0.18em] text-primary uppercase">Porque RuJe IA</span><h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Mais clareza para avançar.</h2><p className="mt-4 leading-7 text-muted-foreground">A RuJe IA foi pensada para reunir ferramentas úteis num ambiente simples, com valores em meticais e caminhos claros para cada necessidade.</p></div>
+            <div><span className="text-xs font-semibold text-primary">Porque RuJe IA</span><h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Mais clareza para avançar.</h2><p className="mt-4 leading-7 text-muted-foreground">A RuJe IA foi pensada para reunir ferramentas úteis num ambiente simples, com valores em meticais e caminhos claros para cada necessidade.</p></div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-border bg-card p-5"><Layers3 className="h-6 w-6 text-primary" /><h3 className="mt-3 font-bold">Tudo organizado</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">Serviços separados para encontrares rapidamente o que procuras.</p></div>
               <div className="rounded-2xl border border-border bg-card p-5"><Clock3 className="h-6 w-6 text-primary" /><h3 className="mt-3 font-bold">Poupa tempo</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">Processos guiados para começares sem complicações.</p></div>
@@ -211,12 +209,12 @@ function Landing() {
         </section>
 
         <section id="perguntas" className="scroll-mt-24 mx-auto max-w-4xl px-5 py-16 sm:px-6 sm:py-20">
-          <div className="text-center"><span className="text-xs font-extrabold tracking-[0.18em] text-primary uppercase">Ajuda e informação</span><h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Perguntas frequentes</h2></div>
+          <div className="text-center"><span className="text-xs font-semibold text-primary">Ajuda e informação</span><h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Perguntas frequentes</h2></div>
           <div className="mt-8 divide-y divide-border rounded-2xl border border-border bg-card px-5">{faqs.map(faq => <details key={faq.q} className="group py-5"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold [&::-webkit-details-marker]:hidden">{faq.q}<ChevronDown className="h-4 w-4 shrink-0 text-primary transition group-open:rotate-180" /></summary><p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">{faq.a}</p></details>)}</div>
         </section>
 
         <section id="contacto" className="scroll-mt-24 px-5 pb-16 sm:px-6 sm:pb-24">
-          <div className="mx-auto max-w-5xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#145b36] to-[#0d3924] p-7 text-white shadow-xl sm:p-10">
+          <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl bg-[#103d28] p-7 text-white shadow-sm sm:p-10">
             <div className="grid gap-7 sm:grid-cols-[1fr_auto] sm:items-center">
               <div><span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-green-200"><Headphones className="h-4 w-4" /> Estamos disponíveis para ajudar</span><h2 className="mt-4 text-3xl font-extrabold">Precisas de apoio?</h2><p className="mt-3 max-w-xl text-sm leading-7 text-white/75">Fala com a equipa da RuJe IA para esclarecer dúvidas sobre a plataforma, pagamentos, exames ou criação de currículo.</p><p className="mt-4 text-lg font-extrabold">+258 84 729 6041</p><p className="mt-1 text-xs text-white/65">Suporte por WhatsApp</p></div>
               <Button asChild size="lg" className="h-12 bg-white text-[#145b36] hover:bg-green-50"><a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-2 h-5 w-5" /> Contactar suporte</a></Button>
