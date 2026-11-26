@@ -3,6 +3,18 @@ const reply = (body: Record<string, unknown>, status = 200) => Response.json(bod
 const isApproved = (value: unknown) => /^(approved|aprovado|paid|pago|completed|liquidado|success|successful)$/i.test(String(value ?? ""));
 const isFailed = (value: unknown) => /^(failed|falhou|rejected|rejeitado|declined|cancelled|canceled|expired|error)$/i.test(String(value ?? ""));
 const numeric = (value: unknown) => Number(String(value ?? "").replace(",", "."));
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function providerData(payload: any) {
+  let value = payload;
+  for (let depth = 0; depth < 4; depth++) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) break;
+    if (value.payment && typeof value.payment === "object") { value = value.payment; continue; }
+    if (value.data && typeof value.data === "object") { value = value.data; continue; }
+    if (value.payload && typeof value.payload === "object") { value = value.payload; continue; }
+    break;
+  }
+  return value && typeof value === "object" ? value : {};
+}
 export const Route = createFileRoute("/api/matrixpay-webhook")({
   server: { handlers: {
     GET: async () => reply({ ok: true, service: "ruje-ia-matrixpay-webhook", method: "POST" }),
@@ -11,14 +23,21 @@ export const Route = createFileRoute("/api/matrixpay-webhook")({
       const base = (process.env.MATRIXPAY_API_BASE_URL || "https://matrixpay.tech").replace(/\/$/, "");
       if (!apiKey) return reply({ error: "provider_not_configured" }, 503);
       let event: any; try { event = await request.json(); } catch { return reply({ error: "invalid_json" }, 400); }
-      const eventType = String(event?.event || "").toLowerCase();
+      const eventType = String(event?.event ?? event?.type ?? event?.event_type ?? event?.name ?? "").trim().toLowerCase();
       const approvalEvent = eventType === "payment.approved";
       const failureEvent = ["payment.failed", "payment.rejected", "payment.declined", "payment.cancelled", "payment.canceled", "payment.expired"].includes(eventType);
       if (!approvalEvent && !failureEvent) return reply({ ok: true, ignored: true });
-      const payload = event?.data ?? event?.payment ?? {};
-      const reference = String(payload?.external_reference || payload?.referencia || payload?.reference || "");
-      const eventPaymentId = String(payload?.id || payload?.payment_id || "");
-      if (!reference) return reply({ error: "missing_external_reference" }, 400);
+      const payload = providerData(event);
+      const reference = String(payload?.external_reference || payload?.referencia || payload?.reference || payload?.order_id || event?.external_reference || event?.reference || event?.referencia || "");
+      const eventPaymentId = String(payload?.id || payload?.payment_id || payload?.paymentId || payload?.transaction_id || "");
+      // MatrixPay's dashboard test uses a synthetic reference. Acknowledge it
+      // successfully without looking up an order or granting any entitlement.
+      if (!UUID_RE.test(reference)) {
+        console.info("[MatrixPay] test/invalid webhook reference acknowledged without activation", {
+          eventType, hasPaymentId: Boolean(eventPaymentId),
+        });
+        return reply({ ok: true, test: true, ignored: true, reason: "non_order_reference" });
+      }
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: order, error } = await (supabaseAdmin.from("payment_requests") as any).select("id,user_id,plan,amount,status,matrixpay_payment_id").eq("id", reference).maybeSingle();
@@ -29,9 +48,9 @@ export const Route = createFileRoute("/api/matrixpay-webhook")({
         const lookup = eventPaymentId || reference;
         const check = await fetch(`${base}/api/v1/payments/${encodeURIComponent(lookup)}`, { headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" }, signal: AbortSignal.timeout(15000) });
         const checkJson = await check.json().catch(() => ({})) as any;
-        const verified = checkJson?.data ?? checkJson?.payment ?? checkJson;
+        const verified = providerData(checkJson);
         const verifiedReference = String(verified?.external_reference || verified?.referencia || verified?.reference || "");
-        const verifiedId = String(verified?.id || verified?.payment_id || "");
+        const verifiedId = String(verified?.id || verified?.payment_id || verified?.paymentId || verified?.transaction_id || "");
         const verifiedAmount = numeric(verified?.valor ?? verified?.amount);
         const verifiedCurrency = String(verified?.moeda || verified?.currency || "MZN").toUpperCase();
         const identityMatches = (!verifiedReference || verifiedReference === order.id) &&
