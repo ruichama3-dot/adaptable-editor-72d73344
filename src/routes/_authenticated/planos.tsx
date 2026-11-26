@@ -254,7 +254,14 @@ function Planos() {
                 {plan.name} · {plan.price} MT
               </h2>
 
-              <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><label htmlFor="plan-payment-method" className="text-sm font-medium">Método de pagamento</label><select id="plan-payment-method" value={method} onChange={(event) => setMethod(event.target.value as "mpesa" | "emola")} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select><p className="text-muted-foreground text-xs">Confirma a solicitação USSD no número indicado.</p></div>
+              <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => {
+                const nextPhone = event.target.value;
+                setPhone(nextPhone);
+                const digits = nextPhone.replace(/\\D/g, "");
+                const local = digits.startsWith("258") ? digits.slice(3) : digits;
+                if (/^(86|87)/.test(local)) setMethod("emola");
+                else if (/^(84|85)/.test(local)) setMethod("mpesa");
+              }} inputMode="tel" autoComplete="tel" placeholder="84... / 85... / 86... / 87..." className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" /><label htmlFor="plan-payment-method" className="text-sm font-medium">Método de pagamento</label><select id="plan-payment-method" value={method} onChange={(event) => setMethod(event.target.value as "mpesa" | "emola")} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="mpesa">M-Pesa</option><option value="emola">e-Mola</option></select><p className="text-muted-foreground text-xs">Confirma a solicitação USSD no número indicado.</p></div>
               <Button size="lg" className="mt-5 w-full" disabled={busy || Boolean(activePending) || !phone.trim()} onClick={payWithMatrixPay}>
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} {busy ? "A contactar a operadora..." : `Pagar agora · ${plan.price} MT`}
               </Button>
