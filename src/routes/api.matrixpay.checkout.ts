@@ -33,6 +33,14 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       if (!phone) return reply({ error: "Indica um número moçambicano válido (82–87 e 7 dígitos)." }, 400);
       const method = String(body.method || "").toLowerCase();
       if (method !== "mpesa" && method !== "emola") return reply({ error: "Escolhe M-Pesa ou e-Mola." }, 400);
+      const operatorNumberMatches = method === "mpesa" ? /^(84|85)\\d{7}$/.test(phone) : /^(86|87)\\d{7}$/.test(phone);
+      if (!operatorNumberMatches) {
+        return reply({
+          error: method === "mpesa"
+            ? "Este número não é M-Pesa. Para M-Pesa, usa um número iniciado por 84 ou 85; para 86 ou 87, selecciona e-Mola."
+            : "Este número não é e-Mola. Para e-Mola, usa um número iniciado por 86 ou 87; para 84 ou 85, selecciona M-Pesa.",
+        }, 400);
+      }
       const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
       const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || DEFAULT_SUPABASE_PUBLISHABLE_KEY;
       const authClient = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
