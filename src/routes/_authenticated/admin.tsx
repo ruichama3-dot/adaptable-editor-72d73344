@@ -149,6 +149,31 @@ function Admin() {
     toast.success("Plano removido. A conta e o histórico foram mantidos.");
   }
 
+  async function grantUserAccess(user: (typeof users)[number], days: number) {
+    const plan = PLANS.find((item) => item.days === days);
+    const now = new Date();
+    const activeExpiry = subs
+      .filter((item) => item.user_id === user.id && new Date(item.expires_at) > now)
+      .reduce((latest, item) => Math.max(latest, new Date(item.expires_at).getTime()), now.getTime());
+    const startsAt = new Date(activeExpiry);
+    const expiresAt = new Date(activeExpiry + days * 24 * 60 * 60 * 1000);
+    const { error } = await supabase.from("subscriptions").insert({
+      user_id: user.id,
+      plan: plan?.name ?? `Acesso manual · ${days} dias`,
+      daily_limit: plan?.dailyLimit ?? 2,
+      starts_at: startsAt.toISOString(),
+      expires_at: expiresAt.toISOString(),
+    });
+    if (error) {
+      toast.error("Não foi possível conceder o acesso. Tente novamente.");
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["admin-subs"] });
+    void queryClient.invalidateQueries({ queryKey: ["user-access"] });
+    void queryClient.invalidateQueries({ queryKey: ["access"] });
+    toast.success(`Acesso concedido por ${days} ${days === 1 ? "dia" : "dias"} a ${user.full_name || user.email || "este utilizador"}.`);
+  }
+
   async function toggleAdmin(userId: string, email: string | null, isCurrentlyAdmin: boolean) {
     const { data: me } = await supabase.auth.getUser();
     if (isCurrentlyAdmin && me.user?.id === userId) {
@@ -249,7 +274,7 @@ function Admin() {
 
         <TabsContent value="pagamentos">
           <div className="shadow-soft mt-4 overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="min-w-[760px] w-full text-sm">
+            <table className="min-w-[1040px] w-full text-sm">
               <thead className="bg-secondary/60 text-left">
                 <tr>
                   <th className={cell}>Nome</th>
@@ -337,7 +362,8 @@ function Admin() {
                   <th className={cell}>Trabalhos</th>
                   <th className={cell}>Plano</th>
                   <th className={cell}>Registo</th>
-                  <th className={cell}>Acesso</th>
+                  <th className={cell}>Admin</th>
+                  <th className={cell}>Acesso manual</th>
                   <th className={cell}>Acção</th>
                 </tr>
               </thead>
@@ -370,6 +396,15 @@ function Admin() {
                         >
                           {adminIds.has(u.id) ? "Remover admin" : "Tornar admin"}
                         </Button>
+                      </td>
+                      <td className={cell}>
+                        <div className="flex min-w-[220px] flex-wrap gap-1">
+                          {[1, 7, 14, 30].map((days) => (
+                            <Button key={days} size="sm" variant="outline" onClick={() => grantUserAccess(u, days)}>
+                              +{days}d
+                            </Button>
+                          ))}
+                        </div>
                       </td>
                       <td className={cell}>
                         {sub || payments.some((p) => p.user_id === u.id && ["aprovado", "approved", "aprovada", "pago"].includes(String(p.status ?? "").toLowerCase())) ? (
