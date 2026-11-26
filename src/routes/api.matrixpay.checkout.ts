@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       if (!phone) return reply({ error: "Indica um número moçambicano válido (82–87 e 7 dígitos)." }, 400);
       const method = String(body.method || "").toLowerCase();
       if (method !== "mpesa" && method !== "emola") return reply({ error: "Escolhe M-Pesa ou e-Mola." }, 400);
-      const operatorNumberMatches = method === "mpesa" ? /^(84|85)\\d{7}$/.test(phone) : /^(86|87)\\d{7}$/.test(phone);
+      const operatorNumberMatches = method === "mpesa" ? /^(84|85)\d{7}$/.test(phone) : /^(86|87)\d{7}$/.test(phone);
       if (!operatorNumberMatches) {
         return reply({
           error: method === "mpesa"
