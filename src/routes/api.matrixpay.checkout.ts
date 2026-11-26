@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       const providerStartedAt = Date.now();
       const response = await fetch(`${base}/api/v1/payments`, {
         method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ titulo: `RuJe IA - ${productName}`, valor: amount, cliente_email: email, referencia: order.id, cliente_nome: profile?.full_name || email, cliente_telefone: phone, metodo: method }),
+        body: JSON.stringify({ titulo: productName, valor: amount, cliente_email: email, referencia: order.id, cliente_nome: profile?.full_name || email, cliente_telefone: phone, metodo: method }),
         signal: AbortSignal.timeout(20000),
       });
       console.info("[MatrixPay] provider response received", { durationMs: Date.now() - providerStartedAt, status: response.status });
@@ -102,7 +102,7 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       if (!response.ok) {
         const providerCode = pickString(json?.code, data?.code);
         const providerMessage = pickString(json?.message, json?.error, data?.message, data?.error);
-        console.error("[MatrixPay] create payment failed", { status: response.status, code: providerCode || "unknown", response: raw.slice(0, 700) });
+        console.error("[MatrixPay] create payment failed", { status: response.status, code: providerCode || "unknown", amount, method, phoneSuffix: phone.slice(-2), response: raw.slice(0, 700) });
         await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id);
         if (response.status === 401 || response.status === 403) {
           return reply({ error: "Não foi possível iniciar o pagamento neste momento. Contacta o apoio da RuJe IA se o problema continuar." }, 502);
