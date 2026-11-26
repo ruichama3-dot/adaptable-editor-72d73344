@@ -257,7 +257,7 @@ function Planos() {
               <div className="mt-4 space-y-2"><label htmlFor="plan-payment-phone" className="text-sm font-medium">Número que será usado no pagamento</label><input id="plan-payment-phone" value={phone} onChange={(event) => {
                 const nextPhone = event.target.value;
                 setPhone(nextPhone);
-                const digits = nextPhone.replace(/\\D/g, "");
+                const digits = nextPhone.replace(/\D/g, "");
                 const local = digits.startsWith("258") ? digits.slice(3) : digits;
                 if (/^(86|87)/.test(local)) setMethod("emola");
                 else if (/^(84|85)/.test(local)) setMethod("mpesa");
