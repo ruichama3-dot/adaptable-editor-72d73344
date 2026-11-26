@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/matrixpay-webhook")({
         };
         const plan = plans[order.plan];
         if (plan) {
-          if (plan.amount !== Number(order.amount)) return reply({ error: "plan_amount_mismatch" }, 409);
+          if (plan.amount !== Number(order.amount) && !(order.plan === "Plano 1 dia" && Number(order.amount) === 30)) return reply({ error: "plan_amount_mismatch" }, 409);
           const { data: result, error: rpcError } = await (supabaseAdmin as any).rpc("confirm_matrixpay_payment", {
             p_payment_request_id: order.id, p_payment_id: order.matrixpay_payment_id, p_plan: order.plan, p_daily_limit: plan.dailyLimit, p_days: plan.days,
           });
