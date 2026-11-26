@@ -33,6 +33,7 @@ function Planos() {
 
   const [busy, setBusy] = useState(false);
   const paymentLock = useRef(false);
+  const failureToastShown = useRef(false);
   const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<"mpesa" | "emola">("mpesa");
 
@@ -78,7 +79,10 @@ function Planos() {
       toast.dismiss("ruje-payment-processing");
       void queryClient.invalidateQueries({ queryKey: ["my-subscription"] });
     } else if (/^(falhou|failed|rejeitado|rejected|declined|cancelled|canceled|expired)$/i.test(String(latestPlanPayment.status ?? ""))) {
-      toast.error("Pagamento não concluído. Verifica o PIN e o saldo da carteira e tenta novamente.");
+      if (!failureToastShown.current) {
+        failureToastShown.current = true;
+        toast.error("A MatrixPay não conseguiu concluir a cobrança. Confirma o número e o método de pagamento; se o erro continuar, contacta o suporte.");
+      }
       setBusy(false);
       paymentLock.current = false;
       toast.dismiss("ruje-payment-processing");
@@ -108,6 +112,7 @@ function Planos() {
   async function payWithMatrixPay() {
     if (!plan || busy || paymentLock.current || activePending) return;
     paymentLock.current = true;
+    failureToastShown.current = false;
     setBusy(true);
     toast.loading("A contactar a MatrixPay para iniciar a cobrança...", { id: "ruje-payment-processing" });
     try {
@@ -121,7 +126,10 @@ function Planos() {
       }
     } catch (error) {
       toast.dismiss("ruje-payment-processing");
-      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
+      if (!failureToastShown.current) {
+        failureToastShown.current = true;
+        toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.");
+      }
       paymentLock.current = false;
       setBusy(false);
     }
