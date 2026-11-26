@@ -7,6 +7,17 @@ const USSD_TIMEOUT_MS = 3 * 60 * 1000;
 const PRODUCTS = { exams: { name: "Pacote de exames", amount: 125 }, cv: { name: "Currículo profissional", amount: 125 } } as const;
 function normalizeMozPhone(value: unknown) { const digits = String(value ?? "").replace(/[^0-9]/g, ""); const local = digits.startsWith("258") ? digits.slice(3) : digits; return /^(82|83|84|85|86|87)\d{7}$/.test(local) ? local : null; }
 function pickString(...values: unknown[]) { return values.find((value): value is string => typeof value === "string" && value.trim())?.trim(); }
+function providerData(payload: any) {
+  let value = payload;
+  for (let depth = 0; depth < 4; depth++) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) break;
+    if (value.payment && typeof value.payment === "object") { value = value.payment; continue; }
+    if (value.data && typeof value.data === "object") { value = value.data; continue; }
+    if (value.payload && typeof value.payload === "object") { value = value.payload; continue; }
+    break;
+  }
+  return value && typeof value === "object" ? value : {};
+}
 export const Route = createFileRoute("/api/matrixpay/checkout")({
   server: { handlers: { POST: async ({ request }) => {
     let orderId: string | undefined;
@@ -78,16 +89,16 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
       console.info("[MatrixPay] provider response received", { durationMs: Date.now() - providerStartedAt, status: response.status });
       const raw = await response.text();
       let json: any = {}; try { json = raw ? JSON.parse(raw) : {}; } catch { /* provider response not JSON */ }
-      const data = json?.data ?? json?.payment ?? json;
+      const data = providerData(json);
       const providerStatus = String(data?.status ?? json?.status ?? "").toLowerCase();
       if (/^(failed|falhou|rejected|rejeitado|declined|cancelled|canceled|expired|error)$/i.test(providerStatus)) {
         await supabaseAdmin.from("payment_requests").update({ status: "falhou" }).eq("id", order.id).eq("status", "pendente");
         const providerMessage = pickString(data?.message, data?.error, json?.message, json?.error);
-        return reply({ error: providerMessage || "O pagamento não foi concluído. Verifica o PIN e o saldo da carteira e tenta novamente." }, 402);
+        return reply({ error: providerMessage ? `A MatrixPay recusou a criação da cobrança: ${providerMessage}` : "A MatrixPay não conseguiu iniciar a cobrança. Confirma se o número e o método estão corretos e tenta novamente." }, 402);
       }
-      const providerId = pickString(data?.id, data?.payment_id, data?.transaction_id);
+      const providerId = pickString(data?.id, data?.payment_id, data?.paymentId, data?.transaction_id);
       const storedId = providerId || order.id;
-      const checkoutUrl = pickString(data?.checkout_url, data?.payment_url, data?.url, data?.link, json?.checkout_url, json?.payment_url, json?.url);
+      const checkoutUrl = pickString(data?.checkout_url, data?.payment_url, data?.payment_link, data?.url, data?.link, json?.checkout_url, json?.payment_url, json?.payment_link, json?.url);
       if (!response.ok) {
         const providerCode = pickString(json?.code, data?.code);
         const providerMessage = pickString(json?.message, json?.error, data?.message, data?.error);
@@ -97,7 +108,7 @@ export const Route = createFileRoute("/api/matrixpay/checkout")({
           return reply({ error: "Não foi possível iniciar o pagamento neste momento. Contacta o apoio da RuJe IA se o problema continuar." }, 502);
         }
         if (providerCode === "PAYMENT_FAILED" && providerMessage) {
-          return reply({ error: `Pagamento não concluído: ${providerMessage} Verifica o número M-Pesa/e-Mola, o PIN e se a carteira tem saldo. Depois, tenta novamente.` }, 502);
+          return reply({ error: `A MatrixPay não conseguiu iniciar a cobrança: ${providerMessage}` }, 502);
         }
         return reply({ error: providerMessage ? `Não foi possível iniciar o pagamento: ${providerMessage}` : "Não foi possível iniciar o pagamento. Tenta novamente." }, 502);
       }
