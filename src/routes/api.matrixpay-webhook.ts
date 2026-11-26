@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/matrixpay-webhook")({
         }
         if (!isApproved(verified?.status)) return reply({ error: "payment_not_verified" }, 409);
         const plans: Record<string, { days: number; dailyLimit: number; amount: number }> = {
-          "Plano 1 dia": { days: 1, dailyLimit: 2, amount: 30 }, "Plano Semanal": { days: 7, dailyLimit: 2, amount: 150 },
+          "Plano 1 dia": { days: 1, dailyLimit: 2, amount: 50 }, "Plano Semanal": { days: 7, dailyLimit: 2, amount: 150 },
           "Plano 14 dias": { days: 14, dailyLimit: 4, amount: 250 }, "Plano 30 dias": { days: 30, dailyLimit: 10, amount: 400 },
         };
         const plan = plans[order.plan];
